@@ -1,0 +1,17 @@
+
+      // Apollo landing sites: lunar module touchdown points
+      { id: 'apollo11', group: 'landing', name: 'Apollo 11', note: '20 Jul 1969 · Sea of Tranquility', lat: 0.6741, lon: 23.4730, size: 38, ex: 4 },
+      { id: 'apollo12', group: 'landing', name: 'Apollo 12', note: '19 Nov 1969 · Ocean of Storms', lat: -3.0124, lon: -23.4216, size: 130, ex: 5 },
+      { id: 'apollo14', group: 'landing', name: 'Apollo 14', note: '5 Feb 1971 · Fra Mauro highlands', lat: -3.6453, lon: -17.4714, size: 130, ex: 3 },
+      { id: 'apollo15', group: 'landing', name: 'Apollo 15', note: '30 Jul 1971 · Hadley Rille', lat: 26.1322, lon: 3.6339, size: 100, ex: 1.5 },
+      { id: 'apollo16', group: 'landing', name: 'Apollo 16', note: '21 Apr 1972 · Descartes highlands', lat: -8.9730, lon: 15.5002, size: 120, ex: 2.5 },
+      { id: 'apollo17', group: 'landing', name: 'Apollo 17', note: '11 Dec 1972 · Taurus-Littrow valley', lat: 20.1908, lon: 30.7717, size: 110, ex: 2 },
+      { id: 'tycho', name: 'Tycho', note: '85 km impact crater with central peak', lat: -43.24, lon: -11.30, size: 95, ex: 1.5 },
+      { id: 'copernicus', name: 'Copernicus', note: '93 km crater, terraced walls', lat: 9.62, lon: -20.08, size: 150, ex: 1.5 },
+      { id: 'aristarchus', name: 'Aristarchus', note: 'Brightest large crater, Vallis Schröteri', lat: 24.4, lon: -48.6, size: 200, ex: 2 },
+      { id: 'clavius', name: 'Clavius', note: '231 km crater with a crater chain', lat: -58.4, lon: -14.4, size: 300, ex: 1.5 },
+      { id: 'plato', name: 'Plato', note: 'Dark lava-flooded floor', lat: 51.6, lon: -9.4, size: 160, ex: 2 },
+      { id: 'gassendi', name: 'Gassendi', note: 'Fractured floor crater', lat: -17.5, lon: -39.9, size: 160, ex: 2 },
+      { id: 'tsiolkovskiy', name: 'Tsiolkovskiy', note: 'Far side, dark floor and central peak', lat: -20.4, lon: 129.1, size: 260, ex: 1.5 },
+      { id: 'orientale', name: 'Mare Orientale', note: 'Bullseye basin, three rings', lat: -19.4, lon: -92.8, size: 1100, ex: 4 },
+      { id: 'southpole', name: 'South Pole', note: 'Shackleton and the Artemis region', lat: -89.0, lon: 0, size: 220, ex: 1.5 },

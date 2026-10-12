@@ -1,0 +1,17 @@
+{
+  "name": "terrain-press",
+  "private": true,
+  "description": "Turn real NASA elevation data into 3D-printable ornaments and jigsaw puzzles.",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "build": "python3 source/build.py",
+    "serve": "python3 -m http.server 8080 --directory site"
+  },
+  "devDependencies": {
+    "bootstrap": "5.3.3",
+    "clipper-lib": "6.4.2",
+    "poly2tri": "1.5.0",
+    "purgecss": "6.0.0",
+    "three": "0.128.0"
+  }
+}

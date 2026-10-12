@@ -1,0 +1,288 @@
+<title>Terrain Press</title>
+<script>
+// theme first, so the page never flashes the wrong colours
+(function () {
+  var r = document.documentElement, mode = 'auto';
+  try { mode = localStorage.getItem('tp-theme') || 'auto'; } catch (e) {}
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  function eff() { return mode === 'auto' ? (r.getAttribute('data-theme') || (mq.matches ? 'dark' : 'light')) : mode; }
+  window.TPTheme = {
+    get mode() { return mode; },
+    set: function (m) { mode = m; try { localStorage.setItem('tp-theme', m); } catch (e) {} apply(); },
+    apply: apply, listeners: []
+  };
+  function apply() { var t = eff(); if (r.getAttribute('data-bs-theme') !== t) { r.setAttribute('data-bs-theme', t); TPTheme.listeners.forEach(function (f) { f(t); }); } }
+  apply();
+  mq.addEventListener ? mq.addEventListener('change', apply) : mq.addListener(apply);
+  new MutationObserver(apply).observe(r, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
+<style>/*BOOTSTRAP*/</style>
+<style>
+/* Layout: control rail + stage (3D bench / globe). Bootstrap supplies the components; these tokens give it a planetary identity. */
+:root {
+  --tp-bg: #f3f2ef; --tp-panel: #ffffff; --tp-panel-2: #f7f6f3; --tp-line: #e2dfd8; --tp-ink: #1f2124; --tp-ink-2: #555a61; --tp-ink-3: #7c8189;
+  --tp-stage: #e9e7e2; --tp-plate: #d8d5ce; --tp-grid1: #c9c5bc; --tp-grid2: #dcd9d2;
+  --tp-accent: #6f6650; --tp-accent-ink: #ffffff; --tp-accent-soft: rgba(111, 102, 80, .14);
+  --tp-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-bs-theme="light"]) {
+  --tp-bg: #0d1014; --tp-panel: #14181e; --tp-panel-2: #1a1f26; --tp-line: #262c35; --tp-ink: #e7e4dc; --tp-ink-2: #a9adb3; --tp-ink-3: #7b828b;
+  --tp-stage: #0d1014; --tp-plate: #161a20; --tp-grid1: #252c35; --tp-grid2: #1b2128;
+  --tp-accent: #d6ccb2; --tp-accent-ink: #15130e; --tp-accent-soft: rgba(214, 204, 178, .14); color-scheme: dark } }
+:root[data-theme="dark"], :root[data-bs-theme="dark"] {
+  --tp-bg: #0d1014; --tp-panel: #14181e; --tp-panel-2: #1a1f26; --tp-line: #262c35; --tp-ink: #e7e4dc; --tp-ink-2: #a9adb3; --tp-ink-3: #7b828b;
+  --tp-stage: #0d1014; --tp-plate: #161a20; --tp-grid1: #252c35; --tp-grid2: #1b2128;
+  --tp-accent: #d6ccb2; --tp-accent-ink: #15130e; --tp-accent-soft: rgba(214, 204, 178, .14); color-scheme: dark }
+:root[data-bs-theme="light"] { color-scheme: light }
+/* world accents, light then dark */
+body[data-world="mars"] { --tp-accent: #b4522a; --tp-accent-soft: rgba(180, 82, 42, .13) }
+body[data-world="mercury"] { --tp-accent: #7a6a52; --tp-accent-soft: rgba(122, 106, 82, .14) }
+body[data-world="ceres"] { --tp-accent: #56657a; --tp-accent-soft: rgba(86, 101, 122, .14) }
+body[data-world="vesta"] { --tp-accent: #6e675b; --tp-accent-soft: rgba(110, 103, 91, .14) }
+body[data-world="venus"] { --tp-accent: #a3621f; --tp-accent-soft: rgba(163, 98, 31, .13) }
+body[data-world="pluto"] { --tp-accent: #94604a; --tp-accent-soft: rgba(148, 96, 74, .13) }
+[data-bs-theme="dark"] body[data-world="mars"] { --tp-accent: #e0834f; --tp-accent-ink: #1a0d07; --tp-accent-soft: rgba(224, 131, 79, .15) }
+[data-bs-theme="dark"] body[data-world="mercury"] { --tp-accent: #c4b394; --tp-accent-ink: #17140f; --tp-accent-soft: rgba(196, 179, 148, .15) }
+[data-bs-theme="dark"] body[data-world="ceres"] { --tp-accent: #a9b7c9; --tp-accent-ink: #0f1318; --tp-accent-soft: rgba(169, 183, 201, .15) }
+[data-bs-theme="dark"] body[data-world="vesta"] { --tp-accent: #c2bbae; --tp-accent-ink: #15130f; --tp-accent-soft: rgba(194, 187, 174, .15) }
+[data-bs-theme="dark"] body[data-world="venus"] { --tp-accent: #e6a75c; --tp-accent-ink: #1a1006; --tp-accent-soft: rgba(230, 167, 92, .15) }
+[data-bs-theme="dark"] body[data-world="pluto"] { --tp-accent: #e2b79c; --tp-accent-ink: #1a110c; --tp-accent-soft: rgba(226, 183, 156, .15) }
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg); --bs-body-color: var(--tp-ink); --bs-border-color: var(--tp-line); --bs-secondary-color: var(--tp-ink-3); --bs-tertiary-bg: var(--tp-panel-2); --bs-focus-ring-color: var(--tp-accent-soft); font-size: 14px; }
+:focus-visible { outline: 2px solid var(--tp-accent); outline-offset: 2px; }
+.form-control, .form-select { background-color: var(--tp-bg); border-color: var(--tp-line); color: var(--tp-ink); }
+.form-control:focus { border-color: var(--tp-accent); box-shadow: 0 0 0 .2rem var(--tp-accent-soft); background-color: var(--tp-bg); color: var(--tp-ink); }
+.form-range { accent-color: var(--tp-accent); }
+.form-range::-webkit-slider-thumb { background: var(--tp-accent); }
+.form-range::-moz-range-thumb { background: var(--tp-accent); }
+.form-range:focus::-webkit-slider-thumb { box-shadow: 0 0 0 .2rem var(--tp-accent-soft); }
+.form-check-input:checked { background-color: var(--tp-accent); border-color: var(--tp-accent); }
+.form-check-input:focus { border-color: var(--tp-accent); box-shadow: 0 0 0 .2rem var(--tp-accent-soft); }
+.form-switch .form-check-input:focus { --bs-form-switch-bg: var(--bs-form-switch-bg); }
+.btn-tp { --bs-btn-color: var(--tp-ink-2); --bs-btn-border-color: var(--tp-line); --bs-btn-hover-color: var(--tp-ink); --bs-btn-hover-bg: var(--tp-panel-2); --bs-btn-hover-border-color: var(--tp-line); --bs-btn-active-color: var(--tp-accent-ink); --bs-btn-active-bg: var(--tp-accent); --bs-btn-active-border-color: var(--tp-accent); background: var(--tp-panel); }
+.btn-check:checked + .btn-tp, .btn-tp.active { color: var(--tp-accent-ink); background: var(--tp-accent); border-color: var(--tp-accent); }
+.btn-accent { --bs-btn-color: var(--tp-accent-ink); --bs-btn-bg: var(--tp-accent); --bs-btn-border-color: var(--tp-accent); --bs-btn-hover-color: var(--tp-accent-ink); --bs-btn-hover-bg: var(--tp-accent); --bs-btn-hover-border-color: var(--tp-accent); --bs-btn-active-bg: var(--tp-accent); --bs-btn-active-color: var(--tp-accent-ink); --bs-btn-disabled-bg: var(--tp-accent); --bs-btn-disabled-border-color: var(--tp-accent); --bs-btn-disabled-color: var(--tp-accent-ink); font-weight: 600; }
+.btn-accent:hover { filter: brightness(1.06); }
+
+.tp-nav { background: var(--tp-panel); border-bottom: 1px solid var(--tp-line); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+.tp-brand { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap; color: var(--tp-ink); }
+.tp-brand svg { flex: none; }
+.tp-worlds { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.tp-worlds::-webkit-scrollbar { display: none; }
+.tp-world { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.tp-world i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+
+.tp-app { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); height: calc(100% - 57px); }
+.tp-side { background: var(--tp-panel); border-right: 1px solid var(--tp-line); overflow-y: auto; min-width: 0; display: flex; flex-direction: column; }
+.tp-sec { padding: 14px 16px; border-bottom: 1px solid var(--tp-line); display: flex; flex-direction: column; gap: 10px; }
+.tp-sec > h2 { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--tp-ink-3); margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.tp-sec > h2 small { font: 11px var(--tp-mono); letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--tp-ink-3); }
+.tp-label { font-size: 11.5px; color: var(--tp-ink-3); margin-bottom: 3px; display: block; }
+.tp-hint { font-size: 12px; color: var(--tp-ink-3); margin: 0; }
+.tp-out { font: 12px var(--tp-mono); color: var(--tp-ink); font-variant-numeric: tabular-nums; }
+.tp-num { font-family: var(--tp-mono); font-size: 13px; }
+.btn-group.tp-seg { width: 100%; }
+.btn-group.tp-seg > .btn { flex: 1 1 0; font-size: 13px; padding: .32rem .4rem; }
+
+.tp-marks { max-height: 290px; overflow-y: auto; border: 1px solid var(--tp-line); border-radius: 8px; background: var(--tp-panel-2); }
+.tp-marks .grp { position: sticky; top: 0; z-index: 1; background: var(--tp-panel-2); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--tp-ink-2); padding: 7px 10px 4px; display: flex; align-items: center; gap: 7px; border-bottom: 1px solid var(--tp-line); }
+.tp-marks .grp i { width: 7px; height: 7px; border-radius: 50%; background: var(--tp-accent); }
+.tp-mark { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--tp-line); padding: 7px 10px; color: var(--tp-ink); }
+.tp-mark:last-child { border-bottom: 0; }
+.tp-mark:hover { background: var(--tp-accent-soft); }
+.tp-mark[aria-pressed="true"] { background: var(--tp-accent-soft); box-shadow: inset 3px 0 0 var(--tp-accent); }
+.tp-mark b { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-mark span { grid-column: 1; font-size: 11.5px; color: var(--tp-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-mark em { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 600 9.5px var(--tp-mono); font-style: normal; color: var(--tp-accent); border: 1px solid var(--tp-accent); border-radius: 4px; padding: 1px 4px; letter-spacing: .03em; }
+.tp-colors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tp-colors label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--tp-ink-2); border: 1px solid var(--tp-line); border-radius: 6px; padding: 4px 8px; cursor: pointer; background: var(--tp-panel-2); min-width: 0; }
+.tp-colors input { width: 22px; height: 22px; border: 0; padding: 0; background: none; flex: none; cursor: pointer; }
+.tp-cta { position: sticky; bottom: 0; margin-top: auto; background: var(--tp-panel); border-top: 1px solid var(--tp-line); padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 3; }
+.tp-cta .btn { width: 100%; padding: .6rem; font-size: 15px; }
+.tp-cta p { font-size: 11.5px; color: var(--tp-ink-3); text-align: center; margin: 6px 0 0; }
+.tp-credits { padding: 14px 16px; font-size: 11px; color: var(--tp-ink-3); line-height: 1.5; }
+.tp-credits a { color: var(--tp-ink-2); }
+
+.tp-stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; background: var(--tp-stage); }
+.tp-stagebar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--tp-line); background: var(--tp-panel); flex-wrap: wrap; }
+.tp-coord { margin-left: auto; font: 12px var(--tp-mono); color: var(--tp-ink-2); display: flex; gap: 12px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.tp-coord b { color: var(--tp-accent); font-weight: 600; }
+.tp-view { position: relative; min-height: 0; overflow: hidden; }
+.tp-view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.tp-overlay { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; pointer-events: none; max-width: calc(100% - 24px); }
+.tp-chip { background: color-mix(in srgb, var(--tp-panel) 88%, transparent); border: 1px solid var(--tp-line); border-radius: 999px; padding: 4px 10px; font: 11.5px var(--tp-mono); color: var(--tp-ink-2); backdrop-filter: blur(6px); }
+.tp-chip b { color: var(--tp-ink); font-weight: 600; }
+.tp-chip.warn { border-color: #c9932e; color: var(--tp-ink); }
+.tp-sun { position: absolute; right: 12px; bottom: 12px; width: min(210px, calc(100% - 24px)); background: color-mix(in srgb, var(--tp-panel) 88%, transparent); border: 1px solid var(--tp-line); border-radius: 10px; padding: 6px 12px 4px; backdrop-filter: blur(6px); }
+.tp-busy { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.tp-busy span { background: var(--tp-panel); border: 1px solid var(--tp-line); border-radius: 8px; padding: 8px 14px; font: 12px var(--tp-mono); color: var(--tp-ink); box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+.tp-pick { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: calc(100% - 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--tp-line); background: var(--tp-panel); margin: 0; }
+.tp-stats > div { padding: 8px 12px; border-right: 1px solid var(--tp-line); min-width: 0; }
+.tp-stats > div:last-child { border-right: 0; }
+.tp-stats dt { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--tp-ink-3); }
+.tp-stats dd { margin: 2px 0 0; font: 13.5px var(--tp-mono); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--tp-ink); }
+.tp-stats dd small { color: var(--tp-ink-3); font-size: 11px; }
+.nav-pills.tp-tabs .nav-link { color: var(--tp-ink-2); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: .3rem .8rem; }
+.nav-pills.tp-tabs .nav-link.active { background: var(--tp-accent-soft); color: var(--tp-ink); }
+.tp-toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; max-width: calc(100% - 32px); }
+
+@media (max-width: 991.98px) {
+  html, body { height: auto; }
+  .tp-nav { flex-wrap: wrap; row-gap: 8px !important; }
+  .tp-worlds { order: 3; flex-basis: 100%; }
+  .tp-app { display: flex; flex-direction: column; height: auto; }
+  .tp-stage { order: -1; grid-template-rows: auto 60vh auto; }
+  .tp-side { border-right: 0; overflow: visible; }
+  .tp-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tp-stats > div:nth-child(3) { border-right: 0; }
+  .tp-stats > div:nth-child(n+4) { border-top: 1px solid var(--tp-line); }
+  .tp-coord { margin-left: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<nav class="tp-nav d-flex align-items-center gap-3 px-3 py-2">
+  <span class="tp-brand"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 15c3-2 5 1 8-1s4-4 6-3" fill="none" stroke="var(--tp-accent)" stroke-width="1.8" stroke-linecap="round"/></svg>Terrain Press</span>
+  <div class="tp-worlds flex-grow-1" id="worlds" role="group" aria-label="World"></div>
+  <div class="btn-group btn-group-sm" role="group" aria-label="Colour theme">
+    <button type="button" class="btn btn-tp" id="th-light" title="Light" aria-label="Light theme"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg></button>
+    <button type="button" class="btn btn-tp" id="th-auto" title="Match system" aria-label="Match system theme"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+    <button type="button" class="btn btn-tp" id="th-dark" title="Dark" aria-label="Dark theme"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor"/></svg></button>
+  </div>
+</nav>
+
+<div class="tp-app">
+  <aside class="tp-side" aria-label="Model settings">
+    <section class="tp-sec">
+      <h2>Where <small id="mark-count"></small></h2>
+      <input type="search" class="form-control form-control-sm" id="mark-filter" placeholder="Search landmarks" aria-label="Search landmarks">
+      <div class="tp-marks" id="marks"></div>
+      <div class="row g-2">
+        <div class="col-4"><label class="tp-label" for="lat">Latitude °</label><input class="form-control form-control-sm tp-num" id="lat" type="number" step="0.01" min="-90" max="90"></div>
+        <div class="col-4"><label class="tp-label" for="lon">Longitude °E</label><input class="form-control form-control-sm tp-num" id="lon" type="number" step="0.01" min="-180" max="180"></div>
+        <div class="col-4"><label class="tp-label" for="size">Width km</label><input class="form-control form-control-sm tp-num" id="size" type="number" step="1" min="10" max="9000"></div>
+      </div>
+      <p class="tp-hint" id="where-hint">Open the <b>Globe</b> tab to pick any spot; the dots are landing sites.</p>
+    </section>
+
+    <section class="tp-sec">
+      <h2>Model</h2>
+      <div class="btn-group tp-seg" role="group" aria-label="Product">
+        <input type="radio" class="btn-check" name="product" id="p-ornament" value="ornament" checked><label class="btn btn-tp" for="p-ornament">Ornament</label>
+        <input type="radio" class="btn-check" name="product" id="p-puzzle" value="puzzle"><label class="btn btn-tp" for="p-puzzle">Puzzle</label>
+      </div>
+      <div class="btn-group tp-seg" role="group" aria-label="Shape">
+        <input type="radio" class="btn-check" name="shape" id="s-circle" value="circle" checked><label class="btn btn-tp" for="s-circle">Circle</label>
+        <input type="radio" class="btn-check" name="shape" id="s-square" value="square"><label class="btn btn-tp" for="s-square">Square</label>
+        <input type="radio" class="btn-check" name="shape" id="s-hexagon" value="hexagon"><label class="btn btn-tp" for="s-hexagon">Hexagon</label>
+      </div>
+      <div><div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div><input type="range" class="form-range" id="width" min="60" max="220" step="5" value="100"></div>
+      <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
+      <div class="row g-2">
+        <div class="col-4"><label class="tp-label" for="base">Base mm</label><input class="form-control form-control-sm tp-num" id="base" type="number" step="0.2" min="1" max="8" value="2"></div>
+        <div class="col-4"><label class="tp-label" for="frame">Frame mm</label><input class="form-control form-control-sm tp-num" id="frame" type="number" step="0.5" min="4" max="14" value="7"></div>
+        <div class="col-4"><label class="tp-label" for="rim">Rim mm</label><input class="form-control form-control-sm tp-num" id="rim" type="number" step="0.5" min="0.5" max="30" value="3"></div>
+      </div>
+      <div class="form-check form-switch" id="rim-auto-wrap"><input class="form-check-input" type="checkbox" role="switch" id="rim-auto"><label class="form-check-label" for="rim-auto">Raise the rim with tall relief</label></div>
+      <div id="orn-opts" class="d-flex flex-column gap-1">
+        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="separate" checked><label class="form-check-label" for="separate">Terrain and frame as two separate prints</label></div>
+        <div class="form-check form-switch" id="loop-wrap"><input class="form-check-input" type="checkbox" role="switch" id="loop"><label class="form-check-label" for="loop">Hanging loop on the frame</label></div>
+      </div>
+      <div class="row g-2" id="fit-row">
+        <div class="col-6" id="pieces-wrap"><label class="tp-label" for="pieces">Pieces across</label><input class="form-control form-control-sm tp-num" id="pieces" type="number" step="1" min="2" max="12" value="5"></div>
+        <div class="col-6"><label class="tp-label" for="gap">Clearance mm</label><input class="form-control form-control-sm tp-num" id="gap" type="number" step="0.05" min="0.1" max="0.6" value="0.3"></div>
+      </div>
+      <div id="spread-opts" class="d-flex flex-column gap-2">
+        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="spread"><label class="form-check-label" for="spread">Spread pieces apart for printing</label></div>
+        <div class="row g-2" id="spread-row"><div class="col-6"><label class="tp-label" for="spread-gap">Gap between pieces mm</label><input class="form-control form-control-sm tp-num" id="spread-gap" type="number" step="0.5" min="1" max="15" value="3"></div></div>
+        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="per-piece"><label class="form-check-label" for="per-piece">Also every piece as its own STL, with a numbered map</label></div>
+      </div>
+      <p class="tp-hint" id="model-hint"></p>
+    </section>
+
+    <section class="tp-sec">
+      <h2>Frame &amp; lettering</h2>
+      <div class="btn-group tp-seg" role="group" aria-label="Border">
+        <input type="radio" class="btn-check" name="border" id="b-lettered" value="lettered" checked><label class="btn btn-tp" for="b-lettered">Frame + text</label>
+        <input type="radio" class="btn-check" name="border" id="b-plain" value="plain"><label class="btn btn-tp" for="b-plain">Plain frame</label>
+        <input type="radio" class="btn-check" name="border" id="b-none" value="none"><label class="btn btn-tp" for="b-none">No frame</label>
+      </div>
+      <div id="back-opts" class="d-flex flex-column gap-2">
+        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="back" checked><label class="form-check-label" for="back">Closed back, so the frame is a tray you can carry</label></div>
+        <div class="row g-2" id="back-row"><div class="col-6"><label class="tp-label" for="back-mm">Back thickness mm</label><input class="form-control form-control-sm tp-num" id="back-mm" type="number" step="0.2" min="0.8" max="4" value="1.6"></div></div>
+      </div>
+      <div id="letter-opts" class="d-flex flex-column gap-2">
+        <div class="btn-group tp-seg" role="group" aria-label="Lettering style">
+          <input type="radio" class="btn-check" name="font" id="f-worm" value="worm" checked><label class="btn btn-tp" for="f-worm">Space age</label>
+          <input type="radio" class="btn-check" name="font" id="f-plaque" value="plaque"><label class="btn btn-tp" for="f-plaque">Apollo plaque</label>
+          <input type="radio" class="btn-check" name="font" id="f-technical" value="technical"><label class="btn btn-tp" for="f-technical">Technical</label>
+        </div>
+        <p class="tp-hint" id="font-hint"></p>
+        <div class="row g-2">
+          <div class="col-6"><label class="tp-label" for="t-top">Top line</label><input class="form-control form-control-sm" id="t-top" type="text" maxlength="40"></div>
+          <div class="col-6"><label class="tp-label" for="t-bottom">Bottom line</label><input class="form-control form-control-sm" id="t-bottom" type="text" maxlength="48"></div>
+        </div>
+        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="merge" checked><label class="form-check-label" for="merge">Lettering and frame as one part</label></div>
+        <p class="tp-hint" id="loop-note" hidden>The top line is left off while the hanging loop is on.</p>
+      </div>
+    </section>
+
+    <section class="tp-sec">
+      <h2>Print</h2>
+      <div class="tp-colors">
+        <label><input id="c-terrain" type="color" value="#8e8d87" aria-label="Terrain colour">Terrain</label>
+        <label><input id="c-frame" type="color" value="#26282c" aria-label="Frame colour">Frame</label>
+        <label><input id="c-text" type="color" value="#c8915a" aria-label="Lettering colour">Letters</label>
+      </div>
+      <div class="btn-group tp-seg" role="group" aria-label="Export detail">
+        <input type="radio" class="btn-check" name="detail" id="d-std" value="0.5"><label class="btn btn-tp" for="d-std">Standard</label>
+        <input type="radio" class="btn-check" name="detail" id="d-fine" value="0.35" checked><label class="btn btn-tp" for="d-fine">Fine</label>
+        <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra</label>
+      </div>
+      <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
+    </section>
+
+    <div class="tp-cta">
+      <button type="button" class="btn btn-accent" id="export">Download print files</button>
+      <p id="export-note">A .zip with STL and .3mf files, ready for any slicer.</p>
+    </div>
+    <div class="tp-credits" id="credits"></div>
+  </aside>
+
+  <main class="tp-stage">
+    <div class="tp-stagebar">
+      <ul class="nav nav-pills tp-tabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" id="tab-model" role="tab" aria-selected="true" aria-controls="view-model">Model</button></li>
+        <li class="nav-item"><button class="nav-link" id="tab-globe" role="tab" aria-selected="false" aria-controls="view-globe">Globe</button></li>
+      </ul>
+      <div class="tp-coord" id="coord"></div>
+    </div>
+    <div class="tp-view" id="view-model" role="tabpanel">
+      <canvas id="bench" aria-label="3D preview of the printable model"></canvas>
+      <div class="tp-overlay"><span class="tp-chip" id="chip-src">Loading…</span><span class="tp-chip warn" id="chip-warn" hidden></span></div>
+      <div class="tp-sun"><div class="d-flex justify-content-between"><label class="tp-label mb-0" for="sun">Sun angle</label><output class="tp-out" id="o-sun"></output></div><input type="range" class="form-range" id="sun" min="4" max="70" value="18"></div>
+      <div class="tp-busy" id="busy" hidden><span id="busy-text">Building…</span></div>
+    </div>
+    <div class="tp-view" id="view-globe" role="tabpanel" hidden>
+      <canvas id="globe" aria-label="Globe. Drag to rotate, tap to choose the centre of your region."></canvas>
+      <span class="tp-chip tp-pick" id="pickhint">Drag to spin · tap a dot for a landing site, or anywhere to centre a region</span>
+      <div class="tp-busy" id="gbusy" hidden><span>Loading globe…</span></div>
+    </div>
+    <dl class="tp-stats">
+      <div><dt>Lowest</dt><dd id="st-low">–</dd></div>
+      <div><dt>Highest</dt><dd id="st-high">–</dd></div>
+      <div><dt>Printed relief</dt><dd id="st-relief">–</dd></div>
+      <div><dt>Footprint</dt><dd id="st-foot">–</dd></div>
+      <div><dt>Parts</dt><dd id="st-parts">–</dd></div>
+    </dl>
+  </main>
+</div>
+<div class="tp-toast alert py-2 px-3 mb-0 shadow" id="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>/*APP*/</script>

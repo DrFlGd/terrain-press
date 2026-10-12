@@ -1,0 +1,11 @@
+
+      { id: 'messenger', group: 'landing', name: 'MESSENGER', note: '30 Apr 2015 · end-of-mission impact site', lat: 54.44, lon: -149.88, size: 300, ex: 8 },
+      { id: 'caloris', name: 'Caloris Basin', note: '1,550 km impact basin, lava-filled', lat: 30.5, lon: -170.2, size: 1700, ex: 8 },
+      { id: 'rachmaninoff', name: 'Rachmaninoff', note: '290 km basin, Mercury\'s lowest point', lat: 27.6, lon: 57.6, size: 340, ex: 3 },
+      { id: 'raditladi', name: 'Raditladi', note: '263 km young peak-ring basin', lat: 27.3, lon: 119.1, size: 320, ex: 3 },
+      { id: 'rembrandt', name: 'Rembrandt', note: '715 km basin, second largest', lat: -33.2, lon: 88.2, size: 800, ex: 4 },
+      { id: 'beethoven', name: 'Beethoven', note: '630 km lava-flooded basin', lat: -20.8, lon: -123.6, size: 720, ex: 4 },
+      { id: 'tolstoj', name: 'Tolstoj', note: '390 km ancient basin', lat: -16.3, lon: -164.7, size: 450, ex: 5 },
+      { id: 'kuiper', name: 'Kuiper', note: '62 km young crater with bright rays', lat: -11.35, lon: -31.5, size: 110, ex: 2.5 },
+      { id: 'hokusai', name: 'Hokusai', note: '114 km crater, rays across half the planet', lat: 57.8, lon: 16.9, size: 160, ex: 2.5 },
+      { id: 'degas', name: 'Degas', note: '52 km crater with a central peak', lat: 37.1, lon: -127.3, size: 90, ex: 2.5 },

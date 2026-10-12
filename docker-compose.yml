@@ -1,0 +1,10 @@
+# Run Terrain Press on a NAS or any Docker host, then open http://<host>:8085
+services:
+  terrain-press:
+    image: ghcr.io/ianbauters/terrain-press:latest
+    # or build it yourself from this repository instead of pulling:
+    # build: .
+    container_name: terrain-press
+    ports:
+      - "8085:80"
+    restart: unless-stopped
