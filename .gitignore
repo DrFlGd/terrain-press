@@ -3,3 +3,4 @@ source/_content.html
 source/_purge.json
 .DS_Store
 *.zip
+dist/

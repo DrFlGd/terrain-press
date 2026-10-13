@@ -1,0 +1,50 @@
+name: Windows portable release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'package.json'
+      - '.github/workflows/windows-desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out Terrain Press (including bundled terrain data)
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Test desktop asset routing
+        run: npm run test:desktop
+      - name: Build standalone Windows app
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Publish downloadable Windows release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v1.0.0
+          name: Terrain Press Desktop v1.0.0
+          target_commitish: ${{ github.sha }}
+          files: dist/Terrain-Press-*-Portable.exe
+          fail_on_unmatched_files: true
+          make_latest: true
+          body: |
+            Standalone portable 64-bit Windows edition of Terrain Press.
+
+            - Download Terrain-Press-1.0.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
+            - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
+            - Unsigned executable: Windows SmartScreen may show a publisher warning.
+
+            Source is provided in this repository under AGPL-3.0-or-later.

@@ -1,17 +1,54 @@
 {
   "name": "terrain-press",
+  "version": "1.0.0",
   "private": true,
   "description": "Turn real NASA elevation data into 3D-printable ornaments and jigsaw puzzles.",
   "license": "AGPL-3.0-or-later",
+  "main": "desktop/main.js",
   "scripts": {
     "build": "python3 source/build.py",
-    "serve": "python3 -m http.server 8080 --directory site"
+    "serve": "python3 -m http.server 8080 --directory site",
+    "desktop": "electron .",
+    "test:desktop": "node --test desktop/asset-path.test.js",
+    "dist:win": "electron-builder --win portable --x64 --publish never"
   },
   "devDependencies": {
     "bootstrap": "5.3.3",
     "clipper-lib": "6.4.2",
     "poly2tri": "1.5.0",
     "purgecss": "6.0.0",
-    "three": "0.128.0"
+    "three": "0.128.0",
+    "electron": "^38.0.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "org.terrainpress.desktop",
+    "productName": "Terrain Press",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json",
+      "LICENSE",
+      "CREDITS.md",
+      "LICENSES/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "site",
+        "to": "site",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "Terrain-Press-${version}-Portable.${ext}"
+    }
   }
 }

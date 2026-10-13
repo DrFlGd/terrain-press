@@ -68,3 +68,7 @@ Terrain Press is © Ian Bauters and contributors, licensed under the **GNU AGPL-
 Elevation data comes from NASA, the USGS Astrogeology Science Center, DLR and the NASA Planetary Data System. Libraries and fonts are under MIT, BSD, Boost and SIL OFL licences. Full details are in [CREDITS.md](CREDITS.md) and [LICENSES/](LICENSES).
 
 This is a decorative representation, not survey-grade data, and is not endorsed by NASA, the USGS or DLR.
+
+## Windows desktop app
+
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.0.0) (the **Terrain-Press-1.0.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
