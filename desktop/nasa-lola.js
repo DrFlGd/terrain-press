@@ -137,12 +137,14 @@ async function install({ ppd, staging, signal, progress, report }) {
     if (signal.aborted) throw new Error('Download cancelled');
     const { label, metadata } = await getLabel(c, signal);
     fs.writeFileSync(path.join(staging, c.stem + '.lbl'), label, 'utf8');
-    let thisBytes = 0;
+    let lastReport = 0;
     await fetchImage(c, staging, signal, received => {
-      thisBytes = received;
       progress.currentFileBytes = received;
-      // throttle at the UI side, not in the transfer
-      report();
+      const now = Date.now();
+      if (now - lastReport > 300 || received === c.bytes) {
+        lastReport = now;
+        report();
+      }
     });
     progress.phase = 'verifying downloaded file';
     report();
@@ -188,12 +190,13 @@ function findComponent(ppd, x, y) {
   const c = bounds(ppd).find(c =>
     lat <= c.north && lat > c.south && lon >= c.west && lon < c.east);
   if (!c) throw new Error('Unable to map NASA grid cell');
-  return { c, x: nasaX - c.west * ppd, y: (90 - c.north) * ppd + y };
+  return { c, x: nasaX - c.west * ppd, y: y - (90 - c.north) * ppd };
 }
 function generateTile(packDir, ppd, tileName) {
   const { x, y, width, height, w } = tileInfo(ppd, tileName);
   const png = new PNG({ width, height, colorType: 6, inputColorType: 6, bitDepth: 8 });
   const descriptors = new Map();
+  const receipt = JSON.parse(fs.readFileSync(path.join(packDir, 'receipt.json'), 'utf8'));
   try {
     for (let r = 0; r < height; r++) {
       let offsetX = 0;
@@ -202,7 +205,6 @@ function generateTile(packDir, ppd, tileName) {
         const { c, x: srcX, y: srcY } = findComponent(ppd, originalX, y + r);
         let fd = descriptors.get(c.name);
         if (!fd) {
-          const receipt = JSON.parse(fs.readFileSync(path.join(packDir, 'receipt.json'), 'utf8'));
           const file = receipt.files.find(f => f.name === c.name);
           if (!file) throw new Error('Missing NASA image metadata');
           fd = { handle: fs.openSync(path.join(packDir, c.name), 'r'), bigEndian: file.type === 'MSB_INTEGER' };

@@ -75,13 +75,13 @@ app.whenReady().then(() => {
   ipcMain.handle('terrain-packs:cancel', (_, id) => packStore.cancel(id));
   ipcMain.handle('terrain-packs:remove', (_, id) => packStore.remove(id));
   const root = siteDirectory();
-  protocol.handle('terrain', request => {
+  protocol.handle('terrain', async request => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('Method not allowed', { status: 405 });
     }
     const pathname = new URL(request.url).pathname;
     const file = pathname.startsWith('/packs/')
-      ? packStore.assetForUrl(request.url)
+      ? await packStore.assetForUrl(request.url)
       : resolveAssetPath(root, request.url);
     if (!file) return new Response('Not found', { status: 404 });
     return net.fetch(pathToFileURL(file).toString());

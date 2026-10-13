@@ -59,8 +59,11 @@
       "w": 46080,
       "h": 23040,
       "tile": 1024,
-      "status": "planned",
-      "note": "About 237 m/pixel at the equator; dataset conversion and hosting required."
+      "status": "published",
+      "note": "237 m/pixel at equator · NASA PDS LOLA IMG (1 original files) · fully offline after download",
+      "format": "nasa-pds-img",
+      "ppd": 128,
+      "downloadBytes": 2123366400
     },
     {
       "id": "moon-lola-256",
@@ -69,8 +72,11 @@
       "w": 92160,
       "h": 46080,
       "tile": 1024,
-      "status": "planned",
-      "note": "About 118 m/pixel at the equator; verify coverage and fill provenance."
+      "status": "published",
+      "note": "118 m/pixel at equator · NASA PDS LOLA IMG (4 original files) · fully offline after download",
+      "format": "nasa-pds-img",
+      "ppd": 256,
+      "downloadBytes": 8493465600
     },
     {
       "id": "moon-lola-512",
@@ -79,8 +85,11 @@
       "w": 184320,
       "h": 92160,
       "tile": 1024,
-      "status": "planned",
-      "note": "About 59 m/pixel at the equator; requires tiled multi-GB distribution."
+      "status": "published",
+      "note": "59 m/pixel at equator · NASA PDS LOLA IMG (16 original files) · fully offline after download",
+      "format": "nasa-pds-img",
+      "ppd": 512,
+      "downloadBytes": 33973862400
     }
   ]
 }

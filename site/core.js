@@ -75,9 +75,10 @@
               }
           }
           const prefix = 'packs/' + p.id;
+          const extension = p.imageExt === 'png' ? 'png' : 'webp';
           return { kind: 'pack', id: p.id, grid: g, w: p.w, h: p.h,
             tile: p.tile, prefix, pxKm, label: p.label || (p.w / 360).toFixed(0) + ' px/deg',
-            paths: [...set].map(name => prefix + '/' + name) };
+            paths: [...set].map(name => prefix + '/' + name.replace(/\.webp$/, '.' + extension)) };
         }
       }
       if (candidatePatch) return candidatePatch;

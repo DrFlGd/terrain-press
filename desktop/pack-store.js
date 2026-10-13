@@ -11,6 +11,7 @@ const TILE = /^t(\d+)_(\d+)\.webp$/;
 const SHA = /^[a-f0-9]{64}$/;
 const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 const CATALOG = require('./packs/catalog.json');
+const NASA = require('./nasa-lola');
 
 function httpsUrl(url) {
   try {
@@ -62,6 +63,7 @@ class PackStore {
       ? path.resolve(saved.root) : path.join(userData, 'terrain-datasets');
     this.installed = new Set(Array.isArray(saved.installed) ? saved.installed.filter(id => ID.test(id)) : []);
     this.active = null;
+    this.tileJobs = new Map();
     fs.mkdirSync(this.root, { recursive: true });
   }
   save() {
@@ -73,10 +75,12 @@ class PackStore {
   catalogPack(id) { return CATALOG.packs.find(p => p.id === id); }
   status() {
     const installed = [...this.installed].map(id => this.catalogPack(id)).filter(Boolean)
-      .filter(p => fs.existsSync(path.join(this.root, p.id)));
+      .filter(p => p.format === 'nasa-pds-img'
+        ? NASA.complete(path.join(this.root, p.id), p.ppd)
+        : fs.existsSync(path.join(this.root, p.id)));
     return {
       root: this.root, bundled: CATALOG.builtIn, catalog: CATALOG.packs,
-      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name })),
+      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: p.format === 'nasa-pds-img' ? 'png' : 'webp' })),
       active: this.active ? this.active.progress : null
     };
   }
@@ -93,14 +97,37 @@ class PackStore {
     }
     return this.status();
   }
-  assetForUrl(requestUrl) {
+  async assetForUrl(requestUrl) {
     let parsed;
     try { parsed = new URL(requestUrl); } catch { return null; }
-    const match = /^\/packs\/([a-z][a-z0-9-]{1,63})\/(t\d+_\d+\.webp)$/.exec(parsed.pathname);
-    if (!match || !this.installed.has(match[1]) || !this.catalogPack(match[1])) return null;
-    const dir = path.join(this.root, match[1]);
-    if (!fs.existsSync(dir)) return null;
-    return path.join(dir, match[2]);
+    const match = /^\/packs\/([a-z][a-z0-9-]{1,63})\/(t\d+_\d+\.(?:webp|png))$/.exec(parsed.pathname);
+    if (!match || !this.installed.has(match[1])) return null;
+    const pack = this.catalogPack(match[1]);
+    if (!pack) return null;
+    const dir = path.join(this.root, pack.id);
+    if (pack.format !== 'nasa-pds-img') {
+      if (!match[2].endsWith('.webp') || !fs.existsSync(dir)) return null;
+      return path.join(dir, match[2]);
+    }
+    if (!match[2].endsWith('.png') || !NASA.complete(dir, pack.ppd)) return null;
+    try { NASA.tileInfo(pack.ppd, match[2]); } catch { return null; }
+    const cache = path.join(dir, 'cache'), tile = path.join(cache, match[2]);
+    if (fs.existsSync(tile)) return tile;
+    if (!this.tileJobs.has(tile)) {
+      const job = (async () => {
+        await fs.promises.mkdir(cache, { recursive: true });
+        // Convert the needed native IMG cells only; never build a second whole-planet copy.
+        const png = NASA.generateTile(dir, pack.ppd, match[2]);
+        const partial = tile + '.' + process.pid + '.partial';
+        try {
+          await fs.promises.writeFile(partial, png);
+          await fs.promises.rename(partial, tile);
+        } finally { await fs.promises.rm(partial, { force: true }); }
+        return tile;
+      })().finally(() => this.tileJobs.delete(tile));
+      this.tileJobs.set(tile, job);
+    }
+    return this.tileJobs.get(tile);
   }
   async remove(id) {
     if (this.active) throw new Error('Cannot remove packs during a download');
@@ -115,8 +142,39 @@ class PackStore {
     this.active.controller.abort();
     return true;
   }
+  async downloadNasa(pack) {
+    if (this.active) throw new Error('Another dataset download is active');
+    if (this.installed.has(pack.id)) throw new Error('Dataset is already installed');
+    const controller = new AbortController();
+    const progress = { id: pack.id, phase: 'connecting to NASA', doneFiles: 0,
+      totalFiles: 0, downloadedBytes: 0, totalBytes: pack.downloadBytes, currentFileBytes: 0 };
+    this.active = { id: pack.id, controller, progress };
+    const report = () => this.notify({ ...progress });
+    report();
+    const staging = path.join(this.root, pack.id + '.incomplete');
+    const destination = path.join(this.root, pack.id);
+    try {
+      if (fs.existsSync(destination)) throw new Error('Destination already exists');
+      await NASA.install({ ppd: pack.ppd, staging, signal: controller.signal, progress, report });
+      if (!NASA.complete(staging, pack.ppd)) throw new Error('Dataset verification failed');
+      fs.renameSync(staging, destination);
+      this.installed.add(pack.id);
+      this.save();
+      progress.phase = 'complete';
+      report();
+      return this.status();
+    } catch (e) {
+      progress.phase = controller.signal.aborted ? 'paused' : 'error';
+      progress.error = asError(e);
+      report();
+      throw new Error(progress.error);
+    } finally { this.active = null; }
+  }
   async download(id) {
     const pack = this.catalogPack(id);
+    if (pack && pack.status === 'published' && pack.format === 'nasa-pds-img') {
+      return this.downloadNasa(pack);
+    }
     if (!pack || pack.status !== 'published' || !httpsUrl(pack.manifestUrl) ||
         !SHA.test(pack.manifestSha256 || '')) throw new Error('This dataset is not published yet');
     if (this.active) throw new Error('Another dataset download is active');

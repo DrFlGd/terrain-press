@@ -1,6 +1,6 @@
 {
   "name": "terrain-press",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Turn real NASA elevation data into 3D-printable ornaments and jigsaw puzzles.",
   "license": "AGPL-3.0-or-later",
@@ -50,5 +50,8 @@
     "portable": {
       "artifactName": "Terrain-Press-${version}-Portable.${ext}"
     }
+  },
+  "dependencies": {
+    "pngjs": "7.0.0"
   }
 }
