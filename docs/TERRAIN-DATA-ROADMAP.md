@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** v1.5.0 introduces user-configurable terrain sampling budgets (Auto / 721 / 1,441 / 2,881) and printer-/DEM-aware Auto optimization. True spatial adaptive meshing remains a future geometry milestone. Complete 2 GB+ direct NASA-transfer validation is still outstanding.
+**Status:** v1.5.1 simplifies resolution controls to Automatic (printer-/DEM-aware) and Advanced (manual spacing and 721/1,441/2,881 sample ceilings). **Next milestone: verified higher-resolution downloads for other planets/dwarf planets and, where suitable products exist, additional moons.** Curvature-adaptive meshes are deferred. Full multi-GB NASA-transfer acceptance remains outstanding.
 
 ## Product objective
 
@@ -11,7 +11,7 @@ Offer a small Windows executable that works immediately without the internet usi
 - The seven built-in worlds are Moon, Mars, Mercury, Venus, Ceres, Vesta and Pluto.
 - Global lunar grid: 8192 × 4096 samples (~1,331 m/pixel at equator), compressed WebP elevation tiles ~31.7 MB. Mercury: 10240 × 5120. Others: 8192 × 4096.
 - All assets are bundled with the Windows executable, including the global grids and selected locally sharper landmark patches. The original offline workflow remains supported.
-- The terrain mesh is sampled independently from the elevation source; Standard/Fine/Ultra export grids are nominally 0.50/0.35/0.25 mm, capped at 721 × 721 samples. Smaller spacing in the STL cannot recover unresolved DEM features.
+- The terrain mesh is sampled independently of the elevation source. Automatic (default) chooses useful spacing using the DEM and printer settings; Advanced offers nominally 0.50/0.35/0.25 mm target spacing and manual grids of 721/1,441/2,881 samples per side. The universal cap is 2,881 × 2,881. Finer spacing cannot recover missing DEM detail.
 - The source code currently stores encoded elevation heights in integer metres in lossless WebP; metadata supplies the reference radius, grid size, and per-patch coverage.
 - Users can already enter custom coordinates; the 0.01° input step should be reduced to 0.001° or finer.
 
@@ -70,11 +70,27 @@ Sources:
 - [x] Increase model width to **1,000 mm** and scale the virtual camera/plate to large puzzles.
 - [x] Make terrain sampling ceiling configurable (721 / 1,441 / 2,881) with an Auto mode limited by the source DEM and model's smallest printable feature.
 - [x] Add user-selectable effective printer feature size (0.2–1.0 mm), preflight mesh estimates, and heavy-mesh warnings.
+- [x] Simplify print controls to Automatic (feature size only) and Advanced (manual mesh spacing and sample ceiling), without changing the numerical sampling algorithm.
 - [ ] Benchmark high-detail previews and 1,000-mm multi-piece puzzles on representative Windows hardware; profile large export ZIP and slicer import performance.
 - [x] Fix PNG-vs-WebP source lookup when switching 83 m landmark → downloaded NASA global raster → landmark, with automated regression coverage.
 - [ ] Implement true **spatially adaptive triangle meshing** to spend triangles on rough terrain rather than uniform grids.
 
-### Phase 4 — Other worlds, sustainability and verification
+### Next milestone — Other worlds in Terrain Data Manager (Phase 4)
+
+The next development milestone is **additional real, verifiable elevation datasets**, not adaptive geometry. Prioritize the bodies already selectable in Terrain Press; do not advertise or enable a new pack until its file format, spatial coverage, and vertical measurements have been validated.
+
+1. **Mars — MOLA:** identify a publicly hosted, stable higher-resolution grid than the included MOLA dataset. Implement downloader, local on-demand elevation tile generation, datum/scale checks, and fallback. Make this the first end-to-end pilot for a non-lunar world.
+2. **Mercury — MESSENGER:** add a globally usable candidate and verify east/west longitude convention, poles, source quality and missing-data behavior. Only publish tiers finer than the built-in grid.
+3. **Venus — Magellan:** validate gridded topography, body radius and datum, known gaps and nominal ground spacing before listing a downloadable tier.
+4. **Ceres and Vesta — Dawn:** separately validate body-specific DEMs, irregular-body reference frames, coverage, and regional vs global options. Never treat their effective map resolutions as identical.
+5. **Pluto — New Horizons:** clearly label partial geographic coverage; prevent unmapped hemisphere filler from being presented as measured high-resolution elevation.
+6. **Additional moons:** first establish that a trustworthy public DEM and coordinate reference model exist, then add a world definition and offline fallback before offering a downloadable pack. Don't make unsupported global-coverage claims.
+
+Implement a reusable **non-lunar raster importer** behind the existing download manager, with source-specific metadata validation and body-specific elevation conversion. Share the current external storage directory, resumable download/reporting UI, tile cache and highest-valid-source selection. Protect existing lunar downloads and the bundled offline fallback. Publish a dataset only with provenance, licensing/attribution, measured bytes, hashes, NoData handling and coordinate/height round-trip checks. Regression-test transitions between bundled global, installed pack, optional landmark patch and missing/corrupt pack.
+
+**Milestone acceptance:** At least one verified non-Moon download (Mars first) completes, survives offline restart, contributes the correct elevation values to preview and 3MF/STL at documented coordinates, and cleanly reverts to bundled terrain when removed. Remaining worlds follow the same acceptance gates.
+
+### Follow-on — Dataset maintenance and verification
 
 - [ ] Inventory real public global DEM resolutions/coverage for Mars (MOLA), Mercury (MESSENGER), Venus (Magellan), Ceres/Vesta (Dawn), Pluto (New Horizons).
 - [ ] Offer only validated, publishable whole-planet tiers, and explicitly label partial-resolution products (Pluto especially).

@@ -42,8 +42,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.5.0
-          name: Terrain Press Desktop v1.5.0
+          tag_name: desktop-v1.5.1
+          name: Terrain Press Desktop v1.5.1
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -51,7 +51,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.5.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.5.1-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -64,6 +64,9 @@ jobs:
             - NEW: Configurable 721 / 1441 / 2881 point sampling ceilings and an automatic DEM/print-feature-aware density planner.
             - NEW: Configurable smallest printable feature size (default 0.4 mm), live export grid estimate, and large-mesh warnings.
             - Auto avoids redundant geometry; manual ceilings allow advanced users to explicitly request more detail.
+            - UI: Automatic mode (default) shows only smallest printable feature; Advanced exposes manual spacing and 721/1441/2881 sample ceilings.
+            - NEXT: Verify and integrate downloads for Mars MOLA, Mercury MESSENGER, Venus Magellan, Ceres/Vesta Dawn, and coverage-limited Pluto.
+            - This release changes presentation of the existing mesh planner, not its sampling algorithm or datasets.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             Source is provided in this repository under AGPL-3.0-or-later.
