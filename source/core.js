@@ -9,7 +9,13 @@
     // loader(path) -> Promise<Float32Array> (decoded, row-major)
     const cache = new Map();
     function get(path) {
-      if (!cache.has(path)) cache.set(path, loader(path));
+      if (!cache.has(path)) {
+        const promise = Promise.resolve().then(() => loader(path));
+        cache.set(path, promise.catch(error => {
+          cache.delete(path); // A transient read failure must not poison later exports.
+          throw error;
+        }));
+      }
       return cache.get(path);
     }
     function nodeGrid(lat0, lon0, sizeKm, N, R) {
@@ -77,7 +83,8 @@
           const prefix = 'packs/' + p.id;
           const extension = p.imageExt === 'png' ? 'png' : 'webp';
           return { kind: 'pack', id: p.id, grid: g, w: p.w, h: p.h,
-            tile: p.tile, prefix, pxKm, label: p.label || (p.w / 360).toFixed(0) + ' px/deg',
+            tile: p.tile, prefix, imageExt: extension, pxKm,
+            label: p.label || (p.w / 360).toFixed(0) + ' px/deg',
             paths: [...set].map(name => prefix + '/' + name.replace(/\.webp$/, '.' + extension)) };
         }
       }
@@ -124,10 +131,17 @@
       } else {
         W = src.w || m.w; H = src.h || m.h; const T = src.tile || m.tile;
         const prefix = src.prefix || `data/${body}`;
+        const extension = src.imageExt || 'webp';
         const px = (x, y) => {
           y = Math.max(0, Math.min(H - 1, y)); x = ((x % W) + W) % W;
-          const a = byPath.get(`${prefix}/t${(y / T) | 0}_${(x / T) | 0}.webp`);
-          return a[(y % T) * T + (x % T)];
+          const col = Math.floor(x / T), row = Math.floor(y / T);
+          const key = prefix + '/t' + row + '_' + col + '.' + extension;
+          const pixels = byPath.get(key);
+          if (!pixels) throw new Error('Missing terrain tile ' + key + ' for the selected coordinates');
+          const tileWidth = Math.min(T, W - col * T);
+          const offset = (y % T) * tileWidth + (x % T);
+          if (offset >= pixels.length) throw new Error('Invalid terrain tile dimensions for ' + key);
+          return pixels[offset];
         };
         for (let k = 0; k < out.length; k++) {
           const fy = (90 - lats[k]) / 180 * H - 0.5, fx = (lons[k] + 180) / 360 * W - 0.5;
@@ -150,6 +164,27 @@
     const cx = x => wrap ? ((x % W) + W) % W : Math.max(0, Math.min(W - 1, x));
     const g = (x, y) => A[cy(y) * W + cx(x)];
     return (g(x0, y0) * (1 - tx) + g(x0 + 1, y0) * tx) * (1 - ty) + (g(x0, y0 + 1) * (1 - tx) + g(x0 + 1, y0 + 1) * tx) * ty;
+  }
+
+  // Resolution-aware export grid; the source mode is uniform sampling, not an
+  // error-adaptive/quadtree triangulation (tracked as a later milestone).
+  function meshPlan(widthMm, sizeKm, sourcePxKm, detail) {
+    const MAX_N = 721;
+    if (!(Number.isFinite(widthMm) && widthMm > 0))
+      throw new Error('Invalid printed model width');
+    if (detail === 'source') {
+      if (!(Number.isFinite(sizeKm) && sizeKm > 0 &&
+          Number.isFinite(sourcePxKm) && sourcePxKm > 0))
+        throw new Error('Unable to determine elevation resolution');
+      const standardN = Math.round(widthMm / 0.5) + 1;
+      const nativeN = Math.ceil(1.5 * sizeKm / sourcePxKm) + 1;
+      const N = Math.max(3, Math.min(MAX_N, Math.max(standardN, nativeN)));
+      return { N, stepMm: widthMm / (N - 1), limited: nativeN > MAX_N, mode: 'source' };
+    }
+    if (!(Number.isFinite(detail) && detail > 0)) throw new Error('Invalid mesh detail');
+    const N = Math.max(3, Math.min(MAX_N, Math.round(widthMm / detail) + 1));
+    return { N, stepMm: Math.max(detail, widthMm / (N - 1)),
+      limited: Math.round(widthMm / detail) + 1 > MAX_N, mode: 'fixed' };
   }
   // ---------- 2D helpers (mm) ----------
   const toCL = pts => pts.map(p => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) }));
@@ -838,5 +873,5 @@
     return out;
   }
 
-  root.TPCore = { makeStore, buildModel, spreadPieces, stl, model3mf, zip, weld, shapeOutline };
+  root.TPCore = { makeStore, meshPlan, buildModel, spreadPieces, stl, model3mf, zip, weld, shapeOutline };
 })(typeof self !== 'undefined' ? self : globalThis);
