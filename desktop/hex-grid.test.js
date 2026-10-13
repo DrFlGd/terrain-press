@@ -83,7 +83,10 @@ test('sampled hex pieces extrude watertight and support flat/terrain border vari
     const m=C.buildModel({...basic,hexLayout:layout},hf,null);
     const g=C.hexGridCells(120,19,layout);
     assert.ok(m.parts.length>0);
-    assert.equal(m.parts.length,g.cells.length,'no tessellation cells disappear');
+    const lost=g.cells.filter(c=>!m.parts.some(p=>p.cell[0]===c.i && p.cell[1]===c.j))
+      .map(c=>({i:c.i,j:c.j,partial:c.partial,area:geomArea(c.pts)}));
+    assert.equal(m.parts.length,g.cells.length,
+      layout+': no tessellation cells disappear; missing '+JSON.stringify(lost));
     assert.ok(m.parts.every(p=>p.role==='terrain'&&p.cell&&p.ring&&p.tris.length>0));
     assert.ok(m.parts.every(p=>p.tris.every(Number.isFinite)));
     const spread=C.spreadPieces(m.parts,m.grid,3);
