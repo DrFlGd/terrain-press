@@ -246,11 +246,17 @@
     }
     return out;
   }
-  function cleanRing(pts, minD) {
+  function cleanRing(pts, minD, preserveCollinear = false) {
     const out = [];
     for (const p of pts) { const q = out[out.length - 1]; if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > minD) out.push(p); }
     while (out.length > 2 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) <= minD) out.pop();
-    // drop collinear points
+    // A sampled terrain perimeter MUST retain its intermediate collinear XY
+    // vertices: their Z values follow the DEM. Removing them replaces the
+    // terrain edge with a chord between two heights, producing unsupported
+    // triangular "curtain" walls and disconnected top/sidewall vertices.
+    if (preserveCollinear) return out;
+    // For constant-height polygon faces the traditional simplification remains
+    // useful to avoid unnecessary triangulation of straight segments.
     const res = [];
     for (let i = 0; i < out.length; i++) {
       const a = out[(i - 1 + out.length) % out.length], b = out[i], c = out[(i + 1) % out.length];
@@ -355,7 +361,10 @@
     return pts;
   }
   function solid(ex, topZ, bottomZ, step, out) {
-    ex = { outer: ccw(cleanRing(ex.outer, 0.02)), holes: ex.holes.map(h => cw(cleanRing(h, 0.02))).filter(h => h.length >= 3) };
+    const sampledBoundary = typeof topZ === 'function' && step > 0;
+    ex = { outer: ccw(cleanRing(ex.outer, 0.02, sampledBoundary)),
+      holes: ex.holes.map(h => cw(cleanRing(h, 0.02, sampledBoundary)))
+        .filter(h => h.length >= 3) };
     if (ex.outer.length < 3) return;
     const tz = typeof topZ === 'function' ? topZ : () => topZ;
     let tris;
@@ -768,7 +777,7 @@
     // rim height above the base: exactly as set, or (optional) raised to about half the printed relief
     const frameTop = floorZ + base + (p.rimAuto ? Math.max(p.rimMm, Math.min(reliefMm * 0.55, 14)) : p.rimMm);
     const join = p.shape === 'circle' ? 'round' : 'miter';
-    const outlineD = densify(outline, Math.max(0.6, step * 1.5));
+    const outlineD = densify(outline, Math.max(0.2, step));
 
     // terrain
     const terrain = [];
@@ -796,7 +805,7 @@
             if (!shr.length) throw new Error(
               'Hex tile is too small for the selected gap. Choose fewer rings or reduce clearance.');
             for (const s of shr) {
-              const ring = densify(s.outer,Math.max(0.6,step*1.5));
+              const ring = densify(s.outer, Math.max(0.2, step));
               const tris=[];
               const flat = hex.clip && c.partial && p.hexEdge === 'flat';
               solid({outer:ring,holes:s.holes},flat ? floorZ+base : topZ,floorZ,step,tris);
@@ -849,18 +858,18 @@
         shr.sort((x, y) => exArea(y) - exArea(x));
         if (!shr.length) continue;
         let tris = [], ring = shr[0].outer;
-        try { solid({ outer: densify(shr[0].outer, Math.max(0.6, step * 1.5)), holes: shr[0].holes }, topZ, floorZ, step, tris); }
+        try { solid({ outer: densify(shr[0].outer, Math.max(0.2, step)), holes: shr[0].holes }, topZ, floorZ, step, tris); }
         catch (e) {
           // a pinch where two tabs nearly touch: open the outline slightly and retry
           const fix = exPolysFrom(offset(offset([shr[0].outer, ...shr[0].holes], -0.15, 'round'), 0.15, 'round'));
           fix.sort((x, y) => exArea(y) - exArea(x)); tris = []; ring = fix[0].outer;
-          solid({ outer: densify(fix[0].outer, Math.max(0.6, step * 1.5)), holes: fix[0].holes }, topZ, floorZ, step, tris);
+          solid({ outer: densify(fix[0].outer, Math.max(0.2, step)), holes: fix[0].holes }, topZ, floorZ, step, tris);
         }
         parts.push({ name: `Piece ${++n}`, role: 'terrain', tris: new Float32Array(tris), cell: [q.cell.i, q.cell.j], ring });
       }
       }
     } else {
-      const tOut = p.separate ? densify(offset([outline], -p.gapMm / 2, join)[0], Math.max(0.6, step * 1.5)) : outlineD;
+      const tOut = p.separate ? densify(offset([outline], -p.gapMm / 2, join)[0], Math.max(0.2, step)) : outlineD;
       solid({ outer: tOut, holes: [] }, topZ, floorZ, step, terrain);
       parts.push({ name: 'Terrain', role: 'terrain', tris: new Float32Array(terrain) });
     }
