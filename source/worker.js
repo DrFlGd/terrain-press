@@ -168,7 +168,7 @@ self.onmessage = async e => {
         model.parts = [...sp.parts.map(o => mv(o, -cx)), ...rest.map(o => mv(o, shift - cx))];
       }
       const { parts, transfer } = pack(model, true);
-      self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label } }, transfer);
+      self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label } }, transfer);
       return;
     }
     if (m.type === 'export') {

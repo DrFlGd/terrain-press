@@ -181,7 +181,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <input type="radio" class="btn-check" name="shape" id="s-square" value="square"><label class="btn btn-tp" for="s-square">Square</label>
         <input type="radio" class="btn-check" name="shape" id="s-hexagon" value="hexagon"><label class="btn btn-tp" for="s-hexagon">Hexagon</label>
       </div>
-      <div><div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div><input type="range" class="form-range" id="width" min="60" max="220" step="5" value="100"></div>
+      <div><div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div><input type="range" class="form-range" id="width" min="60" max="1000" step="5" value="100"></div>
       <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
       <div class="row g-2">
         <div class="col-4"><label class="tp-label" for="base">Base mm</label><input class="form-control form-control-sm tp-num" id="base" type="number" step="0.2" min="1" max="8" value="2"></div>
@@ -245,7 +245,13 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra</label>
         <input type="radio" class="btn-check" name="detail" id="d-source" value="source"><label class="btn btn-tp" for="d-source" title="Sample to match the installed elevation source, within a 721 × 721 point limit">Auto</label>
       </div>
+      <div class="form-check form-switch mt-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="preview-high">
+        <label class="form-check-label" for="preview-high">High-detail preview (match export)</label>
+      </div>
+      <p class="tp-hint" id="preview-hint">Fast preview for responsive editing. Enable to see the selected export mesh before downloading.</p>
       <p class="tp-hint">Source-matched selects a denser export grid where terrain data supports it (up to 721 × 721 height samples). Large regions may export slowly or produce large 3MF files. Standard, Fine and Ultra retain predictable sizes.</p>
+      <p class="tp-hint">Prints up to 1,000 mm wide are supported. For large puzzles, check each piece against your printer's build volume.</p>
       <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
     </section>
 
@@ -266,7 +272,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
     </div>
     <div class="tp-view" id="view-model" role="tabpanel">
       <canvas id="bench" aria-label="3D preview of the printable model"></canvas>
-      <div class="tp-overlay"><span class="tp-chip" id="chip-src">Loading…</span><span class="tp-chip warn" id="chip-warn" hidden></span></div>
+      <div class="tp-overlay"><span class="tp-chip" id="chip-src">Loading…</span><span class="tp-chip" id="chip-mesh">Fast preview</span><span class="tp-chip warn" id="chip-warn" hidden></span></div>
       <div class="tp-sun"><div class="d-flex justify-content-between"><label class="tp-label mb-0" for="sun">Sun angle</label><output class="tp-out" id="o-sun"></output></div><input type="range" class="form-range" id="sun" min="4" max="70" value="18"></div>
       <div class="tp-busy" id="busy" hidden><span id="busy-text">Building…</span></div>
     </div>

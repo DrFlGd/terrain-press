@@ -159,9 +159,10 @@ async function build() {
   busy('Loading elevation…');
   try {
     if (state.border === 'lettered') await ensureFont(state.font);
-    const p = params(PREVIEW_STEP);
+    const step = $('preview-high').checked ? state.detail : PREVIEW_STEP;
+    const p = params(step);
     const spread = state.product === 'puzzle' && $('spread').checked;
-    const msg = { type: 'build', q: query(PREVIEW_STEP), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
+    const msg = { type: 'build', q: query(step), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
     if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); }
@@ -171,6 +172,15 @@ async function build() {
 function showStats(p, r) {
   const W = WORLDS[state.world], src = r.source, s = r.stats, pxM = src.pxKm * 1000;
   $('chip-src').innerHTML = `<b>${src.kind === 'pack' ? src.label : (src.kind === 'patch' ? (W.patchName || W.grid) : W.grid)}</b> · ${pxM < 1000 ? Math.round(pxM) + ' m' : (pxM / 1000).toFixed(2) + ' km'} per sample`;
+  const high = $('preview-high').checked, mesh = r.mesh;
+  $('chip-mesh').textContent = (high ? 'Export-matched' : 'Fast') + ' · ' +
+    mesh.N + ' × ' + mesh.N + ' · ' + mesh.stepMm.toFixed(2) + ' mm' +
+    (mesh.limited ? ' · sampling cap' : '');
+  $('preview-hint').textContent = high
+    ? 'Showing export-detail geometry (' + mesh.N + ' × ' + mesh.N + ' grid, ' +
+      mesh.stepMm.toFixed(3) + ' mm spacing).' +
+      (mesh.limited ? ' Limited to 721 × 721 sampled heights.' : '')
+    : 'Fast preview for responsive editing. Enable to see the selected export mesh before downloading.';
   $('st-low').textContent = fmtM(s.hMin); $('st-high').textContent = fmtM(s.hMax);
   $('st-relief').innerHTML = `${s.reliefMm.toFixed(1)} mm <small>${((s.hMax - s.hMin) / 1000).toFixed(1)} km real</small>`;
   const H = p.shape === 'hexagon' ? p.widthMm * Math.sqrt(3) / 2 : p.widthMm, fr = p.border === 'none' ? 0 : p.frameMm;
@@ -216,7 +226,17 @@ const bench = (() => {
   let framed = '';
   function frameTo(size) {
     const k = String(Math.round(size / 20)); if (framed === k) return; framed = k;
-    const d = Math.max(size, 100) / 100; ctl.target.set(0, 0, 4); cam.position.set(0, -190 * d, 170 * d); ctl.update();
+    const effective = Math.max(size, 100), d = effective / 100;
+    // The model can now be 1,000 mm wide (or wider when puzzle pieces spread).
+    // Size the virtual build plate, shadows and clipping planes to fit the model.
+    plate.geometry.dispose();
+    plate.geometry = new THREE.PlaneGeometry(Math.max(800, effective * 1.2), Math.max(800, effective * 1.2));
+    cam.far = Math.max(4000, 4000 * d);
+    cam.updateProjectionMatrix();
+    const shadowExtent = Math.max(160, effective * 0.7);
+    Object.assign(sun.shadow.camera, { left: -shadowExtent, right: shadowExtent, top: shadowExtent, bottom: -shadowExtent, far: Math.max(900, effective * 3) });
+    sun.shadow.camera.updateProjectionMatrix();
+    ctl.target.set(0, 0, 4); cam.position.set(0, -190 * d, 170 * d); ctl.update();
   }
   function setParts(parts, spread) {
     scene.remove(group); group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
@@ -443,7 +463,12 @@ function syncMode() {
   $('export-note').textContent = (state.product === 'puzzle' && back) || sep || (state.product === 'puzzle' && $('spread').checked) ? 'A .zip with one file per print plate (STL and 3MF).' : 'A .zip with STL and multicolour 3MF files.';
   if (state.product === 'puzzle' && $('per-piece').checked) $('export-note').textContent += ' Plus a single-pieces folder: one STL per piece and a numbered map.';
 }
-document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => { syncMode(); if (el.name === 'shape' && globe) globe.refresh(); if (el.name !== 'detail') schedule(); }));
+document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => {
+  syncMode();
+  if (el.name === 'shape' && globe) globe.refresh();
+  if (el.name !== 'detail' || $('preview-high').checked) schedule();
+}));
+$('preview-high').addEventListener('change', () => schedule(true));
 ['separate', 'loop', 'spread', 'back', 'merge', 'rim-auto'].forEach(id => $(id).addEventListener('change', () => { syncMode(); schedule(); }));
 ['base', 'frame', 'rim', 'pieces', 'gap', 'spread-gap', 'back-mm', 't-top', 't-bottom'].forEach(id => $(id).addEventListener('input', () => schedule()));
 $('width').addEventListener('input', () => { $('o-width').textContent = $('width').value + ' mm'; schedule(); });
