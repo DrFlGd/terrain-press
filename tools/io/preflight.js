@@ -40,7 +40,8 @@ function evaluate(id, data) {
     errors.push('Missing, rotated or non-north-up georeferencing');
   const wkt = data.coordinateSystem?.wkt || '';
   const allText = JSON.stringify([wkt,data.metadata || {}]).toLowerCase();
-  if (!allText.includes('io')) errors.push('Coordinate metadata does not identify Io');
+  if (!/(^|[^a-z])io([^a-z]|$)/i.test(allText))
+    errors.push('Coordinate metadata does not identify Io');
   if (!(/eqc|equirectangular|simple.cylindrical/i).test(allText))
     warnings.push('Map projection must be confirmed against an Io cartographic source');
   const hasNoData = Object.hasOwn(band,'noDataValue') &&

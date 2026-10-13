@@ -60,3 +60,12 @@ test('preflight does not accept unspecified or unrecognized sources',()=>{
   assert.throws(()=>parseArgs(['--source','io-white-2014-global']),/exactly one/);
   assert.throws(()=>parseArgs(['--source','io-white-2014-global','--raster','x','--gdalinfo-json','y']),/exactly one/);
 });
+
+test('generic projection/normalization words cannot impersonate Io metadata',()=>{
+  const r=evaluate('io-white-2014-global',raster({
+    coordinateSystem:{wkt:'PROJCS["Equirectangular Projection"]'},
+    metadata:{SERVICE:'Normalisation and image processing'}
+  }));
+  assert.equal(r.structurallyValid,false);
+  assert.ok(r.errors.some(e=>e.includes('identify Io')));
+});
