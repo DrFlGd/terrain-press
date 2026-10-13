@@ -73,3 +73,37 @@ test('mesh planner follows source spacing but never exceeds the 721 x 721 cap', 
   assert.equal(cappedFixed.N,721);
   assert.ok(cappedFixed.stepMm > 0.25);
 });
+
+
+test('automatic sample cap honors both source spacing and smallest printable feature', () => {
+  const C = globalThis.TPCore;
+  const coarse = C.meshPlan(1000, 100, 1.33, 'source', 'auto', 0.4);
+  const dense = C.meshPlan(1000, 100, 0.059, 'source', 'auto', 0.4);
+  assert.equal(coarse.N, 114); // coarse global raster: do not generate millions of fake samples
+  assert.equal(dense.N, 2544); // source is fine enough to benefit from a dense 1m print
+  assert.equal(dense.recommendedLimit, 2881);
+  assert.equal(dense.limited, false);
+  assert.ok(dense.sourceStepMm > 0.5);
+  const small = C.meshPlan(100, 100, 0.059, 'source', 'auto', 0.4);
+  assert.equal(small.N, 501); // 0.4mm printable features need ~0.2mm nodes, not 721
+  const lowRes = C.meshPlan(100, 100, 1.33, 'source', 'auto', 0.4);
+  assert.ok(lowRes.N < 200);
+});
+test('fixed export presets are limited by useful detail only in Auto sampling limit', () => {
+  const C = globalThis.TPCore;
+  assert.equal(C.meshPlan(1000, 100, 1.33, 0.25, 'auto', 0.4).N, 114);
+  assert.equal(C.meshPlan(1000, 100, 1.33, 0.25, 721, 0.4).N, 721);
+  assert.equal(C.meshPlan(1000, 100, 0.059, 0.25, 1441, 0.4).N, 1441);
+  assert.equal(C.meshPlan(1000, 100, 0.059, 0.25, 2881, 0.4).N, 2881);
+  assert.equal(C.meshPlan(1000, 100, 0.059, 0.25, 'auto', 0.4).N, 2544);
+});
+test('different printer feature limits reduce unneeded mesh resolution', () => {
+  const C = globalThis.TPCore;
+  const fine = C.meshPlan(100, 100, 0.059, 'source', 'auto', 0.2);
+  const ordinary = C.meshPlan(100, 100, 0.059, 'source', 'auto', 0.4);
+  const coarse = C.meshPlan(100, 100, 0.059, 'source', 'auto', 0.8);
+  assert.ok(fine.N > ordinary.N);
+  assert.ok(ordinary.N > coarse.N);
+  assert.throws(() => C.meshPlan(100, 100, 0.059, 'source', 'auto', 0.05));
+  assert.throws(() => C.meshPlan(100, 100, 0.059, 'source', 99999, 0.4));
+});

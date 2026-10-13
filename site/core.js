@@ -166,25 +166,50 @@
     return (g(x0, y0) * (1 - tx) + g(x0 + 1, y0) * tx) * (1 - ty) + (g(x0, y0 + 1) * (1 - tx) + g(x0 + 1, y0 + 1) * tx) * ty;
   }
 
-  // Resolution-aware export grid; the source mode is uniform sampling, not an
-  // error-adaptive/quadtree triangulation (tracked as a later milestone).
-  function meshPlan(widthMm, sizeKm, sourcePxKm, detail) {
-    const MAX_N = 721;
-    if (!(Number.isFinite(widthMm) && widthMm > 0))
-      throw new Error('Invalid printed model width');
+  // Resolution-aware uniform heightfield planner (not adaptive triangulation).
+  // The DEM spacing is projected into print-space millimetres. A ~1.5x raster
+  // oversampling factor supports interpolation; ~2 nodes per printable feature
+  // avoid meshing detail a printer cannot show. The larger spacing wins.
+  //
+  // samplingLimit='auto': avoid geometry beyond *both* DEM and printable detail.
+  // Explicit 721/1441/2881: honor selected print-detail preset up to that cap.
+  // Omitting samplingLimit preserves the legacy 721-node behavior for callers.
+  function meshPlan(widthMm, sizeKm, sourcePxKm, detail, samplingLimit = 721, featureMm = 0.4) {
+    const HARD_MAX = 2881, LEVELS = [721, 1441, 2881];
+    if (!(Number.isFinite(widthMm) && widthMm > 0 &&
+      Number.isFinite(sizeKm) && sizeKm > 0 &&
+      Number.isFinite(sourcePxKm) && sourcePxKm > 0))
+      throw new Error('Invalid dimensions or elevation resolution');
+    const autoCap = samplingLimit === 'auto';
+    if (!autoCap && !LEVELS.includes(samplingLimit))
+      throw new Error('Unsupported terrain sampling limit');
+    if (!(Number.isFinite(featureMm) && featureMm >= 0.1 && featureMm <= 2))
+      throw new Error('Invalid printable feature size');
+    const sourceStepMm = widthMm * sourcePxKm / sizeKm;
+    const usefulStepMm = Math.max(sourceStepMm / 1.5, featureMm / 2);
+    const usefulN = Math.max(3, Math.ceil(widthMm / usefulStepMm) + 1);
+    const nativeN = Math.ceil(1.5 * sizeKm / sourcePxKm) + 1;
+    let requestedN;
     if (detail === 'source') {
-      if (!(Number.isFinite(sizeKm) && sizeKm > 0 &&
-          Number.isFinite(sourcePxKm) && sourcePxKm > 0))
-        throw new Error('Unable to determine elevation resolution');
-      const standardN = Math.round(widthMm / 0.5) + 1;
-      const nativeN = Math.ceil(1.5 * sizeKm / sourcePxKm) + 1;
-      const N = Math.max(3, Math.min(MAX_N, Math.max(standardN, nativeN)));
-      return { N, stepMm: widthMm / (N - 1), limited: nativeN > MAX_N, mode: 'source' };
+      // Auto detail in automatic-limit mode is *not* forced to Standard density.
+      // Manual ceilings preserve the prior source-matched, Standard-minimum path.
+      requestedN = autoCap ? usefulN : Math.max(Math.round(widthMm / 0.5) + 1, nativeN);
+    } else {
+      if (!(Number.isFinite(detail) && detail > 0)) throw new Error('Invalid mesh detail');
+      requestedN = Math.round(widthMm / detail) + 1;
     }
-    if (!(Number.isFinite(detail) && detail > 0)) throw new Error('Invalid mesh detail');
-    const N = Math.max(3, Math.min(MAX_N, Math.round(widthMm / detail) + 1));
-    return { N, stepMm: Math.max(detail, widthMm / (N - 1)),
-      limited: Math.round(widthMm / detail) + 1 > MAX_N, mode: 'fixed' };
+    requestedN = Math.max(3, requestedN);
+    const cap = autoCap ? HARD_MAX : samplingLimit;
+    const N = Math.max(3, Math.min(requestedN, cap, autoCap ? usefulN : Infinity));
+    const gridLimit = requestedN > cap || (autoCap && usefulN > cap && requestedN >= cap);
+    const detailOptimized = autoCap && requestedN > usefulN;
+    const recommendedLimit = LEVELS.find(n => n >= Math.min(usefulN, HARD_MAX)) || HARD_MAX;
+    return {
+      N, stepMm: widthMm / (N - 1), limited: gridLimit,
+      mode: detail === 'source' ? 'source' : 'fixed',
+      samplingLimit, cap, recommendedLimit, featureMm, sourceStepMm, usefulStepMm,
+      usefulN, requestedN, detailOptimized, hardwareCap: usefulN > HARD_MAX && N === HARD_MAX
+    };
   }
   // ---------- 2D helpers (mm) ----------
   const toCL = pts => pts.map(p => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) }));
