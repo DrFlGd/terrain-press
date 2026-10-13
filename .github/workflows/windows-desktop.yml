@@ -42,8 +42,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.6.0
-          name: Terrain Press Desktop v1.6.0
+          tag_name: desktop-v1.7.0
+          name: Terrain Press Desktop v1.7.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -51,7 +51,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.6.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.7.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -69,7 +69,11 @@ jobs:
             - FIX: Frame-less spread puzzle preview no longer produces non-finite positions; large 460-mm piece layouts are re-centered safely.
             - BETA: Mars MOLA MEGDR 64 pixels/degree topography direct from NASA PDS4; 4 native IMG files, 506 MiB total.
             - Beta MOLA import validates signed elevation labels, world orientation and native raster tile generation; real NASA transfer still requires full Windows acceptance testing.
-            - Default Auto sampling and manual Advanced resolution controls from v1.5.1 remain available.
+            - Default Auto sampling and manual Advanced resolution controls remain available.
+            - BETA: Mercury MESSENGER 64 ppd, Ceres Dawn HAMO 60 ppd and Vesta Dawn HAMO 48 ppd USGS GeoTIFF downloads in the Terrain Data Manager.
+            - New planetary GeoTIFF decoder with measured source dimensions, body-specific elevation datums, 24-bit signed height cache, and bundled fallback for missing pixels.
+            - Venus Magellan remains at bundled global topography resolution; Pluto high-resolution coverage is partial, so neither is advertised as a complete higher-resolution global download.
+            - WARNING: Three new GeoTIFF tiers are beta; full USGS transfers and offline Windows 3MF elevation checks are pending user validation.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             Source is provided in this repository under AGPL-3.0-or-later.

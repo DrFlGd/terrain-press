@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** v1.6.0 fixes missing large spread-puzzle previews and introduces Mars MOLA 64 pixels/degree as a **beta direct-NASA downloader**, using signed 16-bit topography from the maintained PDS4 archive. The 506 MiB transfer and Windows end-to-end elevations are **not yet verified**. Other worlds and adaptive geometry are future milestones.
+**Status:** v1.7.0 adds **beta** USGS GeoTIFF elevation downloads for Mercury (MESSENGER 64 ppd), Ceres (Dawn 60 ppd) and Vesta (Dawn 48 ppd) alongside the Mars beta and lunar LOLA upgrades. Source-specific height datums, 24-bit signed elevation tiles, and NoData fallback are implemented. **Complete transfer and real-value offline export testing of the new GeoTIFFs remains outstanding.** Venus offers no clearly better global Magellan topography at present; Pluto's fine DEM coverage is partial.
 
 ## Product objective
 
@@ -80,9 +80,9 @@ Sources:
 The next development milestone is **additional real, verifiable elevation datasets**, not adaptive geometry. Prioritize the bodies already selectable in Terrain Press; do not advertise or enable a new pack until its file format, spatial coverage, and vertical measurements have been validated.
 
 1. **Mars — MOLA beta implemented in v1.6.0:** select the PDS4-maintained MEGDR 64 ppd topography (four 132,710,400-byte IMG files, global 90°N–90°S), implement local on-demand elevation tile conversion, validate PDS labels/datum, preserve the low-res built-in fallback and existing lunar downloads. **Outstanding:** a complete real-data download, native PDS label inspection and an offline STL/3MF value comparison on physical Windows hardware. Do not mark this as acceptance-complete before those tests.
-2. **Mercury — MESSENGER:** add a globally usable candidate and verify east/west longitude convention, poles, source quality and missing-data behavior. Only publish tiers finer than the built-in grid.
+2. **Mercury — MESSENGER beta integrated:** USGS MDIS Global DEM v2 GeoTIFF (64 ppd, 665 m/pixel). Validate actual downloaded georeferencing, positive-east longitude, poles, no-data and measured elevations against trusted positions before removing the beta label.
 3. **Venus — Magellan:** validate gridded topography, body radius and datum, known gaps and nominal ground spacing before listing a downloadable tier.
-4. **Ceres and Vesta — Dawn:** separately validate body-specific DEMs, irregular-body reference frames, coverage, and regional vs global options. Never treat their effective map resolutions as identical.
+4. **Ceres and Vesta — Dawn beta integrated:** USGS Ceres 60ppd HAMO relative-height DTM and Vesta 48ppd HAMO radius DTM (subtract 255 km; Claudia Double Prime frame). The former is ~98% observed and the latter ~95%; verify source NoData maps, exact DEM origin and reference datum in a full beta test before marking production quality.
 5. **Pluto — New Horizons:** clearly label partial geographic coverage; prevent unmapped hemisphere filler from being presented as measured high-resolution elevation.
 6. **Additional moons:** first establish that a trustworthy public DEM and coordinate reference model exist, then add a world definition and offline fallback before offering a downloadable pack. Don't make unsupported global-coverage claims.
 
@@ -161,3 +161,12 @@ For genuine spatial adaptivity, the next implementation should:
 - Both lunar and Martian IMG downloaders share the manager's external directory, catalog selection, cancellation, status and on-demand PNG cache. Physical Mars heights must represent **metres relative to the areoid**, not radius offset; test samples include both positive and negative synthetic elevations. MOLA labels must validate PDS dimensions, signed 16-bit sample type, scale and offset.
 - **Known beta risk:** PDS4-hosted `.lbl` availability, server Range behavior, full transfer duration, and actual topography DATUM roundtrip have not been confirmed by a completed real Windows download. UI labels must disclose experimental status. Do not mark the Mars source production-verified until the full acceptance checklist passes.
 - Spread-piece preview now handles puzzles with no separate frame. A regression test covers 460-mm spread geometry without and with a frame (including an empty frame), checking for finite coordinates and no frame overlap.
+
+## v1.7.0 — Other-world beta downloads and verification gates
+
+- Mercury: `Mercury_Messenger_USGS_DEM_Global_665m_v2.tif` (USGS GeoTIFF, expected 23,040 × 11,520 and 16-bit raster).
+- Ceres: `Ceres_Dawn_FC_HAMO_DTM_DLR_Global_60ppd_Oct2016.tif` (expected 21,600 × 10,800; signed heights above 470 km sphere; ~98% mapped/interpolated poles).
+- Vesta: `Vesta_Dawn_HAMO_DTM_DLR_Global_48ppd.tif` (expected 17,280 × 8,640; 32-bit radius, Claudia Double Prime longitude, ~95% stereo coverage).
+- A dedicated USGS GeoTIFF driver downloads each beta source to local optional storage, reads sample windows on demand, and encodes signed height samples in 24-bit RGB. Missing/NoData samples are masked and the sampler falls back to bundled terrain. Unknown data formats are rejected instead of being silently treated as heights.
+- **Still to validate individually:** remote full download and redirects, exact TIFF file metadata and georeferencing, reference elevation and longitude roundtrip against archive landmarks, corrupt-data recovery, performance of TIFF decode, offline STL/3MF and uninstall fallback.
+- Venus and Pluto have not been presented as full higher-resolution downloads: the former does not clearly improve on already-bundled global topography at documented ~4.64km/pixel, and the latter requires an explicit partial-coverage selector to avoid claiming New Horizons data exists everywhere.

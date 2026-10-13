@@ -71,11 +71,11 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.6.0) (the **Terrain-Press-1.6.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.7.0) (the **Terrain-Press-1.7.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
 
 ## Hybrid dataset roadmap (Windows)
 
-The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) documents the hybrid system. Starting with **Windows v1.2.0**, the Terrain Data Manager can download the complete Moon in NASA PDS LOLA 128, 256 or 512 pixels-per-degree native IMG files directly from the [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Download sizes are 2.12, 8.49 and 33.97 GB, respectively, plus locally cached tiles. Downloads may be resumed and the datasets work offline after installation. The original bundled terrain is always available. The first additional planet download, **Mars MOLA 64 px/degree beta**, is now available through the manager. Mercury, Venus, Ceres, Vesta, Pluto and regional packs remain roadmap items.
+The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) documents the hybrid system. Starting with **Windows v1.2.0**, the Terrain Data Manager can download the complete Moon in NASA PDS LOLA 128, 256 or 512 pixels-per-degree native IMG files directly from the [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Download sizes are 2.12, 8.49 and 33.97 GB, respectively, plus locally cached tiles. Downloads may be resumed and the datasets work offline after installation. The original bundled terrain is always available. The first additional planet download, **Mars MOLA 64 px/degree beta**, is now available through the manager. Mercury, Ceres and Vesta now have separately selectable **beta USGS GeoTIFF** upgrades. Venus's available global topography does not improve on the bundled nominal spatial resolution, and higher-resolution Pluto data do not cover the whole planet; both remain future source-specific work.
 
 ### Source-matched export (v1.3.0)
 
@@ -102,3 +102,19 @@ The Print panel now provides **Terrain sampling limit: Auto / 721² / 1,441² / 
 **Mars beta:** Open **Terrain Data Manager → MOLA MEGDR 64 px/degree · Mars beta**. Terrain Press downloads four original 16-bit, big-endian topography files directly from NASA's [maintained MOLA PDS4 bundle](https://pds-geosciences.wustl.edu/missions/mgs/megdr.html), about **530.84 MB (506 MiB)**, plus on-demand PNG cache tiles. The MOLA 64 product covers the full planet and is ~925 metres/sample at Mars's equator, finer than the built-in Mars 8192 × 4096 base grid. No user data leaves your machine during mesh creation; the files remain accessible offline after download.
 
 **Beta limitation:** Source product filenames, coverage and tile geometry follow NASA PDS documentation and synthetic coordinate/value tests. The complete ~506 MiB NASA transfer, PDS label parsing against actual downloaded labels, and offline 3MF export have **not** yet been tested end-to-end on physical Windows hardware. Please treat this as a validation test, not yet a verified production dataset. Failed downloads should retain partial IMG files for resumption; the bundled Mars data remains available if the beta pack is not installed.
+
+### Other-world GeoTIFF beta downloads (v1.7.0)
+
+The **Terrain Data Manager** adds three independent DEM upgrades via USGS Astrogeology source products (not reflectance or color mosaics):
+
+| World | Source DEM | Global raster | Approx. source download | Notes |
+|---|---|---|---|---|
+| Mercury | [MESSENGER MDIS Global DEM v2](https://astrogeology.usgs.gov/search/map/mercury_messenger_global_dem_665m) | 23,040 × 11,520 (64 px/degree) | ~506 MB | Elevation relative to Mercury's reference surface |
+| Ceres | [Dawn FC2 HAMO Global DTM](https://astrogeology.usgs.gov/search/map/ceres_dawn_fc2_hamo_global_dtm_137m) | 21,600 × 10,800 (60 px/degree) | ~446 MB | Elevation above 470 km reference sphere; ~98% observed, some shadows interpolated |
+| Vesta | [Dawn FC HAMO DTM](https://astrogeology.usgs.gov/search/map/vesta_dawn_fc_hamo_global_dtm_93m) | 17,280 × 8,640 (48 px/degree) | ~570 MB | Radius from center; converted to elevation from 255 km; ~95% stereo coverage; Claudia Double Prime orientation |
+
+These are **beta test downloads**, not production-verified transfers. Each GeoTIFF remains on the user's external dataset drive, is checked for raster dimensions and number of bands, locally hashed, and decoded into only the needed PNG elevation tiles on demand. The decoder uses signed 24-bit RGB for larger elevations and falls back to bundled lower-resolution data at masked/NoData pixels. Existing Moon and Mars native NASA IMG data use their original importer and are unchanged.
+
+**Why not add Venus and Pluto now?** The available [Venus Magellan GTDR global topography](https://astrogeology.usgs.gov/search/map/venus_magellan_global_topography_4641m) has ~4.64 km pixels, comparable to the bundled Venus 8,192 × 4,096 grid. High-resolution [Pluto/Charon New Horizons DEM coverage](https://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=NH-P%2FPSA-LORRI%2FMVIC-5-GEOPHYS-V1.0) is partial; treating that as a global observed DEM would be misleading. Both need distinct handling, particularly for coverage and data provenance.
+
+Test the new worlds separately: download a beta pack, choose that world, compare a named landmark before/after installation, export an STL/3MF, restart offline, and remove the pack to confirm the included DEM returns. A full transfer has **not** been run in CI; please report any URL, TIFF metadata, or out-of-memory errors you encounter.
