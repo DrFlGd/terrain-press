@@ -94,3 +94,33 @@ test('bundled desktop page mirrors the simplified UI', () => {
   }
   assert.match(built, /state\.detail = automaticResolution \? 'source' : \+radio\('detail'\);/);
 });
+
+test('460-mm spread preview keeps framed and frameless puzzle vertices finite', () => {
+  function flat(x0, x1) {
+    return new Float32Array([
+      x0,0,0, x1,0,0, x1,200,2,
+      x0,0,0, x1,200,2, x0,200,0
+    ]);
+  }
+  const pieces = [
+    { role:'terrain', cell:[0,0], name:'One', tris:flat(-230,0) },
+    { role:'terrain', cell:[0,1], name:'Two', tris:flat(0,230) }
+  ];
+  const before = Array.from(pieces[0].tris);
+  const frameless = core.spreadPreview(pieces, {cellW:230,cellH:200}, 3);
+  assert.equal(frameless.length, 2);
+  assert.deepEqual(Array.from(pieces[0].tris), before, 'original parts must not be moved');
+  assert.ok(frameless.every(p => p.tris.every(Number.isFinite)));
+  const frame = {role:'frame', tris:flat(-242,242)};
+  const withFrame = core.spreadPreview([...pieces, frame], {cellW:230,cellH:200}, 3);
+  assert.equal(withFrame.length, 3);
+  assert.ok(withFrame.every(p => p.tris.every(Number.isFinite)));
+  const at = p => p.tris.filter((v,i)=>i%3===0);
+  const spreadRight = Math.max(...withFrame.slice(0,2).flatMap(p=>Array.from(at(p))));
+  const frameLeft = Math.min(...at(withFrame[2]));
+  assert.ok(frameLeft > spreadRight, 'frame and puzzle pieces must not overlap');
+  const emptyFrame = {role:'frame', tris:new Float32Array([])};
+  const noGeometry = core.spreadPreview([...pieces,emptyFrame], {cellW:230,cellH:200}, 3);
+  assert.equal(noGeometry.length,2);
+  assert.ok(noGeometry.every(p => p.tris.every(Number.isFinite)));
+});

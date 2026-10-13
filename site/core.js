@@ -815,6 +815,40 @@
     return { parts: out, width: totW, depth: totH, minX: -totW / 2, maxX: totW / 2 };
   }
 
+
+  // Safe preview-only placement for puzzle pieces and optional frame/lettering.
+  // In particular, puzzles with "no frame" must not derive offsets from
+  // Infinity/-Infinity. This layout is NOT used to alter exported geometry.
+  function spreadPreview(parts, grid, gapMm, floorZ = 0) {
+    const sp = spreadPieces(parts, grid, gapMm, floorZ);
+    const rest = parts.filter(p => !p.cell && p.tris.length >= 3);
+    const bounds = part => {
+      let lo = Infinity, hi = -Infinity;
+      for (let k = 0; k < part.tris.length; k += 3) {
+        const x = part.tris[k];
+        if (!Number.isFinite(x)) throw new Error('Invalid puzzle vertex');
+        lo = Math.min(lo, x); hi = Math.max(hi, x);
+      }
+      return { lo, hi };
+    };
+    const movable = ps => ps.map(p => ({ ...p, tris: new Float32Array(p.tris) }));
+    const move = (ps, dx) => movable(ps).map(p => {
+      for (let i = 0; i < p.tris.length; i += 3) p.tris[i] += dx;
+      return p;
+    });
+    if (!rest.length) return sp.parts; // Frame-less puzzle already centered.
+    const b = rest.map(bounds);
+    const fMin = Math.min(...b.map(o => o.lo)), fMax = Math.max(...b.map(o => o.hi));
+    if (!Number.isFinite(fMin) || !Number.isFinite(fMax))
+      throw new Error('Unable to determine puzzle frame bounds');
+    const gap = Math.max(0, gapMm);
+    const shift = sp.maxX + gap + 12 - fMin;
+    // Recenter full layout, not merely the left-hand spread tray.
+    const farRight = fMax + shift;
+    const cx = (sp.minX + farRight) / 2;
+    return [...move(sp.parts, -cx), ...move(rest, shift - cx)];
+  }
+
   // ---------- writers ----------
   function stl(parts) {
     let n = 0; for (const p of parts) n += p.tris.length / 9;
@@ -898,5 +932,5 @@
     return out;
   }
 
-  root.TPCore = { makeStore, meshPlan, buildModel, spreadPieces, stl, model3mf, zip, weld, shapeOutline };
+  root.TPCore = { makeStore, meshPlan, buildModel, spreadPieces, spreadPreview, stl, model3mf, zip, weld, shapeOutline };
 })(typeof self !== 'undefined' ? self : globalThis);

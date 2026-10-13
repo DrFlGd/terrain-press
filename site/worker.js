@@ -1,5 +1,5 @@
 // Terrain Press worker: decodes elevation tiles, builds meshes and print files off the main thread.
-importScripts('lib/poly2tri.min.js', 'lib/clipper.js', 'core.js' + self.location.search);
+importScripts('https://cdn.jsdelivr.net/npm/poly2tri@1.5.0/dist/poly2tri.min.js', 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'core.js' + self.location.search);
 const C = self.TPCore;
 let meta = null, store = null;
 const fonts = {};
@@ -168,12 +168,7 @@ self.onmessage = async e => {
       const model = C.buildModel({ ...m.p, stepMm: hf.stepMm }, hf, fonts[m.font] || null);
       if (m.spread && model.grid) {
         // preview the print layout: pieces packed apart, frame set beside them
-        const sp = C.spreadPieces(model.parts, model.grid, m.spreadGap, model.floorZ || 0);
-        const rest = model.parts.filter(o => !o.cell);
-        let fMin = Infinity, fMax = -Infinity; for (const o of rest) for (let i = 0; i < o.tris.length; i += 3) { if (o.tris[i] < fMin) fMin = o.tris[i]; if (o.tris[i] > fMax) fMax = o.tris[i]; }
-        const shift = sp.maxX + 12 - fMin, cx = (sp.minX + sp.maxX + 12 + (fMax - fMin)) / 2;
-        const mv = (o, dx) => { const t = new Float32Array(o.tris); for (let i = 0; i < t.length; i += 3) t[i] += dx; return { ...o, tris: t }; };
-        model.parts = [...sp.parts.map(o => mv(o, -cx)), ...rest.map(o => mv(o, shift - cx))];
+        model.parts = C.spreadPreview(model.parts, model.grid, m.spreadGap, model.floorZ || 0);
       }
       const { parts, transfer } = pack(model, true);
       self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited, cap: hf.plan.cap,
