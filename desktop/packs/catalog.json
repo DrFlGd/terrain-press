@@ -90,6 +90,19 @@
       "format": "nasa-pds-img",
       "ppd": 512,
       "downloadBytes": 33973862400
+    },
+    {
+      "id": "mars-mola-64",
+      "body": "mars",
+      "name": "MOLA MEGDR 64 px/degree · Mars beta",
+      "w": 23040,
+      "h": 11520,
+      "tile": 1024,
+      "status": "published",
+      "note": "~925 m/pixel at equator · four NASA PDS4 MEGDR topography IMG files · beta: full-transfer validation pending",
+      "format": "nasa-mola-img",
+      "ppd": 64,
+      "downloadBytes": 530841600
     }
   ]
 }
