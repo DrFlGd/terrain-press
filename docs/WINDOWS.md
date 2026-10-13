@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.7.1-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.7.2-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.7.1-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.7.2-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,7 +57,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.7.1 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.7.2 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -104,3 +104,9 @@ Venus Magellan's available global elevation product is nominally about the same 
 All entries in **Terrain Data Manager**, including bundled datasets, explicitly display **Applies to: [world] ([body type])**. The Moon is labelled **Earth's moon**, Mars/Mercury/Venus **planet**, Ceres/Pluto **dwarf planet**, and Vesta **asteroid**. Thus similarly named mission datasets are unmistakably tied to the correct printable world: LOLA → Moon, MOLA → Mars, MESSENGER → Mercury, Dawn HAMO → Ceres or Vesta. Optional downloads preserve their existing experimental/beta status. Download confirmation also states the world and full dataset name.
 
 Adding a *new download tier to a supported world* usually reuses the existing world/landmarks/globe and the downloader framework. A *new celestial body* additionally needs verified global terrain data with a consistent height reference, projection, coordinate frame, bundled offline tiles and globe imagery, dataset metadata, UI world selection, credits and suitable named landmarks. Sparse or partial DEM coverage cannot be treated as globally observed terrain.
+
+## Io research groundwork (v1.7.2)
+
+The Io candidate from the [planetary data roadmap](TERRAIN-DATA-ROADMAP.md#next-new-world-candidate--io-jupiters-volcanic-moon-research-milestone) is **not yet visible in Terrain Press**. This release adds the source inventory and GDAL metadata preflight as developer tooling only. It does not modify any of the currently selectable worlds, terrain downloads, STL/3MF generation or model caches.
+
+Io has a published ~75%-coverage stereo elevation source (`IoDEM.cub`, ISIS3) and a separate 900 m regional Tvashtar Paterae GeoTIFF. The global file's original supplementary link could not be read through automated inspection (HTTP 403); its original numeric scale, coordinate conventions and NoData masks must be inspected before a printable Io model is produced. The regional file's vertical zero is arbitrary and must be aligned independently. Developers can run `node tools/io/preflight.js --help` and use GDAL on the raw datasets. The validator never authorizes a data pack automatically.

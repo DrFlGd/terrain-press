@@ -8,6 +8,7 @@ on:
       - 'source/**'
       - 'site/**'
       - 'docs/TERRAIN-DATA-ROADMAP.md'
+      - 'tools/io/**'
       - 'package.json'
       - '.github/workflows/windows-desktop.yml'
   workflow_dispatch:
@@ -42,8 +43,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.7.1
-          name: Terrain Press Desktop v1.7.1
+          tag_name: desktop-v1.7.2
+          name: Terrain Press Desktop v1.7.2
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -51,7 +52,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.7.1-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.7.2-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -77,6 +78,10 @@ jobs:
             - UI: Dataset manager now shows “Applies to: <world> (<body type>)” on each included and downloadable terrain product.
             - UI: Download confirmations identify the selected world and dataset instead of calling all planetary providers NASA.
             - No change to terrain coordinates, native source decoders, installed data, or sampling algorithms.
+            - RESEARCH: Io (Jupiter's moon) next-world requirements and published stereo DEM sources documented in the roadmap.
+            - NEW developer tool: offline GDAL/ISIS3 or GeoTIFF header inspection with audit gates; includes synthetic regression tests.
+            - Io remains research-only: no world selection, downloadable Io pack, or converted Io elevation data is shipped.
+            - Existing seven-world raster engine and installed downloaded data remain unchanged.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             Source is provided in this repository under AGPL-3.0-or-later.

@@ -69,3 +69,12 @@ test('generic projection/normalization words cannot impersonate Io metadata',()=
   assert.equal(r.structurallyValid,false);
   assert.ok(r.errors.some(e=>e.includes('identify Io')));
 });
+
+test('research-only Io sources cannot appear as installable world packs',()=>{
+  const packs=require('../../desktop/packs/catalog.json');
+  const installed=(packs.packs||[]).filter(p=>p.body==='io');
+  const builtIn=(packs.builtIn||[]).filter(p=>p.body==='io');
+  assert.equal(installed.length,0);
+  assert.equal(builtIn.length,0);
+  assert.ok(catalog.sources.every(source=>source.status==='research-only'));
+});
