@@ -142,7 +142,7 @@ function params(step) {
     pieces: Math.round(clamp(+$('pieces').value, 2, 12, 5)), gapMm: clamp(+$('gap').value, 0.1, 0.6, 0.3),
     separate: product === 'ornament' && border !== 'none' && $('separate').checked,
     loop: product === 'ornament' && border !== 'none' && $('loop').checked,
-    stepMm: step, border, mergeText: $('merge').checked, back: $('back').checked, backMm: clamp(+$('back-mm').value, 0.8, 4, 1.6),
+    stepMm: typeof step === 'number' ? step : 0.5, border, mergeText: $('merge').checked, back: $('back').checked, backMm: clamp(+$('back-mm').value, 0.8, 4, 1.6),
     seed: Math.abs(Math.round(state.lat * 1000) * 31 + Math.round(state.lon * 1000)) + 7,
   };
 }
@@ -426,7 +426,7 @@ function showTab(t) {
 }
 $('tab-model').onclick = () => showTab('model'); $('tab-globe').onclick = () => showTab('globe');
 function syncMode() {
-  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font'); state.detail = +radio('detail');
+  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font'); state.detail = radio('detail') === 'source' ? 'source' : +radio('detail');
   const orn = state.product === 'ornament', framed = state.border !== 'none', sep = orn && framed && $('separate').checked;
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
   $('fit-row').hidden = !(state.product === 'puzzle' || sep); $('pieces-wrap').hidden = state.product !== 'puzzle';
@@ -464,7 +464,9 @@ function readmeTemplate(p, slug) {
     `World: ${W.name}`, `Centre: ${fmtLat(state.lat)} ${fmtLon(state.lon)}`, `Region width: ${state.size} km (azimuthal equidistant projection)`,
     `Elevation range: {{LOW}} m to {{HIGH}} m (${W.datum})`,
     `Model: ${p.product}, ${p.shape}, ${p.widthMm} mm terrain, ${p.exag}x relief exaggeration, {{RELIEF}} mm printed relief`,
-    `Mesh detail: ${p.stepMm} mm grid; source data {{PX}} m per sample`, '', 'Files'];
+    `Export detail: ${state.detail === 'source' ? 'Source-matched' : 'Fixed spacing'}`,
+    'Mesh detail: {{STEP}} mm grid; {{GRID}} x {{GRID}} sampled heights; source {{SOURCE}} at {{PX}} m per sample',
+    'Detail cap: {{LIMIT}}', '', 'Files'];
   if (spread) L.push('  *-pieces-spread — the pieces only, moved apart so no tab sits in its socket. One plate.', `  *-frame — the frame${p.border === 'lettered' ? ' and lettering' : ''}, a second plate.`, '  *-assembled.3mf — everything in place, for reference only.');
   else if (p.separate) L.push('  *-1-terrain — the terrain on its own, flat on the plate.', '  *-2-frame — the frame' + (p.border === 'lettered' && p.mergeText ? ' with its lettering' : '') + ', flat on the plate.', '  *-assembled.3mf — both in place, for reference only.');
   else if (p.product === 'puzzle' && back) L.push('  *-pieces — the pieces in their assembled positions, on their own plate.', '  *-tray — the tray' + (p.border === 'lettered' ? ' and lettering' : '') + ', on a second plate.', '  *-assembled.3mf — everything in place, for reference only.');

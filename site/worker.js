@@ -21,16 +21,23 @@ async function decode(path) {
 }
 
 async function heights(q, onProgress) {
-  const N = Math.min(721, Math.round(q.widthMm / q.step) + 1);
-  const s = await store.sample(q.world, q.lat, q.lon, q.size, N, onProgress);
-  return { heights: s.heights, N, sizeKm: q.size, source: s.source };
+  // Resolve the source for these coordinates before choosing the printable grid.
+  // Source-matched mode uses a standard-density footprint to decide between a
+  // bundled landmark patch and the finest installed global raster.
+  const probeN = Math.min(721, Math.round(q.widthMm / 0.5) + 1);
+  const probe = store.chooseSource(q.world, q.lat, q.lon, q.size, probeN);
+  const plan = C.meshPlan(q.widthMm, q.size, probe.pxKm, q.step);
+  const s = await store.sample(q.world, q.lat, q.lon, q.size, plan.N, onProgress);
+  return { heights: s.heights, N: plan.N, sizeKm: q.size, source: s.source,
+    stepMm: plan.stepMm, limited: plan.limited };
 }
 
 const cache = { key: '', hf: null };
 async function getHF(q, id) {
-  const N = Math.min(721, Math.round(q.widthMm / q.step) + 1);
-  const key = [q.world, q.lat, q.lon, q.size, N].join('|');
+  const key = [q.world, q.lat, q.lon, q.size, q.widthMm, q.step].join('|');
   if (cache.key !== key) {
+    // Keep an in-flight query out of the cache until successful; cancelled and
+    // failed samples must be retried, not served from a stale heightfield.
     const hf = await heights(q, (d, n) => n > 1 && self.postMessage({ type: 'progress', id, text: `Loading elevation · ${d}/${n}` }));
     cache.key = key; cache.hf = hf;
   }
@@ -150,7 +157,7 @@ self.onmessage = async e => {
     if (m.type === 'build') {
       const hf = await getHF(m.q, m.id);
       self.postMessage({ type: 'progress', id: m.id, text: 'Building mesh…' });
-      const model = C.buildModel(m.p, hf, fonts[m.font] || null);
+      const model = C.buildModel({ ...m.p, stepMm: hf.stepMm }, hf, fonts[m.font] || null);
       if (m.spread && model.grid) {
         // preview the print layout: pieces packed apart, frame set beside them
         const sp = C.spreadPieces(model.parts, model.grid, m.spreadGap, model.floorZ || 0);
@@ -167,10 +174,17 @@ self.onmessage = async e => {
     if (m.type === 'export') {
       const hf = await getHF(m.q, m.id);
       self.postMessage({ type: 'progress', id: m.id, text: 'Building print mesh…' });
-      const model = C.buildModel(m.p, hf, fonts[m.font] || null);
+      const printParams = { ...m.p, stepMm: hf.stepMm };
+      const model = C.buildModel(printParams, hf, fonts[m.font] || null);
       self.postMessage({ type: 'progress', id: m.id, text: 'Packing files…' });
-      const readme = mdl => m.readme.replace('{{RELIEF}}', mdl.reliefMm.toFixed(1)).replace('{{LOW}}', Math.round(mdl.hMin)).replace('{{HIGH}}', Math.round(mdl.hMax)).replace('{{FRAMETOP}}', (mdl.frameTop || 0).toFixed(2)).replace('{{PX}}', (hf.source.pxKm * 1000).toFixed(0));
-      const z = await exportFiles(model, m.p, { ...m.x, readme });
+      const readme = mdl => m.readme.replace('{{RELIEF}}', mdl.reliefMm.toFixed(1))
+        .replace('{{LOW}}', Math.round(mdl.hMin)).replace('{{HIGH}}', Math.round(mdl.hMax))
+        .replace('{{FRAMETOP}}', (mdl.frameTop || 0).toFixed(2))
+        .replace('{{PX}}', (hf.source.pxKm * 1000).toFixed(0))
+        .replace('{{SOURCE}}', hf.source.label).replace('{{STEP}}', hf.stepMm.toFixed(3))
+        .replaceAll('{{GRID}}', String(hf.N))
+        .replace('{{LIMIT}}', hf.limited ? 'The 721 x 721 sample limit was reached; some source detail may be lost.' : 'Within the sampling limit.');
+      const z = await exportFiles(model, printParams, { ...m.x, readme });
       self.postMessage({ type: 'exported', id: m.id, zip: z }, [z.buffer]);
     }
   } catch (err) { self.postMessage({ type: 'error', id: m.id, text: String(err && err.message || err) }); }
