@@ -35,7 +35,8 @@ function urlFor(id) { return 'https://' + HOST + '/mosaic/' + product(id).file; 
 function trustedResponse(res) {
   try {
     const u = new URL(res.url);
-    return u.protocol === 'https:' && u.hostname === HOST &&
+    return u.protocol === 'https:' &&
+      [HOST, 'asc-pds-services.s3.us-west-2.amazonaws.com'].includes(u.hostname) &&
       !u.username && !u.password && !u.hash;
   } catch { return false; }
 }
