@@ -220,3 +220,12 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Existing preview, spreading, per-piece STL/numbered SVG, assembled/plate 3MF exports use the same independent hex-cell meshes.
 - [x] Optional explicit unlock for model widths exceeding 1,000 mm, capped at 5,000 mm, with exact numeric input and warnings. The default remains 1,000 mm; heightfield sample density retains its prior limits.
 - [ ] Acceptance on real hardware: inspect printed seams, flat-border height choices and 3MF component manifolds in a slicer; benchmark 460, 1,000 and 5,000 mm and many-piece combinations.
+
+## v1.8.1 — Geometry corrections after real-world Hex Grid screenshots
+
+- [x] Replace arbitrary selected-total optimization (which could intersect cells at hairline corners) with exact integer lattice ring tiers for both clipped six-sided boards.
+- [x] Replace rounded hex approximate count input with preset complete ring totals: 7, 19, 37, 61, 91, 127 whole hexagons.
+- [x] Replace square approximate target total with a **single N across/down input**, producing exactly N² full hexagons (N=2–12).
+- [x] Use regular flat-top interior hexagons and a matching lattice for all four patterns; ensure board coverage prior to individual clearance.
+- [x] Update geometry tests for coverage/area, edge sliver threshold, N² count, frame-free spread/exports and flat versus sampled perimeter.
+- [ ] Confirm printed edge fit and high-resolution preview on user's machine; check that no clipped border cells are omitted at their chosen clearance and ring size.

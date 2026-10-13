@@ -139,3 +139,13 @@ Select **Puzzle → Hex Grid** for an additional overarching model shape, distin
 **Target hex pieces** is a requested approximate number (7–150), not an exact count when geometric tiling needs full rings or rows. The preview displays the actual count. Borders and lettering from standard puzzles are disabled in Hex Grid mode (the clipped edge pieces *are* its optional flat perimeter). Use **Spread pieces apart for printing** and **Also every piece as its own STL** in the usual manner.
 
 **Oversize models:** The normal terrain-width control remains capped at **1,000 mm**. The explicit **Unlock over 1,000 mm** switch enables 60–5,000 mm, with exact-mm input and confirmation/warnings. This is a *model dimension unlock*, not a mesh sampling quality unlock. The same 2,881×2,881 sample hard cap and source-/printer-aware Auto density still apply, so a very large model may lack small terrain detail and may exhaust available CPU/RAM during triangulation or STL/3MF writing. Large pieces may exceed your printer's bed, even when separated.
+
+### Hex Grid reliability and count controls (v1.8.1)
+
+Replaces the v1.8.0 trial's arbitrary-polygon trimming with **lattice-aligned, deterministic hex rings**. The outlines now choose the grid **before** cutting the perimeter, eliminating near-zero edge fragments from count optimization. The unrotated interior tiles are flat-topped, as in the original visual examples. The six geometric outer corners can form one-third corner tiles, while other trimmed edge tiles are generally halves (or intentionally offset larger/smaller edge fractions for the alternating variant); no tiny incidental slivers should remain.
+
+- **Hex-outline / alternating / rounded:** select a fixed ring tier from a dropdown: 1 ring / 7 nominal hexes, 2 / 19, 3 / 37, 4 / 61, 5 / 91, or 6 / 127. The **rounded** cluster has exactly that many **whole hexagons**. The two outline styles fill a perfect hexagonal silhouette, so some boundary hexagons are intentionally cropped; they have been checked for no missing board area prior to printable fit clearance.
+- **Square:** choose **N hexagons across and N down** (2–12); exactly **N² whole, regular tessellating hexagons** are generated. Staggered rows yield an approximately square, stepped footprint without trimming any hex.
+- **Flat border:** only intentionally cropped cells are flat; whole cells retain terrain detail. Existing clearance offsets each valid tile once. Piece counts are displayed after mesh generation.
+
+This patch does not alter the terrain DEMs, printer-aware sampling, optional >1,000 mm size unlock or other puzzle types.

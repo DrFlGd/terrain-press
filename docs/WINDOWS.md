@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.8.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.8.1-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.8.0-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.8.1-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,7 +57,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.8.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.8.1 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -118,3 +118,11 @@ Io has a published ~75%-coverage stereo elevation source (`IoDEM.cub`, ISIS3) an
 A **Target hex pieces** field requests between 7 and 150 pieces. Actual count may differ because complete rings and rows, and clipped pieces around the outer perimeter, are geometry constrained; look at the preview's actual piece count. Existing puzzle clearance, printing spread, individual STL files, numbered piece map and assembled 3MF remain available.
 
 **Unlock over 1,000 mm** allows a model up to 5,000 mm wide, and is off by default. Turn it on only when willing to accept much slower and larger exports. It does not override the 2,881×2,881 maximum uniform heightfield or increase underlying source resolution. For large grids or heavy terrain, perform a fast preview first and consider printers' part-specific bed dimensions. Expect high memory demand for dense fine-detail 3MF/STL exports, particularly with many separate pieces.
+
+## Hex Grid corrections (v1.8.1)
+
+The previous Hex Grid tried arbitrary polygon size variations to meet any desired piece count. That could produce a sliver in an edge row and a missing, too-small piece. Hex Grid now uses **lattice-aligned fixed ring tiers**. For the two full-outline layouts, the hexagonal board is constructed from an integer number of lattice rings; the perimeter generally creates deliberate half-hex border pieces and six geometrically necessary corner portions instead of unpredictable hairline pieces. The rounded cluster has only full hexagon tiles. A fixed ring dropdown offers 7, 19, 37, 61, 91 and 127 nominal cells.
+
+The square variant no longer asks for a total target. Specify **N hexagons across and N down**, yielding exactly N × N whole hexes (N=2 through 12). Its outline follows staggered hex-row boundaries, not a clipped rectangle. Generated pieces receive their existing clearance once, not a second arbitrary board inset, and continue to work with assembled and spread previews, STL/3MF and individual-piece exports.
+
+Automated geometry tests compare summed clipped-cell area against the exact hexagonal board, reject sub-18%-area artifacts, validate ring counts, verify square counts, and test sampled flat versus detailed border meshes. At very high density, narrow fragments can still conflict with your configured printer clearance; use a lower ring tier if any error appears.
