@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** Phase 2 direct NASA IMG integration added in desktop v1.2.0 (October 2026); complete real NASA transfer and offline print validation still outstanding.
+**Status:** v1.3.0 adds a source-transition regression fix and resolution-aware Auto export setting. True spatial adaptive meshing is the next scoped geometry milestone. Complete 2 GB+ direct NASA-transfer validation is still outstanding.
 
 ## Product objective
 
@@ -65,7 +65,9 @@ Sources:
 - [ ] Tile previews: estimated storage cost, download progress, pause/resume and retry, ETA when measurable, cancellation.
 - [ ] Add dataset quality/coverage overlay and provenance warnings instead of marking interpolated pixels as observed.
 - [ ] Support changing/migrating data directory after installs, optional multiple drives and disk quota management.
-- [ ] Compare coarse/fine export mesh spacing; consider a more efficient adaptive mesh for high-detail regions.
+- [x] Add an Auto source-matched export grid that uses the highest available DEM at each selected coordinate and flags the 721 × 721 cap.
+- [x] Fix PNG-vs-WebP source lookup when switching 83 m landmark → downloaded NASA global raster → landmark, with automated regression coverage.
+- [ ] Implement true **spatially adaptive triangle meshing** to spend triangles on rough terrain rather than uniform grids.
 
 ### Phase 4 — Other worlds, sustainability and verification
 
@@ -107,3 +109,19 @@ Large pack distribution needs hosting/bandwidth cost estimation; GitHub release 
 The desktop app fetches original LOLA LDEM_128, 256 (4 segments), and 512 (16 segments) IMG files and PDS labels directly from the official [NASA PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Each IMG segment is 2,123,366,400 bytes. The downloader checks PDS label dimensions, signed 16-bit format, sample scaling (0.5 metres), datum radius (1,737,400 metres), and file sizes. After transfer it computes local SHA-256 checksums; these have not been compared to NASA-published canonical SHA-256 values. Completed images are stored outside the executable, interrupted transfers retain their partial files, and resumed requests use HTTP Range where the PDS server permits it. A secure local protocol generates on-demand PNG terrain tiles from the native IMG files, compensating for the PDS 0–360-degree longitude origin. Web builds retain the bundled data.
 
 **Outstanding acceptance checks:** Download real 2.12GB+ data on Windows, verify offline restart and STL heights at representative coordinates, check performance, disk-space behavior and no-data source coverage. Do not imply these tests have passed yet. Adding downloadable datasets for the six other bodies remains planned.
+
+## Next geometry milestone — Adaptive mesh by terrain error
+
+The v1.3.0 **Auto** option is an immediate, safe stepping stone: it matches *uniform heightfield grid density* to the selected source at the requested coordinates, maintaining a Standard-quality minimum. It does **not** yet vary triangle sizes across the terrain, and the 721 × 721 heightfield cap still applies.
+
+For genuine spatial adaptivity, the next implementation should:
+
+1. Derive a curvature/screen- or print-space height error tolerance (millimetres of printed relief) for each terrain area, with selectable quality budget.
+2. Subdivide a quadtree only where local height residual exceeds the requested tolerance, preserving cliff/crater rims and respecting raw DEM sampling (do not invent detail from interpolation).
+3. Handle adjacent cells without T-junctions/cracks; stitch triangulation around cut-out shapes, frames, puzzle pieces and coast/border loops.
+4. Export watertight, consistently wound manifold STL and 3MF meshes, with stable topology at the dateline and around poles.
+5. Show triangle count and forecast output size before export, with a bounded triangle budget; support cancel and progress reporting.
+6. Compare adaptive output to source raster ground truth for Tycho, Apollo landing sites, global LOLA 128/256/512 and a smooth plain. Bench memory, CPU, file size and slicer import reliability.
+7. Leave Standard/Fine/Ultra fixed-grid options for predictable performance and reproducible legacy prints.
+
+**Acceptance:** A 512 px/degree print should resolve all DEM-supported crater detail at the chosen print scale without needlessly subdividing smooth terrain, should never silently fall back to a lower local source, and should be watertight in common slicers.

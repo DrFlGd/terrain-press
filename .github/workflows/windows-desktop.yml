@@ -42,8 +42,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.2.0
-          name: Terrain Press Desktop v1.2.0
+          tag_name: desktop-v1.3.0
+          name: Terrain Press Desktop v1.3.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -51,12 +51,14 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.2.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.3.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
             - NEW: Moon LOLA 128/256/512 px-per-degree native IMG files download directly from NASA PDS and remain available offline.
             - Source download sizes: 2.12 / 8.49 / 33.97 GB. Large-download end-to-end validation remains outstanding.
+            - FIX: NASA PNG raster tiles now load correctly when switching away from 83 m landmark patches.
+            - NEW: Optional Auto (source-matched) 3MF/STL detail scales the export sampling to installed terrain resolution, capped at 721 x 721; full spatial adaptive triangulation remains on the roadmap.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             Source is provided in this repository under AGPL-3.0-or-later.
