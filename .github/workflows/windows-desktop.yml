@@ -43,8 +43,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.7.2
-          name: Terrain Press Desktop v1.7.2
+          tag_name: desktop-v1.8.0
+          name: Terrain Press Desktop v1.8.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -52,7 +52,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.7.2-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.8.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -81,6 +81,11 @@ jobs:
             - RESEARCH: Io (Jupiter's moon) next-world requirements and published stereo DEM sources documented in the roadmap.
             - NEW developer tool: offline GDAL/ISIS3 or GeoTIFF header inspection with audit gates; includes synthetic regression tests.
             - Io remains research-only: no world selection, downloadable Io pack, or converted Io elevation data is shipped.
+            - NEW: Hex Grid puzzle shape with four layouts: cropped half-hex perimeter, alternate clipping, full-hex rounded ring cluster, and full-hex square cluster.
+            - Hex Grid uses geometrically tessellated edge-sharing hexagonal pieces, with selectable terrain or flat heights on cropped perimeter pieces.
+            - Hex Grid target piece count supports 7 to 150 cells; the displayed actual number may differ where whole rings/rows are required.
+            - NEW: Optional guarded size unlock beyond 1,000 mm to 5,000 mm. Oversize prints explicitly warn about memory/slicer build volumes.
+            - Preview, print-plate spread and separate STL/3MF piece export support the new layout.
             - Existing seven-world raster engine and installed downloaded data remain unchanged.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 

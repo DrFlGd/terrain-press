@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.7.2-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.8.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.7.2-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.8.0-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,7 +57,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.7.2 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.8.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -110,3 +110,11 @@ Adding a *new download tier to a supported world* usually reuses the existing wo
 The Io candidate from the [planetary data roadmap](TERRAIN-DATA-ROADMAP.md#next-new-world-candidate--io-jupiters-volcanic-moon-research-milestone) is **not yet visible in Terrain Press**. This release adds the source inventory and GDAL metadata preflight as developer tooling only. It does not modify any of the currently selectable worlds, terrain downloads, STL/3MF generation or model caches.
 
 Io has a published ~75%-coverage stereo elevation source (`IoDEM.cub`, ISIS3) and a separate 900 m regional Tvashtar Paterae GeoTIFF. The global file's original supplementary link could not be read through automated inspection (HTTP 403); its original numeric scale, coordinate conventions and NoData masks must be inspected before a printable Io model is produced. The regional file's vertical zero is arbitrary and must be aligned independently. Developers can run `node tools/io/preflight.js --help` and use GDAL on the raw datasets. The validator never authorizes a data pack automatically.
+
+## Hex Grid tessellation and guarded oversized printing (v1.8.0)
+
+**Puzzle → Shape → Hex Grid** is a separate model shape from the original concentric-ring Hexagon puzzle. It produces genuine edge-sharing hexagonal tiles, inset individually by half the requested fit clearance and extruded as independent watertight pieces. Four selectable patterns follow the requested supplied diagrams: a regular point-up hex board with clipped half-hex edges; an offset/alternating clipped edge hex board; a whole-hex rounded cluster in complete rings; and a staggered whole-hex square cluster. The first two offer **Half-hex border surface = Terrain relief or Flat**; the last two contain no partial pieces and need no border setting. Standard ornament framing/lettering/tray options are intentionally disabled for Hex Grid.
+
+A **Target hex pieces** field requests between 7 and 150 pieces. Actual count may differ because complete rings and rows, and clipped pieces around the outer perimeter, are geometry constrained; look at the preview's actual piece count. Existing puzzle clearance, printing spread, individual STL files, numbered piece map and assembled 3MF remain available.
+
+**Unlock over 1,000 mm** allows a model up to 5,000 mm wide, and is off by default. Turn it on only when willing to accept much slower and larger exports. It does not override the 2,881×2,881 maximum uniform heightfield or increase underlying source resolution. For large grids or heavy terrain, perform a fast preview first and consider printers' part-specific bed dimensions. Expect high memory demand for dense fine-detail 3MF/STL exports, particularly with many separate pieces.

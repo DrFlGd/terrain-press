@@ -210,3 +210,13 @@ For genuine spatial adaptivity, the next implementation should:
 - A dedicated USGS GeoTIFF driver downloads each beta source to local optional storage, reads sample windows on demand, and encodes signed height samples in 24-bit RGB. Missing/NoData samples are masked and the sampler falls back to bundled terrain. Unknown data formats are rejected instead of being silently treated as heights.
 - **Still to validate individually:** remote full download and redirects, exact TIFF file metadata and georeferencing, reference elevation and longitude roundtrip against archive landmarks, corrupt-data recovery, performance of TIFF decode, offline STL/3MF and uninstall fallback.
 - Venus and Pluto have not been presented as full higher-resolution downloads: the former does not clearly improve on already-bundled global topography at documented ~4.64km/pixel, and the latter requires an explicit partial-coverage selector to avoid claiming New Horizons data exists everywhere.
+
+## v1.8.0 — Hex Grid geometry and oversize model UI
+
+- [x] Introduce **Hex Grid** as a separate puzzle shape (not a reinterpretation of the original Hexagon nested-ring puzzle). Keep the same elevation source and STL/3MF pipeline.
+- [x] Four tessellation families based on supplied print-layout references: point-up hex silhouette clipped into part-hex perimeter pieces, offset variant with alternating edge cuts, full-hex rounded cluster, and full-hex staggered square cluster.
+- [x] Cropped perimeter pieces can be flat at the model base or carry sampled terrain relief. Other pieces always carry terrain, with the same printable clearance setting.
+- [x] Target number of pieces (7–150) with actual counts shown; whole-hex ring or square cluster sizes may be approximate by construction.
+- [x] Existing preview, spreading, per-piece STL/numbered SVG, assembled/plate 3MF exports use the same independent hex-cell meshes.
+- [x] Optional explicit unlock for model widths exceeding 1,000 mm, capped at 5,000 mm, with exact numeric input and warnings. The default remains 1,000 mm; heightfield sample density retains its prior limits.
+- [ ] Acceptance on real hardware: inspect printed seams, flat-border height choices and 3MF component manifolds in a slicer; benchmark 460, 1,000 and 5,000 mm and many-piece combinations.

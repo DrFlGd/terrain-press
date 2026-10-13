@@ -126,3 +126,16 @@ Every **Terrain Data Manager** row now identifies its supported celestial body d
 ### Io — next new-world research milestone
 
 Io, Jupiter's volcanic moon, is now documented in the [terrain-data roadmap](docs/TERRAIN-DATA-ROADMAP.md#next-new-world-candidate--io-jupiters-volcanic-moon-research-milestone). The candidate global source is the ~75%-coverage 2014 White et al. Voyager/Galileo stereo `IoDEM.cub`; an independent 900-m Tvashtar Paterae GeoTIFF offers a promising regional test. The repository includes a non-installable [Io source inventory](tools/io/sources.json), a guarded [GDAL preflight CLI](tools/io/preflight.js) and tests. **Io is not yet selectable or downloadable.** Original files, actual coordinate conventions, vertical heights and observed-area masks must be audited before generating terrain or exposing a beta pack.
+
+### Hex Grid puzzles and larger models (v1.8.0)
+
+Select **Puzzle → Hex Grid** for an additional overarching model shape, distinct from the original nested-ring **Hexagon** puzzle. Hex Grid forms a real point-up hexagonal tessellation with independent 3D-printable pieces, slicer clearance, terrain relief and regular STL/3MF/ZIP export. Choose among four patterns based on example diagrams:
+
+1. **Hex outline · half-hex border:** The overall footprint is a regular pointy hexagon with its outermost tessellated pieces cropped at the edge. Set **Half-hex border surface** to *Terrain relief* (continuous heightfield) or *Flat* (base-level perimeter pieces).
+2. **Hex outline · alternating edge pieces:** Offset tessellation relative to a pointy hexagonal outer boundary to alternate whole and cropped perimeter pieces. The same terrain/flat perimeter choice applies.
+3. **Rounded hex cluster · whole hexes only:** Hexagonal ring clusters with a stepped outer silhouette, never clipping any individual hexagon. The total is chosen from whole-ring counts 7, 19, 37, 61, 91 or 127.
+4. **Square hex cluster · whole hexes only:** Regular staggered tessellation arranged into approximately square rows/columns, with a stepped outer silhouette and no cropped hexagons.
+
+**Target hex pieces** is a requested approximate number (7–150), not an exact count when geometric tiling needs full rings or rows. The preview displays the actual count. Borders and lettering from standard puzzles are disabled in Hex Grid mode (the clipped edge pieces *are* its optional flat perimeter). Use **Spread pieces apart for printing** and **Also every piece as its own STL** in the usual manner.
+
+**Oversize models:** The normal terrain-width control remains capped at **1,000 mm**. The explicit **Unlock over 1,000 mm** switch enables 60–5,000 mm, with exact-mm input and confirmation/warnings. This is a *model dimension unlock*, not a mesh sampling quality unlock. The same 2,881×2,881 sample hard cap and source-/printer-aware Auto density still apply, so a very large model may lack small terrain detail and may exhaust available CPU/RAM during triangulation or STL/3MF writing. Large pieces may exceed your printer's bed, even when separated.
