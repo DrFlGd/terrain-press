@@ -24,13 +24,13 @@ test('label dimensions, scale and datum are checked', () => {
 test('longitude and latitude source coordinate transform', () => {
   for(const ppd of [128,256,512]) {
     const left=findComponent(ppd,0,0);
-    assert.equal(left.c.west,180);
-    assert.equal(left.x,0);
+    assert.equal(left.c.west,ppd===128 ? 0 : 180);
+    assert.equal(left.x,ppd===128 ? 180*ppd : 0);
     const middle=findComponent(ppd,180*ppd,90*ppd);
     assert.equal(middle.c.west,0);
-    assert.equal(middle.c.north,0);
+    assert.equal(middle.c.north,ppd===128 ? 90 : 0);
     assert.equal(middle.x,0);
-    assert.equal(middle.y,0);
+    assert.equal(middle.y,ppd===128 ? 90*ppd : 0);
     const bottom=findComponent(ppd,360*ppd-1,180*ppd-1);
     assert.equal(bottom.y,bottom.c.rows-1);
   }
