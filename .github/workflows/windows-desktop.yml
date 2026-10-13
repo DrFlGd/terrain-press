@@ -43,8 +43,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.8.1
-          name: Terrain Press Desktop v1.8.1
+          tag_name: desktop-v1.8.2
+          name: Terrain Press Desktop v1.8.2
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -52,7 +52,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.8.1-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.8.2-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -90,6 +90,10 @@ jobs:
             - UI v1.8.1: Round and hex-outline layouts use discrete 1–6 ring presets (7/19/37/61/91/127 nominal hexes). The square layout asks for N hexes across and down, exporting exactly N × N whole pieces.
             - Hex tile profiles are flat-top with deliberate edge halves and six corner thirds on the regular six-sided border; round clusters remain whole-hex only.
             - Keep existing oversize unlock, automatic sampling and individual STL/3MF exports.
+            - FIX v1.8.2: Preserve sampled boundary vertices in both terrain top faces and mesh sidewalls, preventing false straight-line height curtains spanning two high terrain points.
+            - FIX v1.8.2: Latitude, longitude, regional width and model width remain directly editable and now show persistent increment/decrement arrows.
+            - FIX v1.8.2: Typed exact model widths retain 1 mm precision, independent of 5 mm slider steps.
+            - New regression tests verify DEM-accurate shared top/wall vertices and user-editable coordinate step controls.
             - Existing seven-world raster engine and installed downloaded data remain unchanged.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 

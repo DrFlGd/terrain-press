@@ -149,3 +149,9 @@ Replaces the v1.8.0 trial's arbitrary-polygon trimming with **lattice-aligned, d
 - **Flat border:** only intentionally cropped cells are flat; whole cells retain terrain detail. Existing clearance offsets each valid tile once. Piece counts are displayed after mesh generation.
 
 This patch does not alter the terrain DEMs, printer-aware sampling, optional >1,000 mm size unlock or other puzzle types.
+
+### Terrain boundary walls and editable location inputs (v1.8.2)
+
+**Terrain edge geometry:** Sampled terrain perimeters now retain their intermediate XY edge vertices while triangulating. Previously a simplification pass removed collinear XY vertices even when their **heights differed**, leaving diagonal "curtain" triangles between distant corner elevations along the puzzle-piece sides. The fix keeps the same DEM-sampled vertices on the top surface and the sidewalls (at up to the requested sample step), preserving the actual cliff/crater contours along Hex Grid pieces and conventional puzzle/ornament outlines. Flat-height non-terrain geometry retains its faster collinear simplification. A regression test compares actual wall heights with an independent heightfield interpolation and verifies shared top/wall boundary vertices.
+
+**Editable coordinates and widths:** Latitude (0.01° increments), east longitude (0.01°), selected region width (1 km), and printed model width (1 mm) support direct number typing **and persistent side-by-side up/down stepper arrows** in Windows Chromium. Keyboard arrows also work when a number field is focused. The existing model-width range slider remains in 5 mm increments, but a typed 463 mm remains 463 mm for preview, mesh planning and export, rather than being rounded to 465 mm. Unlocking model sizes above 1,000 mm still requires confirmation.

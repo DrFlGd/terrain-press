@@ -229,3 +229,12 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Use regular flat-top interior hexagons and a matching lattice for all four patterns; ensure board coverage prior to individual clearance.
 - [x] Update geometry tests for coverage/area, edge sliver threshold, N² count, frame-free spread/exports and flat versus sampled perimeter.
 - [ ] Confirm printed edge fit and high-resolution preview on user's machine; check that no clipped border cells are omitted at their chosen clearance and ring size.
+
+## v1.8.2 — Terrain sidewall boundary consistency and numeric entry
+
+- [x] Prevent straight, false vertical "curtains" on terrain-piece edges by preserving intermediate (collinear XY) perimeter vertices whose DEM heights are distinct; include the same height-sampled vertices in top and sidewall triangulation.
+- [x] Use requested mesh spacing for edge sampling rather than 1.5× coarser than the print grid; leave constant-height geometry simplified.
+- [x] Make latitude, longitude, selected terrain region width and physical model width explicitly editable with always-visible side increment/decrement arrow buttons.
+- [x] Preserve exact 1 mm typed model widths independent of the approximate 5 mm model-width slider, including source-based planning and exported 3MF/STL.
+- [x] Add regression checks for terrain wall height vs original DEM, matched wall/top boundary vertices and numeric input/stepper controls.
+- [ ] User validation: inspect the same crater/ridge edge close-up in v1.8.2 and slice exported per-piece STLs to confirm no residual triangulation artifacts.
