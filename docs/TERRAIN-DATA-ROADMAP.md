@@ -1,6 +1,46 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** v1.7.0 adds **beta** USGS GeoTIFF elevation downloads for Mercury (MESSENGER 64 ppd), Ceres (Dawn 60 ppd) and Vesta (Dawn 48 ppd) alongside the Mars beta and lunar LOLA upgrades. Source-specific height datums, 24-bit signed elevation tiles, and NoData fallback are implemented. **Complete transfer and real-value offline export testing of the new GeoTIFFs remains outstanding.** Venus offers no clearly better global Magellan topography at present; Pluto's fine DEM coverage is partial.
+**Status:** Io source-validation tooling and prerequisites are now tracked as a new-world research milestone (not installed or selectable). v1.7.0 adds **beta** USGS GeoTIFF elevation downloads for Mercury (MESSENGER 64 ppd), Ceres (Dawn 60 ppd) and Vesta (Dawn 48 ppd) alongside the Mars beta and lunar LOLA upgrades. Source-specific height datums, 24-bit signed elevation tiles, and NoData fallback are implemented. **Complete transfer and real-value offline export testing of the new GeoTIFFs remains outstanding.** Venus offers no clearly better global Magellan topography at present; Pluto's fine DEM coverage is partial.
+
+## Next new-world candidate — Io, Jupiter's volcanic moon (research milestone)
+
+**Status: requirements and source-inspection tooling started; not yet a downloadable pack or selectable world.** Io cannot be treated as another Mars/Moon raster with a new `body` ID. Its published global stereo DEM is only partially observed, and its regional Tvashtar DEM has an arbitrary vertical zero. No Io imagery, elevation or model should be advertised as ready until the steps below pass.
+
+### Verified research sources and restrictions
+
+| Source | Data and usefulness | Important constraints |
+|---|---|---|
+| White et al. (2014), `IoDEM.cub` [paper and supplementary file](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2013JE004591) | Voyager/Galileo controlled stereo DEM, 70 component products (0.14–4.08 km/pixel), ~75% measured coverage, publisher lists an ISIS cube ~252.3 MB | **Not a fully observed global DEM.** Publication link for supplementary cube returned HTTP 403 in automated research; obtain and inspect the real file before claiming the download works. Report regional confidence/resolution, special-pixel mask and reference figure. |
+| USGS [Tvashtar Paterae DEM, 900 m](https://astrogeology.usgs.gov/search/map/io_galileo_ssi_tvashtar_paterae_dem_and_orthoimages_900m) | Regional Galileo SSI stereo **elevation** GeoTIFF, 286 × 641 pixels; approx. 55.6–73.8°N and 128.6–110.3°W in positive-east -180–180 form | **Arbitrary vertical zero** and possible long-wavelength tilt. Must fit to overlapping controlled elevations rather than stacking raw Tvashtar values over global topography. Its color hillshade and orthophotos are not height rasters. |
+| USGS planetary Io mosaic and IAU Gazetteer | Surface colors, landmarks, and geometry cross-checks | Images provide visual appearance, **not** DEM heights. The IAU feature Gazetteer commonly displays positive-west longitudes; always convert and verify the convention against landmarks. |
+
+Sources: White et al., 2014, doi:[10.1002/2013JE004591](https://doi.org/10.1002/2013JE004591); [USGS Tvashtar source description](https://astrogeology.usgs.gov/search/map/io_galileo_ssi_tvashtar_paterae_dem_and_orthoimages_900m); [GDAL ISIS3 driver and mask behavior](https://gdal.org/en/stable/drivers/raster/isis3.html).
+
+### Requirements for a scientifically grounded Io print
+
+1. **Source acquisition, identity, license and reproducibility.** Acquire the original `IoDEM.cub` and regional elevation TIFF; capture stable source URL, publication/version, exact bytes, cryptographic SHA-256, attribution/reuse conditions and any detached ISIS labels. Avoid relying on a speculative direct URL or redistribution rights. Preserve native files outside the portable EXE.
+2. **Inspect actual numeric and projection metadata before conversion.** Use GDAL/ISIS3 to record shape, bands, scalar data type, scale/offset, projection, planetocentric vs planetographic latitude, east/west-positive longitude, longitude domain, pixel registration, vertical units and reference radius/ellipsoid. Do not assume the 2014 DEM uses metres or an arbitrary 1,821,460 m sphere merely because the Tvashtar product lists that sphere.
+3. **Coverage and confidence.** Produce a separate *measured-data coverage mask* from the ISIS3 special pixels/NoData and any source quality information. Quantify valid fractions globally and over proposed landmarks. An attractive fill for unobserved areas, if used for printable continuity, must stay explicitly distinguishable from stereo-observed terrain; never claim a wholly measured global Io DEM.
+4. **Datum and body-shape consistency.** Confirm Io's triaxial reference figure, reference elevation and actual DEM sample interpretation. Convert to the signed integer-metre heights used by Terrain Press, including documented treatment of long-wavelength global shape; do not conflate radius, areoid-relative relief, and distance above a projected ellipsoid.
+5. **Tvashtar regional alignment.** Reproject the 900 m GeoTIFF, validate source footprint against positive-east Io landmarks, and estimate its zero offset and tilt against overlapping trusted stereo data. Where alignment is unsupported or residuals are excessive, retain separate provenance or block regional elevation blending.
+6. **Safe reprojection/export preparation.** Produce reproducible equirectangular terrain tiles (north-up, 180°W…180°E), lossless metre-height encoding, source mask/coverage overlay, global overview, globe imagery, and a built-in low-resolution fallback. Keep the measured resolution separate from raster grid oversampling and printer mesh sampling. Test dateline wrap, poles and coordinate round trips.
+7. **New-world UX and data manager.** Only after verified offline assets exist, add `io` to world metadata and renderer with its own radius, colors, globe material, appropriate citations, correctly transformed named volcanic/mountain locations and **Moon of Jupiter** classification. A separate optional Io global/region beta pack may then reuse the downloader's external storage and source-choice priority without claiming complete coverage.
+8. **Print and Windows acceptance.** Cross-check multiple high/low known features (start with Tvashtar, Loki and Ra Paterae and a mapped plain), confirm elevations across source seams and NoData margins, and test 3MF/STL watertight models and puzzles at 100, 460 and 1,000 mm where practicable. Verify offline restart, pack uninstall, upgrade, disk size, cache behavior, and large-mesh memory. Export metadata must disclose observed-vs-filled coverage and source date.
+
+### Sequenced implementation and exit gates
+
+- [x] Identify published 2014 global stereo cube and USGS regional Tvashtar GeoTIFF; distinguish them from optical mosaics and hillshade.
+- [x] Create a versioned, **non-installable research catalog** of original sources in `tools/io/sources.json` (including unverified fields and observed publisher access limitations).
+- [x] Add `tools/io/preflight.js` and Node tests to inspect genuine `gdalinfo -json` output without any assumed datum or promotion to an installable pack.
+- [ ] Obtain `IoDEM.cub` (supplementary link currently blocked for automated inspection), verify source rights/checksum and run the preflight against **actual** cube metadata.
+- [ ] Obtain the small `TvashtarPaterae_DEM_900m.tif`; inspect its true pixel values, CRS, mask and vertical zero and archive a reviewed metadata report.
+- [ ] Choose and document a height-normalization and native-mask preservation strategy based on those actual files, with scientific source checks and independent reference heights.
+- [ ] Implement a reproducible GDAL conversion pipeline and compare exact sample values at surveyed coordinates; generate a test-only Io source asset and measured-coverage overlay.
+- [ ] Produce globe imagery, a clearly differentiated visually filled offline fallback and landmark metadata; test region previews and exports without mislabeling extrapolated terrain.
+- [ ] Enable Io in the world selector and downloadable beta catalog only after a confirmed native DEM → valid preview → printable STL/3MF pipeline.
+- [ ] Complete Windows end-to-end download/offline/restart/remove/slicer testing and record provenance, confidence and coordinate limits in the exported ZIP.
+
+**First-step usage:** `node tools/io/preflight.js --source io-white-2014-global --raster /path/IoDEM.cub --output io-global-report.json`, or use `--source io-tvashtar-900m --raster /path/TvashtarPaterae_DEM_900m.tif`. Requires the free `gdalinfo` executable from GDAL on the developer machine. Reports can also be checked offline via `--gdalinfo-json /path/metadata.json`. A structural pass is **not** release approval; the tool deliberately reports `approvedForImport: false` until the manual scientific checks are complete.
 
 ## Product objective
 

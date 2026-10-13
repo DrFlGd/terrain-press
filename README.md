@@ -122,3 +122,7 @@ Test the new worlds separately: download a beta pack, choose that world, compare
 ### Clear dataset-to-world labels (v1.7.1)
 
 Every **Terrain Data Manager** row now identifies its supported celestial body directly with **Applies to: Moon (Earth's moon)**, **Mars (planet)**, **Mercury (planet)**, **Venus (planet)**, **Ceres (dwarf planet)**, **Vesta (asteroid)**, or **Pluto (dwarf planet)**. This applies to both the bundled/offline datasets and optional Moon LOLA, Mars MOLA, Mercury MESSENGER, Ceres Dawn, and Vesta Dawn downloads. Download confirmations now name the destination world and dataset rather than assuming every download has the same NASA IMG format. No data files are changed.
+
+### Io — next new-world research milestone
+
+Io, Jupiter's volcanic moon, is now documented in the [terrain-data roadmap](docs/TERRAIN-DATA-ROADMAP.md#next-new-world-candidate--io-jupiters-volcanic-moon-research-milestone). The candidate global source is the ~75%-coverage 2014 White et al. Voyager/Galileo stereo `IoDEM.cub`; an independent 900-m Tvashtar Paterae GeoTIFF offers a promising regional test. The repository includes a non-installable [Io source inventory](tools/io/sources.json), a guarded [GDAL preflight CLI](tools/io/preflight.js) and tests. **Io is not yet selectable or downloadable.** Original files, actual coordinate conventions, vertical heights and observed-area masks must be audited before generating terrain or exposing a beta pack.
