@@ -84,7 +84,7 @@ const FONT_INFO = {
 
 // ---------------- state ----------------
 const state = { world: 'moon', mark: null, lat: 0, lon: 0, size: 100, product: 'ornament', shape: 'circle', border: 'lettered', font: 'worm',
-  detail: 0.35, colors: { terrain: '#8e8d87', frame: '#26282c', text: '#c8915a' } };
+  detail: 'source', colors: { terrain: '#8e8d87', frame: '#26282c', text: '#c8915a' } };
 const PREVIEW_STEP = 0.7;
 let meta = null, worker = null, ready = false, lastStats = null, lastSource = null, coverage = null;
 const fontsSent = {};
@@ -150,7 +150,7 @@ const query = (step, fastPreview = false) => ({
   world: state.world, lat: state.lat, lon: state.lon, size: state.size,
   widthMm: +$('width').value, step,
   // Fast preview stays inexpensive regardless of configured export ceiling.
-  samplingLimit: fastPreview ? 721 : $('sampling-limit').value === 'auto'
+  samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
   featureMm: +$('min-feature').value
 });
@@ -478,7 +478,11 @@ function showTab(t) {
 }
 $('tab-model').onclick = () => showTab('model'); $('tab-globe').onclick = () => showTab('globe');
 function syncMode() {
-  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font'); state.detail = radio('detail') === 'source' ? 'source' : +radio('detail');
+  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font');
+  const automaticResolution = radio('resolution-mode') === 'auto';
+  state.detail = automaticResolution ? 'source' : +radio('detail');
+  $('auto-options').hidden = !automaticResolution;
+  $('advanced-options').hidden = automaticResolution;
   const orn = state.product === 'ornament', framed = state.border !== 'none', sep = orn && framed && $('separate').checked;
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
   $('fit-row').hidden = !(state.product === 'puzzle' || sep); $('pieces-wrap').hidden = state.product !== 'puzzle';
@@ -498,7 +502,8 @@ function syncMode() {
 document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => {
   syncMode();
   if (el.name === 'shape' && globe) globe.refresh();
-  if (el.name !== 'detail' || $('preview-high').checked) schedule();
+  const resolutionSetting = el.name === 'detail' || el.name === 'resolution-mode';
+  if (!resolutionSetting || $('preview-high').checked) schedule();
   else void refreshPlan();
 }));
 $('preview-high').addEventListener('change', async () => {
@@ -544,9 +549,11 @@ function readmeTemplate(p, slug) {
     `World: ${W.name}`, `Centre: ${fmtLat(state.lat)} ${fmtLon(state.lon)}`, `Region width: ${state.size} km (azimuthal equidistant projection)`,
     `Elevation range: {{LOW}} m to {{HIGH}} m (${W.datum})`,
     `Model: ${p.product}, ${p.shape}, ${p.widthMm} mm terrain, ${p.exag}x relief exaggeration, {{RELIEF}} mm printed relief`,
+    `Terrain resolution: ${$('resolution-auto').checked ? 'Automatic (DEM and printer-aware)' : 'Advanced (manual mesh spacing and sample limit)'}`,
     `Export detail: ${state.detail === 'source' ? 'Source-matched' : 'Fixed spacing'}`,
     'Mesh detail: {{STEP}} mm grid; {{GRID}} x {{GRID}} sampled heights; source {{SOURCE}} at {{PX}} m per sample',
-    'Sampling control: {{SAMPLEMODE}} (ceiling {{CAP}} x {{CAP}}), minimum useful printed feature {{FEATURE}} mm',
+    'Sampling control: {{SAMPLEMODE}} (ceiling {{CAP}} x {{CAP}})',
+    ...($('resolution-auto').checked ? ['Smallest printable feature: {{FEATURE}} mm'] : ['Manual spacing overrides printable-feature optimization']),
     'Source raster spacing on print: {{SOURCESTEP}} mm/pixel',
     'Detail planning: {{LIMIT}}', '', 'Files'];
   if (spread) L.push('  *-pieces-spread — the pieces only, moved apart so no tab sits in its socket. One plate.', `  *-frame — the frame${p.border === 'lettered' ? ' and lettering' : ''}, a second plate.`, '  *-assembled.3mf — everything in place, for reference only.');

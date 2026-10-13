@@ -248,41 +248,45 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <label><input id="c-frame" type="color" value="#26282c" aria-label="Frame colour">Frame</label>
         <label><input id="c-text" type="color" value="#c8915a" aria-label="Lettering colour">Letters</label>
       </div>
-      <div class="btn-group tp-seg" role="group" aria-label="Export detail">
-        <input type="radio" class="btn-check" name="detail" id="d-std" value="0.5"><label class="btn btn-tp" for="d-std">Standard</label>
-        <input type="radio" class="btn-check" name="detail" id="d-fine" value="0.35" checked><label class="btn btn-tp" for="d-fine">Fine</label>
-        <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra</label>
-        <input type="radio" class="btn-check" name="detail" id="d-source" value="source"><label class="btn btn-tp" for="d-source" title="Match export sampling to the installed elevation source and minimum printable feature">Auto</label>
+      <label class="tp-label">Terrain resolution</label>
+      <div class="btn-group tp-seg" role="group" aria-label="Terrain resolution mode">
+        <input type="radio" class="btn-check" name="resolution-mode" id="resolution-auto" value="auto" checked><label class="btn btn-tp" for="resolution-auto">Automatic</label>
+        <input type="radio" class="btn-check" name="resolution-mode" id="resolution-advanced" value="advanced"><label class="btn btn-tp" for="resolution-advanced">Advanced</label>
+      </div>
+      <div id="auto-options" class="mt-2">
+        <label class="tp-label" for="min-feature">Smallest printable feature</label>
+        <select class="form-select form-select-sm" id="min-feature">
+          <option value="0.2">0.2 mm (very fine)</option>
+          <option value="0.4" selected>0.4 mm (typical)</option>
+          <option value="0.6">0.6 mm</option>
+          <option value="0.8">0.8 mm</option>
+          <option value="1">1.0 mm</option>
+        </select>
+        <p class="tp-hint mt-1">Uses the sharpest available terrain data for these coordinates, your model size and the smallest detail your printer can reproduce. Avoids unnecessary mesh geometry.</p>
+      </div>
+      <div id="advanced-options" class="mt-2" hidden>
+        <label class="tp-label">Mesh spacing</label>
+        <div class="btn-group tp-seg" role="group" aria-label="Manual export detail">
+          <input type="radio" class="btn-check" name="detail" id="d-std" value="0.5"><label class="btn btn-tp" for="d-std">Standard · 0.50 mm</label>
+          <input type="radio" class="btn-check" name="detail" id="d-fine" value="0.35" checked><label class="btn btn-tp" for="d-fine">Fine · 0.35 mm</label>
+          <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra · 0.25 mm</label>
+        </div>
+        <label class="tp-label mt-2" for="sampling-limit">Maximum terrain sample grid</label>
+        <select class="form-select form-select-sm" id="sampling-limit">
+          <option value="721" selected>721 × 721</option>
+          <option value="1441">1,441 × 1,441</option>
+          <option value="2881">2,881 × 2,881</option>
+        </select>
+        <p class="tp-hint mt-1">Advanced settings bypass printer-feature optimization. Finer spacing may not reveal more detail than the elevation data contains and can use substantial memory.</p>
       </div>
       <div class="form-check form-switch mt-2">
         <input class="form-check-input" type="checkbox" role="switch" id="preview-high">
         <label class="form-check-label" for="preview-high">High-detail preview (match export)</label>
       </div>
       <p class="tp-hint" id="preview-hint">Fast preview for responsive editing. Enable to see the selected export mesh before downloading.</p>
-      <div class="row g-2 mt-1">
-        <div class="col-6">
-          <label class="tp-label" for="sampling-limit">Terrain sampling limit</label>
-          <select class="form-select form-select-sm" id="sampling-limit">
-            <option value="auto" selected>Auto (useful detail)</option>
-            <option value="721">721 × 721</option>
-            <option value="1441">1,441 × 1,441</option>
-            <option value="2881">2,881 × 2,881</option>
-          </select>
-        </div>
-        <div class="col-6">
-          <label class="tp-label" for="min-feature">Smallest printable feature</label>
-          <select class="form-select form-select-sm" id="min-feature">
-            <option value="0.2">0.2 mm (very fine)</option>
-            <option value="0.4" selected>0.4 mm (typical)</option>
-            <option value="0.6">0.6 mm</option>
-            <option value="0.8">0.8 mm</option>
-            <option value="1">1.0 mm</option>
-          </select>
-        </div>
-      </div>
       <p class="tp-hint mt-1" id="grid-plan">Calculating useful sampling density…</p>
-      <p class="tp-hint" id="grid-plan-note" role="status">Auto considers both the downloaded DEM resolution and printed feature size; a manual ceiling overrides this optimization.</p>
-      <p class="tp-hint">High-resolution exports may require substantial memory and produce large 3MF/STL files. Maximum sample grid is 2,881 × 2,881.</p>
+      <p class="tp-hint" id="grid-plan-note" role="status">Automatic resolution matches the terrain dataset and your printable-feature setting.</p>
+      <p class="tp-hint">Very dense exports may require substantial memory and produce large 3MF/STL files. Hard limit: 2,881 × 2,881 samples.</p>
       <p class="tp-hint">Prints up to 1,000 mm wide are supported. For large puzzles, check each piece against your printer's build volume.</p>
       <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
     </section>
@@ -482,7 +486,7 @@ const FONT_INFO = {
 
 // ---------------- state ----------------
 const state = { world: 'moon', mark: null, lat: 0, lon: 0, size: 100, product: 'ornament', shape: 'circle', border: 'lettered', font: 'worm',
-  detail: 0.35, colors: { terrain: '#8e8d87', frame: '#26282c', text: '#c8915a' } };
+  detail: 'source', colors: { terrain: '#8e8d87', frame: '#26282c', text: '#c8915a' } };
 const PREVIEW_STEP = 0.7;
 let meta = null, worker = null, ready = false, lastStats = null, lastSource = null, coverage = null;
 const fontsSent = {};
@@ -548,7 +552,7 @@ const query = (step, fastPreview = false) => ({
   world: state.world, lat: state.lat, lon: state.lon, size: state.size,
   widthMm: +$('width').value, step,
   // Fast preview stays inexpensive regardless of configured export ceiling.
-  samplingLimit: fastPreview ? 721 : $('sampling-limit').value === 'auto'
+  samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
   featureMm: +$('min-feature').value
 });
@@ -876,7 +880,11 @@ function showTab(t) {
 }
 $('tab-model').onclick = () => showTab('model'); $('tab-globe').onclick = () => showTab('globe');
 function syncMode() {
-  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font'); state.detail = radio('detail') === 'source' ? 'source' : +radio('detail');
+  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font');
+  const automaticResolution = radio('resolution-mode') === 'auto';
+  state.detail = automaticResolution ? 'source' : +radio('detail');
+  $('auto-options').hidden = !automaticResolution;
+  $('advanced-options').hidden = automaticResolution;
   const orn = state.product === 'ornament', framed = state.border !== 'none', sep = orn && framed && $('separate').checked;
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
   $('fit-row').hidden = !(state.product === 'puzzle' || sep); $('pieces-wrap').hidden = state.product !== 'puzzle';
@@ -896,7 +904,8 @@ function syncMode() {
 document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => {
   syncMode();
   if (el.name === 'shape' && globe) globe.refresh();
-  if (el.name !== 'detail' || $('preview-high').checked) schedule();
+  const resolutionSetting = el.name === 'detail' || el.name === 'resolution-mode';
+  if (!resolutionSetting || $('preview-high').checked) schedule();
   else void refreshPlan();
 }));
 $('preview-high').addEventListener('change', async () => {
@@ -942,9 +951,11 @@ function readmeTemplate(p, slug) {
     `World: ${W.name}`, `Centre: ${fmtLat(state.lat)} ${fmtLon(state.lon)}`, `Region width: ${state.size} km (azimuthal equidistant projection)`,
     `Elevation range: {{LOW}} m to {{HIGH}} m (${W.datum})`,
     `Model: ${p.product}, ${p.shape}, ${p.widthMm} mm terrain, ${p.exag}x relief exaggeration, {{RELIEF}} mm printed relief`,
+    `Terrain resolution: ${$('resolution-auto').checked ? 'Automatic (DEM and printer-aware)' : 'Advanced (manual mesh spacing and sample limit)'}`,
     `Export detail: ${state.detail === 'source' ? 'Source-matched' : 'Fixed spacing'}`,
     'Mesh detail: {{STEP}} mm grid; {{GRID}} x {{GRID}} sampled heights; source {{SOURCE}} at {{PX}} m per sample',
-    'Sampling control: {{SAMPLEMODE}} (ceiling {{CAP}} x {{CAP}}), minimum useful printed feature {{FEATURE}} mm',
+    'Sampling control: {{SAMPLEMODE}} (ceiling {{CAP}} x {{CAP}})',
+    ...($('resolution-auto').checked ? ['Smallest printable feature: {{FEATURE}} mm'] : ['Manual spacing overrides printable-feature optimization']),
     'Source raster spacing on print: {{SOURCESTEP}} mm/pixel',
     'Detail planning: {{LIMIT}}', '', 'Files'];
   if (spread) L.push('  *-pieces-spread — the pieces only, moved apart so no tab sits in its socket. One plate.', `  *-frame — the frame${p.border === 'lettered' ? ' and lettering' : ''}, a second plate.`, '  *-assembled.3mf — everything in place, for reference only.');
