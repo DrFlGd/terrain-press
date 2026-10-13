@@ -71,7 +71,7 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.3.0) (the **Terrain-Press-1.3.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.4.0) (the **Terrain-Press-1.4.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
 
 ## Hybrid dataset roadmap (Windows)
 
@@ -80,3 +80,7 @@ The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) documents the hybrid sy
 ### Source-matched export (v1.3.0)
 
 The **Print → Export detail → Auto** option now plans a denser STL/3MF grid using the finest installed and geographically valid DEM, with a minimum density comparable to Standard. The grid never exceeds 721 × 721 height samples, so large native NASA terrain files may still be downsampled. The exported ZIP's README records the terrain source, sample grid size, actual model spacing and cap status. Existing Standard, Fine and Ultra presets remain available. The terrain sampler now fixes an error when switching from an 83 m landmark patch to a downloaded NASA IMG dataset: cached PNG tiles are read as PNGs instead of being incorrectly looked up as WebP files. **True geometric adaptive/quadtree meshing** is a separate next-phase milestone to improve fidelity while limiting output complexity.
+
+### High-detail preview and 1,000-mm puzzles (v1.4.0)
+
+Choose **Print → High-detail preview (match export)** to render the actual detail/heightfield used by the selected export preset before creating the 3MF. The switch is off by default to preserve smooth editing. The preview displays the resulting sample grid, spacing and cap status. The terrain width slider now supports **up to 1,000 mm**, and the 3D camera/virtual build plate scales to fit large puzzle models. Maximum terrain sampling remains **721 × 721**; high-resolution elevation data will not force unbounded memory use, and very large puzzles may still need to be arranged as individual pieces for printing.

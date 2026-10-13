@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** v1.3.0 adds a source-transition regression fix and resolution-aware Auto export setting. True spatial adaptive meshing is the next scoped geometry milestone. Complete 2 GB+ direct NASA-transfer validation is still outstanding.
+**Status:** v1.4.0 adds optional export-matched high-detail preview and up to 1,000-mm model width, with the 721 × 721 grid cap preserved. True spatial adaptive meshing remains a future geometry milestone. Complete 2 GB+ direct NASA-transfer validation is still outstanding.
 
 ## Product objective
 
@@ -66,6 +66,9 @@ Sources:
 - [ ] Add dataset quality/coverage overlay and provenance warnings instead of marking interpolated pixels as observed.
 - [ ] Support changing/migrating data directory after installs, optional multiple drives and disk quota management.
 - [x] Add an Auto source-matched export grid that uses the highest available DEM at each selected coordinate and flags the 721 × 721 cap.
+- [x] Add an opt-in high-detail 3D preview using the **same export mesh quality** and actual coordinate-specific DEM source; maintain fast previews by default.
+- [x] Increase model width to **1,000 mm** and scale the virtual camera/plate to large puzzles while keeping the 721 × 721 sample limit.
+- [ ] Benchmark high-detail previews and 1,000-mm multi-piece puzzles on representative Windows hardware; profile large export ZIP and slicer import performance.
 - [x] Fix PNG-vs-WebP source lookup when switching 83 m landmark → downloaded NASA global raster → landmark, with automated regression coverage.
 - [ ] Implement true **spatially adaptive triangle meshing** to spend triangles on rough terrain rather than uniform grids.
 

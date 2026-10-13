@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.3.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.4.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -32,6 +32,14 @@ The bug in v1.2.0 that caused "Cannot read properties of undefined" when moving 
 
 This is **resolution-aware uniform meshing**, not yet adaptive triangle subdivision by local surface curvature. A genuine error-controlled adaptive mesh is planned as the next performance/fidelity milestone.
 
+### High-detail preview and large models (v1.4.0)
+
+The **Print → High-detail preview (match export)** switch is off by default for responsive editing. Turning it on rebuilds the interactive model from **the same elevation source, mesh grid spacing and printed geometry as the selected export detail** (Standard, Fine, Ultra or Auto). Changing export detail while it is on triggers a new preview; turning it off switches back to a faster, 0.7-mm-target preview. The preview reports its sample grid and effective spacing so users can see when the 721 × 721 sample cap applies.
+
+Terrain width can now be selected from **60 mm through 1,000 mm**, in 5-mm increments. The preview plate, camera range and shadow boundaries grow with the overall puzzle or ornament so large models are visible. **Large widths do not remove the 721 × 721 grid safety cap.** At 1,000 mm, even the densest uniform grid spaces sample points about 1.39 mm apart on the physical model. Model generation and resulting 3MF/STL/ZIP files may become very large, especially when using puzzles with many pieces; choose an appropriate piece count and arrange individual pieces in your slicer. A 1,000-mm finished model is not necessarily printable in one piece on a typical printer.
+
+This is export-matched preview of the current *uniform-grid* triangulation, not a separate curvature-adaptive triangulation algorithm.
+
 See [the roadmap](TERRAIN-DATA-ROADMAP.md).
 
 ## Build locally
@@ -41,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.3.0-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.4.0-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -49,4 +57,4 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.3.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.4.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
