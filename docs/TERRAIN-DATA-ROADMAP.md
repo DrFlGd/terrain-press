@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** v1.5.1 simplifies resolution controls to Automatic (printer-/DEM-aware) and Advanced (manual spacing and 721/1,441/2,881 sample ceilings). **Next milestone: verified higher-resolution downloads for other planets/dwarf planets and, where suitable products exist, additional moons.** Curvature-adaptive meshes are deferred. Full multi-GB NASA-transfer acceptance remains outstanding.
+**Status:** v1.6.0 fixes missing large spread-puzzle previews and introduces Mars MOLA 64 pixels/degree as a **beta direct-NASA downloader**, using signed 16-bit topography from the maintained PDS4 archive. The 506 MiB transfer and Windows end-to-end elevations are **not yet verified**. Other worlds and adaptive geometry are future milestones.
 
 ## Product objective
 
@@ -79,7 +79,7 @@ Sources:
 
 The next development milestone is **additional real, verifiable elevation datasets**, not adaptive geometry. Prioritize the bodies already selectable in Terrain Press; do not advertise or enable a new pack until its file format, spatial coverage, and vertical measurements have been validated.
 
-1. **Mars — MOLA:** identify a publicly hosted, stable higher-resolution grid than the included MOLA dataset. Implement downloader, local on-demand elevation tile generation, datum/scale checks, and fallback. Make this the first end-to-end pilot for a non-lunar world.
+1. **Mars — MOLA beta implemented in v1.6.0:** select the PDS4-maintained MEGDR 64 ppd topography (four 132,710,400-byte IMG files, global 90°N–90°S), implement local on-demand elevation tile conversion, validate PDS labels/datum, preserve the low-res built-in fallback and existing lunar downloads. **Outstanding:** a complete real-data download, native PDS label inspection and an offline STL/3MF value comparison on physical Windows hardware. Do not mark this as acceptance-complete before those tests.
 2. **Mercury — MESSENGER:** add a globally usable candidate and verify east/west longitude convention, poles, source quality and missing-data behavior. Only publish tiers finer than the built-in grid.
 3. **Venus — Magellan:** validate gridded topography, body radius and datum, known gaps and nominal ground spacing before listing a downloadable tier.
 4. **Ceres and Vesta — Dawn:** separately validate body-specific DEMs, irregular-body reference frames, coverage, and regional vs global options. Never treat their effective map resolutions as identical.
@@ -88,7 +88,7 @@ The next development milestone is **additional real, verifiable elevation datase
 
 Implement a reusable **non-lunar raster importer** behind the existing download manager, with source-specific metadata validation and body-specific elevation conversion. Share the current external storage directory, resumable download/reporting UI, tile cache and highest-valid-source selection. Protect existing lunar downloads and the bundled offline fallback. Publish a dataset only with provenance, licensing/attribution, measured bytes, hashes, NoData handling and coordinate/height round-trip checks. Regression-test transitions between bundled global, installed pack, optional landmark patch and missing/corrupt pack.
 
-**Milestone acceptance:** At least one verified non-Moon download (Mars first) completes, survives offline restart, contributes the correct elevation values to preview and 3MF/STL at documented coordinates, and cleanly reverts to bundled terrain when removed. Remaining worlds follow the same acceptance gates.
+**Milestone acceptance (pending):** At least one verified non-Moon download (Mars first) completes, survives offline restart, contributes the correct elevation values to preview and 3MF/STL at documented coordinates, and cleanly reverts to bundled terrain when removed. The Mars beta implements the pipeline but does not yet pass the full real-NASA transfer acceptance test. Remaining worlds follow the same acceptance gates.
 
 ### Follow-on — Dataset maintenance and verification
 
@@ -154,3 +154,10 @@ For genuine spatial adaptivity, the next implementation should:
 - Explicit limits 721, 1,441 and 2,881 preserve requested detail until the chosen ceiling, even if this oversamples DEM or printer; users can choose precision/quality trade-offs themselves.
 - The fast preview continues to use the legacy 721 ceiling at 0.7-mm target spacing. High-detail preview uses exactly the export planner. Plans are estimated before export; both preview and export warn when more than 1,441 nodes per side are requested.
 - **Safety/performance limitations:** 2,881² is 8.3 million height samples, with multiple temporary arrays plus potentially large mesh/triangle buffers and STL/3MF output. Real CPU/RAM/slicer limits have not been benchmarked and may be considerably lower; consider adaptive mesh and memory-budget settings next. Printable-feature assumptions are approximate and should not be mistaken for dataset measurement confidence.
+
+## v1.6.0 beta notes
+
+- The optional Mars MOLA 64 data are supplied by the [NASA PDS MGS MOLA MEGDR collection](https://pds-geosciences.wustl.edu/missions/mgs/megdr.html). The 2026 PDS4 archive is preferred to the maintained-for-legacy PDS3 URLs. Use only the four `megt*gb.img` topography tiles; `megr*` radius and `megc*` counts are different rasters and must not be substituted. Global MEGDR 64 coverage includes both poles; 128 ppd 88° bands and polar stereographic grids require different handling in future milestones.
+- Both lunar and Martian IMG downloaders share the manager's external directory, catalog selection, cancellation, status and on-demand PNG cache. Physical Mars heights must represent **metres relative to the areoid**, not radius offset; test samples include both positive and negative synthetic elevations. MOLA labels must validate PDS dimensions, signed 16-bit sample type, scale and offset.
+- **Known beta risk:** PDS4-hosted `.lbl` availability, server Range behavior, full transfer duration, and actual topography DATUM roundtrip have not been confirmed by a completed real Windows download. UI labels must disclose experimental status. Do not mark the Mars source production-verified until the full acceptance checklist passes.
+- Spread-piece preview now handles puzzles with no separate frame. A regression test covers 460-mm spread geometry without and with a frame (including an empty frame), checking for finite coordinates and no frame overlap.

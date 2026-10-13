@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.5.1-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.6.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -20,7 +20,7 @@ Windows users can install entire lunar DEMs directly from the original NASA Plan
 
 Choose a dataset folder on a drive with adequate space, open **Terrain data manager**, and select Download. The app fetches original NASA signed-16-bit IMG files and detached LBL metadata. It validates dimensions, sample type, scale, radius offset, and downloaded byte count, and records a local SHA-256 in a download receipt (not a NASA-published reference checksum). Files are staged until the entire chosen global dataset is present. Cancellation leaves partial files for HTTP-range resume, where supported. The native IMG files are retained; the application creates cached PNG elevation tiles only for terrain you actually use. This avoids a full converted copy of the Moon.
 
-After installation, Terrain Press automatically selects the finest installed global Moon source at arbitrary coordinates unless a bundled landmark patch is finer. All functionality works offline afterward. An unmodified embedded coarse Moon dataset remains available on fresh installs. Other planetary data downloads remain future work.
+After installation, Terrain Press automatically selects the finest installed global Moon source at arbitrary coordinates unless a bundled landmark patch is finer. All functionality works offline afterward. An unmodified embedded coarse Moon dataset remains available on fresh installs. Mars MOLA 64 pixels/degree is now available as a **beta** direct-NASA download. Other planetary data downloads remain future work.
 
 **Limitations:** Source filenames and metadata have been checked against the public PDS archive. The full multi-gigabyte transfer, offline reuse and resulting STL have not yet been validated end-to-end on a physical Windows system. NASA's availability, rate limits, and transfer/resume behavior may vary. Nominal pixels-per-degree does not guarantee independent measurements at every grid location.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.5.1-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.6.0-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,7 +57,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.5.1 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.6.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -76,3 +76,11 @@ Choose **Advanced** when you need explicit manual control. This reveals **mesh s
 **High-detail preview (match export)** uses whichever mode is currently selected. Fast preview remains fixed and inexpensive. The planned grid count is always visible before export; grids larger than 1,441 per side prompt a memory/performance warning.
 
 The next project milestone is extending the Terrain Data Manager to the other supported worlds (Mars, Mercury, Venus, Ceres, Vesta, and coverage-limited Pluto). The actual external data products and reliability of conversion must be verified before enabling downloads; the existing offline assets remain fallback.
+
+## Mars MOLA direct NASA trial and puzzle spread fix (v1.6.0)
+
+The **Terrain Data Manager** offers **MOLA MEGDR 64 px/degree · Mars beta**, downloading four original topography (not areoid or planetary-radius) IMG files from the maintained NASA PDS4 archive. Each is 132,710,400 bytes, totaling 530,841,600 bytes (506.25 MiB) plus cached tiles. The 64 pixels/degree product spans the full Martian latitude range, unlike the 128 pixels/degree equirectangular product, which only covers 88°N–88°S. Native imagery uses planetographic/east-positive longitude from 0°–360° and a signed 16-bit height above the Martian areoid. Terrain Press translates it to the app's -180°–180° east-positive longitude and encodes signed metres into its existing PNG format. Downloads can resume with HTTP Range when supported by NASA and use the same external directory as lunar packages.
+
+This is an **experimental beta**. While format geometry, sample encoding, and signed-height operations are covered by tests, a full download of the remote IMG files, actual header compatibility and measured elevation differences at documented landmarks have not yet been tested end-to-end on Windows. The application still provides the included lower-resolution Mars terrain if the optional pack is not installed. The installer checks sample size, endian, scale and offset and rejects unsupported products rather than silently misinterpreting them.
+
+**Puzzle spread preview:** a frameless puzzle no longer uses undefined frame bounds to center the spread layout; the renderer receives valid finite triangle coordinates at 460 mm and other widths.

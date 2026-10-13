@@ -28,3 +28,19 @@ test('no optional pack uses the included global tiles', () => {
   assert.equal(source.kind, 'tiles');
   assert.ok(source.paths.every(p => p.startsWith('data/moon/t')));
 });
+
+test('Mars 64 global native raster wins over built-in DEM with correct cached PNG naming', () => {
+  const low = { w:8192, h:4096, tile:512, ovw:720, ovh:360, radiusKm:3389.5 };
+  const high = { id:'mars-mola-64', body:'mars', w:23040, h:11520, tile:1024,
+    imageExt:'png', label:'MOLA MEGDR 64' };
+  const sample = globalThis.TPCore.makeStore({ mars: { ...low, installedPacks:[high] } },
+    () => Promise.reject(new Error('Unexpected request')));
+  const source = sample.chooseSource('mars', -5, 138, 100, 35);
+  assert.equal(source.kind, 'pack');
+  assert.equal(source.pxKm < 1, true);
+  assert.ok(source.paths.length);
+  assert.ok(source.paths.every(p => /^packs\/mars-mola-64\/t\d+_\d+\.png$/.test(p)));
+  const bundled = globalThis.TPCore.makeStore({ mars: low },
+    () => Promise.reject(new Error('Unexpected request')));
+  assert.notEqual(bundled.chooseSource('mars', -5, 138, 100, 35).kind, 'pack');
+});

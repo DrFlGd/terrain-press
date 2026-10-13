@@ -71,11 +71,11 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.5.1) (the **Terrain-Press-1.5.1-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.6.0) (the **Terrain-Press-1.6.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
 
 ## Hybrid dataset roadmap (Windows)
 
-The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) documents the hybrid system. Starting with **Windows v1.2.0**, the Terrain Data Manager can download the complete Moon in NASA PDS LOLA 128, 256 or 512 pixels-per-degree native IMG files directly from the [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Download sizes are 2.12, 8.49 and 33.97 GB, respectively, plus locally cached tiles. Downloads may be resumed and the datasets work offline after installation. The original bundled terrain is always available. Other planets and regional packs remain roadmap items.
+The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) documents the hybrid system. Starting with **Windows v1.2.0**, the Terrain Data Manager can download the complete Moon in NASA PDS LOLA 128, 256 or 512 pixels-per-degree native IMG files directly from the [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Download sizes are 2.12, 8.49 and 33.97 GB, respectively, plus locally cached tiles. Downloads may be resumed and the datasets work offline after installation. The original bundled terrain is always available. The first additional planet download, **Mars MOLA 64 px/degree beta**, is now available through the manager. Mercury, Venus, Ceres, Vesta, Pluto and regional packs remain roadmap items.
 
 ### Source-matched export (v1.3.0)
 
@@ -94,3 +94,11 @@ The Print panel now provides **Terrain sampling limit: Auto / 721² / 1,441² / 
 **Print → Terrain resolution** now starts in **Automatic** mode. Set just the **Smallest printable feature** (default 0.4 mm); the existing DEM-/print-aware planner chooses the useful grid size with no competing resolution controls. Select **Advanced** to expose **mesh spacing** (Standard 0.50 mm, Fine 0.35 mm, Ultra 0.25 mm) and **maximum sample grid** (721, 1,441 or 2,881 per side). Advanced intentionally bypasses the printer-feature optimization. The fast preview remains independent; enabling **High-detail preview (match export)** renders the current export settings. This is a UI organization change, not a new terrain algorithm.
 
 **Next milestone: downloadable data for the other supported worlds**, beginning with a validated Mars MOLA tier and then Mercury MESSENGER, Venus Magellan, Ceres/Vesta Dawn, and properly coverage-labelled Pluto New Horizons options. The existing bundled data remains the offline fallback; additional moons require verified DEM availability and metadata before being advertised. See the [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md).
+
+### Mars download trial and large-puzzle spread preview (v1.6.0)
+
+**Fix:** Spreading puzzle pieces for printing now handles layouts without a border/frame, including large 460-mm models. The preview coordinates are centered and finite even if no separate frame geometry is present.
+
+**Mars beta:** Open **Terrain Data Manager → MOLA MEGDR 64 px/degree · Mars beta**. Terrain Press downloads four original 16-bit, big-endian topography files directly from NASA's [maintained MOLA PDS4 bundle](https://pds-geosciences.wustl.edu/missions/mgs/megdr.html), about **530.84 MB (506 MiB)**, plus on-demand PNG cache tiles. The MOLA 64 product covers the full planet and is ~925 metres/sample at Mars's equator, finer than the built-in Mars 8192 × 4096 base grid. No user data leaves your machine during mesh creation; the files remain accessible offline after download.
+
+**Beta limitation:** Source product filenames, coverage and tile geometry follow NASA PDS documentation and synthetic coordinate/value tests. The complete ~506 MiB NASA transfer, PDS label parsing against actual downloaded labels, and offline 3MF export have **not** yet been tested end-to-end on physical Windows hardware. Please treat this as a validation test, not yet a verified production dataset. Failed downloads should retain partial IMG files for resumption; the bundled Mars data remains available if the beta pack is not installed.
