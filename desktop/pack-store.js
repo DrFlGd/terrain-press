@@ -13,6 +13,7 @@ const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 const CATALOG = require('./packs/catalog.json');
 const NASA = require('./nasa-lola');
 const MOLA = require('./nasa-mola');
+const TIFF = require('./usgs-geotiff');
 // Driver is selected only by a catalog-controlled format.
 const rasterDriver = pack => pack.format === 'nasa-pds-img' ? NASA :
   pack.format === 'nasa-mola-img' ? MOLA : null;
@@ -81,12 +82,15 @@ class PackStore {
     const installed = [...this.installed].map(id => this.catalogPack(id)).filter(Boolean)
       .filter(p => {
         const driver = rasterDriver(p);
-        return driver ? driver.complete(path.join(this.root, p.id), p.ppd)
+        return p.format === 'usgs-geotiff'
+          ? TIFF.complete(path.join(this.root, p.id), p.id)
+          : driver ? driver.complete(path.join(this.root, p.id), p.ppd)
           : fs.existsSync(path.join(this.root, p.id));
       });
     return {
       root: this.root, bundled: CATALOG.builtIn, catalog: CATALOG.packs,
-      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) ? 'png' : 'webp' })),
+      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || p.format === 'usgs-geotiff' ? 'png' : 'webp',
+        heightEncoding: p.format === 'usgs-geotiff' ? 'int24' : 'int16' })),
       active: this.active ? this.active.progress : null
     };
   }
@@ -112,22 +116,30 @@ class PackStore {
     if (!pack) return null;
     const dir = path.join(this.root, pack.id);
     const driver = rasterDriver(pack);
-    if (!driver) {
+    if (!driver && pack.format !== 'usgs-geotiff') {
       if (!match[2].endsWith('.webp') || !fs.existsSync(dir)) return null;
       return path.join(dir, match[2]);
     }
-    if (!match[2].endsWith('.png') || !driver.complete(dir, pack.ppd)) return null;
-    try {
-      if (pack.format === 'nasa-mola-img') driver.tileInfo(match[2]);
-      else driver.tileInfo(pack.ppd, match[2]);
-    } catch { return null; }
+    if (!match[2].endsWith('.png')) return null;
+    if (pack.format === 'usgs-geotiff') {
+      if (!TIFF.complete(dir, pack.id)) return null;
+      try { TIFF.tileInfo(pack.id, match[2]); } catch { return null; }
+    } else {
+      if (!driver.complete(dir, pack.ppd)) return null;
+      try {
+        if (pack.format === 'nasa-mola-img') driver.tileInfo(match[2]);
+        else driver.tileInfo(pack.ppd, match[2]);
+      } catch { return null; }
+    }
     const cache = path.join(dir, 'cache'), tile = path.join(cache, match[2]);
     if (fs.existsSync(tile)) return tile;
     if (!this.tileJobs.has(tile)) {
       const job = (async () => {
         await fs.promises.mkdir(cache, { recursive: true });
         // Convert the needed native IMG cells only; never build a second whole-planet copy.
-        const png = pack.format === 'nasa-mola-img'
+        const png = pack.format === 'usgs-geotiff'
+          ? await TIFF.generateTile(dir, pack.id, match[2])
+          : pack.format === 'nasa-mola-img'
           ? driver.generateTile(dir, match[2])
           : driver.generateTile(dir, pack.ppd, match[2]);
         const partial = tile + '.' + process.pid + '.partial';
@@ -184,8 +196,35 @@ class PackStore {
       throw new Error(progress.error);
     } finally { this.active = null; }
   }
+  async downloadUsGS(pack) {
+    if (this.active) throw new Error('Another dataset download is active');
+    if (this.installed.has(pack.id)) throw new Error('Dataset is already installed');
+    const controller = new AbortController();
+    const progress = { id: pack.id, phase: 'connecting to USGS', doneFiles: 0,
+      totalFiles: 1, downloadedBytes: 0, totalBytes: pack.downloadBytes, currentFileBytes: 0 };
+    this.active = { id: pack.id, controller, progress };
+    const report = () => this.notify({ ...progress });
+    report();
+    const staging = path.join(this.root, pack.id + '.incomplete');
+    const dest = path.join(this.root, pack.id);
+    try {
+      if (fs.existsSync(dest)) throw new Error('Destination already exists');
+      await TIFF.install({ id: pack.id, staging, signal: controller.signal, progress, report });
+      if (!TIFF.complete(staging, pack.id)) throw new Error('USGS raster validation failed');
+      fs.renameSync(staging, dest);
+      this.installed.add(pack.id);
+      this.save();
+      progress.phase = 'complete'; report();
+      return this.status();
+    } catch (e) {
+      progress.phase = controller.signal.aborted ? 'paused' : 'error';
+      progress.error = asError(e); report(); throw new Error(progress.error);
+    } finally { this.active = null; }
+  }
   async download(id) {
     const pack = this.catalogPack(id);
+    if (pack && pack.status === 'published' && pack.format === 'usgs-geotiff')
+      return this.downloadUsGS(pack);
     if (pack && pack.status === 'published' && rasterDriver(pack)) {
       return this.downloadNasa(pack);
     }

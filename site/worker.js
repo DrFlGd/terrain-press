@@ -11,7 +11,14 @@ async function decode(path) {
   const cv = new OffscreenCanvas(bmp.width, bmp.height), ctx = cv.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(bmp, 0, 0);
   const px = ctx.getImageData(0, 0, bmp.width, bmp.height).data, out = new Float32Array(bmp.width * bmp.height);
-  for (let i = 0, k = 0; i < out.length; i++, k += 4) out[i] = px[k] * 256 + px[k + 1] - 32768;
+  const packId = /^packs\/([a-z0-9-]+)\//.exec(path)?.[1];
+  const enc24 = packId && Object.values(meta).some(m =>
+    (m.installedPacks || []).some(p => p.id === packId && p.heightEncoding === 'int24'));
+  for (let i = 0, k = 0; i < out.length; i++, k += 4) {
+    out[i] = enc24
+      ? (px[k + 3] === 0 ? NaN : px[k] * 65536 + px[k + 1] * 256 + px[k + 2] - 8388608)
+      : px[k] * 256 + px[k + 1] - 32768;
+  }
   if (path.endsWith('overview.webp')) {
     const body = path.split('/')[1], w = bmp.width; let s = 0;
     for (let x = 0; x < w; x++) s += out[512 * w + x];

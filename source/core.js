@@ -41,7 +41,7 @@
       }
       return { lats, lons };
     }
-    function chooseSource(body, lat0, lon0, sizeKm, N) {
+    function chooseSource(body, lat0, lon0, sizeKm, N, ignoreInstalled = false) {
       const m = meta[body], R = m.radiusKm;
       const spacingKm = sizeKm / (N - 1);
       const g = nodeGrid(lat0, lon0, sizeKm, N, R);
@@ -62,7 +62,7 @@
         }
       }
       // Use the sharpest installed global pack, retaining any sharper included landmark patch.
-      const packs = (m.installedPacks || []).filter(p =>
+      const packs = (ignoreInstalled ? [] : m.installedPacks || []).filter(p =>
         p && Number.isInteger(p.w) && Number.isInteger(p.h) && Number.isInteger(p.tile) &&
         p.w > m.w && p.h > 0 && p.tile > 0 && /^[a-z][a-z0-9-]{1,63}$/.test(p.id)
       ).sort((a, b) => b.w - a.w);
@@ -104,9 +104,9 @@
       }
       return { kind: 'tiles', grid: g, pxKm: fullPxKm, label: `${(m.w / 360).toFixed(1)} px/deg`, paths: [...set].map(s => `data/${body}/t${s}.webp`) };
     }
-    async function sample(body, lat0, lon0, sizeKm, N, onProgress) {
+    async function sample(body, lat0, lon0, sizeKm, N, onProgress, ignoreInstalled = false) {
       const m = meta[body];
-      const src = chooseSource(body, lat0, lon0, sizeKm, N);
+      const src = chooseSource(body, lat0, lon0, sizeKm, N, ignoreInstalled);
       let done = 0;
       const arrays = await Promise.all(src.paths.map(p => get(p).then(a => { done++; onProgress && onProgress(done, src.paths.length); return a; })));
       const byPath = new Map(src.paths.map((p, i) => [p, arrays[i]]));
@@ -149,6 +149,13 @@
           const a = px(x0, y0), b = px(x0 + 1, y0), c = px(x0, y0 + 1), d = px(x0 + 1, y0 + 1);
           out[k] = (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
         }
+      }
+      // Some published DTMs have shadows/NoData. Preserve measured heights,
+      // substituting built-in terrain only at genuinely missing pixels.
+      if (!ignoreInstalled && src.kind === 'pack' && out.some(v => !Number.isFinite(v))) {
+        const fallback = await sample(body, lat0, lon0, sizeKm, N, null, true);
+        for (let k = 0; k < out.length; k++)
+          if (!Number.isFinite(out[k])) out[k] = fallback.heights[k];
       }
       return { heights: out, N, source: src };
     }

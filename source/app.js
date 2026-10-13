@@ -620,7 +620,7 @@ function initTerrainDataManager() {
     const percent = p.totalBytes ? Math.min(100, Math.floor(100 * (p.downloadedBytes + (p.currentFileBytes || 0)) / p.totalBytes)) : 0;
     progress.textContent = p.phase + ' · ' + p.doneFiles + '/' + p.totalFiles +
       ' tiles' + (p.totalBytes ? ' · ' + percent + '%' : '') + (p.error ? ' · ' + p.error : '');
-    $('data-cancel').hidden = !['manifest', 'connecting to NASA', 'downloading', 'downloading from NASA', 'verifying downloaded file'].includes(p.phase);
+    $('data-cancel').hidden = !['manifest', 'connecting to NASA', 'connecting to USGS', 'downloading', 'downloading from NASA', 'downloading from USGS', 'verifying downloaded file', 'validating GeoTIFF'].includes(p.phase);
     $('data-cancel').onclick = () => api.cancel(p.id);
   }
   async function render() {
@@ -633,7 +633,7 @@ function initTerrainDataManager() {
         ' · ' + format(built.bytes) + ' compressed · Included', 'tp-data-row'));
     }
     list.appendChild(make('h3', 'Optional planetary downloads', 'h6 mt-3'));
-    list.appendChild(make('p', 'Moon LOLA and Mars MOLA beta source data come directly from NASA PDS. Downloaded native IMG files are kept offline; only the elevation tiles you use are converted locally. Mars is a first integration test, not yet verified end-to-end on Windows.', 'tp-data-muted'));
+    list.appendChild(make('p', 'Moon LOLA and Mars MOLA use native NASA IMG files. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS elevation GeoTIFFs. Downloads are stored separately and needed terrain tiles are converted on demand. Venus has no better validated global grid yet; Pluto high detail is limited to the mapped hemisphere.', 'tp-data-muted'));
     const installed = new Set(s.installed.map(p => p.id));
     for (const pack of s.catalog) {
       const row = make('div', '', 'tp-data-row');
@@ -641,7 +641,7 @@ function initTerrainDataManager() {
       details.appendChild(make('strong', pack.name));
       details.appendChild(make('div', pack.note || pack.body, 'tp-data-muted'));
       if (pack.downloadBytes) details.appendChild(make('div',
-        'NASA download: ' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
+        (pack.format === 'usgs-geotiff' ? 'USGS GeoTIFF' : 'NASA IMG') + ' download: ~' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
       row.appendChild(details);
       const button = make('button', installed.has(pack.id) ? 'Remove' :
         pack.status === 'published' ? 'Download' : 'Planned', 'btn btn-sm btn-tp');
