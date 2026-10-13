@@ -146,11 +146,43 @@ function params(step) {
     seed: Math.abs(Math.round(state.lat * 1000) * 31 + Math.round(state.lon * 1000)) + 7,
   };
 }
-const query = step => ({ world: state.world, lat: state.lat, lon: state.lon, size: state.size, widthMm: +$('width').value, step });
+const query = (step, fastPreview = false) => ({
+  world: state.world, lat: state.lat, lon: state.lon, size: state.size,
+  widthMm: +$('width').value, step,
+  // Fast preview stays inexpensive regardless of configured export ceiling.
+  samplingLimit: fastPreview ? 721 : $('sampling-limit').value === 'auto'
+    ? 'auto' : +$('sampling-limit').value,
+  featureMm: +$('min-feature').value
+});
 
 // ---------------- build ----------------
 let timer = null, buildId = 0, exportId = 0, building = false, again = false;
-function schedule(fast) { clearTimeout(timer); timer = setTimeout(build, fast ? 30 : 160); }
+let planSequence = 0;
+async function refreshPlan() {
+  if (!ready) return;
+  const seq = ++planSequence;
+  try {
+    const r = await call({ type: 'plan', q: query(state.detail) });
+    if (seq !== planSequence) return;
+    const p = r.plan, samples = (p.N * p.N).toLocaleString('en-US');
+    $('grid-plan').textContent = 'Export: ' + p.N.toLocaleString('en-US') +
+      ' × ' + p.N.toLocaleString('en-US') + ' (' + samples + ' heights) · ' +
+      p.stepMm.toFixed(3) + ' mm/grid step · source ' +
+      p.sourceStepMm.toFixed(3) + ' mm/pixel on print';
+    $('grid-plan-note').textContent = (p.samplingLimit === 'auto'
+      ? 'Auto: avoids detail beyond DEM or printed feature; recommended tier ' + p.recommendedLimit + '. '
+      : 'Manual ceiling: ' + p.cap + ' × ' + p.cap + '. ') +
+      (p.detailOptimized ? 'Redundant geometry reduced. ' : '') +
+      (p.limited ? 'Sampling limit reached. ' : '') +
+      (p.N > 1441 ? 'Large mesh: high RAM/CPU and large STL/3MF expected.' : '');
+  } catch (e) {
+    if (seq === planSequence) $('grid-plan-note').textContent = 'Could not estimate mesh: ' + e.message;
+  }
+}
+function schedule(fast) {
+  clearTimeout(timer);
+  timer = setTimeout(() => { void refreshPlan(); void build(); }, fast ? 30 : 160);
+}
 function busy(t) { $('busy').hidden = !t; if (t) $('busy-text').textContent = t; }
 async function build() {
   if (!ready) return;
@@ -162,7 +194,7 @@ async function build() {
     const step = $('preview-high').checked ? state.detail : PREVIEW_STEP;
     const p = params(step);
     const spread = state.product === 'puzzle' && $('spread').checked;
-    const msg = { type: 'build', q: query(step), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
+    const msg = { type: 'build', q: query(step, !$('preview-high').checked), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
     if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); }
@@ -179,7 +211,7 @@ function showStats(p, r) {
   $('preview-hint').textContent = high
     ? 'Showing export-detail geometry (' + mesh.N + ' × ' + mesh.N + ' grid, ' +
       mesh.stepMm.toFixed(3) + ' mm spacing).' +
-      (mesh.limited ? ' Limited to 721 × 721 sampled heights.' : '')
+      (mesh.limited ? ' Limited to ' + mesh.cap + ' × ' + mesh.cap + ' sampled heights.' : '')
     : 'Fast preview for responsive editing. Enable to see the selected export mesh before downloading.';
   $('st-low').textContent = fmtM(s.hMin); $('st-high').textContent = fmtM(s.hMax);
   $('st-relief').innerHTML = `${s.reliefMm.toFixed(1)} mm <small>${((s.hMax - s.hMin) / 1000).toFixed(1)} km real</small>`;
@@ -467,8 +499,15 @@ document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener
   syncMode();
   if (el.name === 'shape' && globe) globe.refresh();
   if (el.name !== 'detail' || $('preview-high').checked) schedule();
+  else void refreshPlan();
 }));
 $('preview-high').addEventListener('change', () => schedule(true));
+for (const id of ['sampling-limit', 'min-feature']) {
+  $(id).addEventListener('change', () => {
+    if ($('preview-high').checked) schedule();
+    else void refreshPlan();
+  });
+}
 ['separate', 'loop', 'spread', 'back', 'merge', 'rim-auto'].forEach(id => $(id).addEventListener('change', () => { syncMode(); schedule(); }));
 ['base', 'frame', 'rim', 'pieces', 'gap', 'spread-gap', 'back-mm', 't-top', 't-bottom'].forEach(id => $(id).addEventListener('input', () => schedule()));
 $('width').addEventListener('input', () => { $('o-width').textContent = $('width').value + ' mm'; schedule(); });
@@ -491,7 +530,9 @@ function readmeTemplate(p, slug) {
     `Model: ${p.product}, ${p.shape}, ${p.widthMm} mm terrain, ${p.exag}x relief exaggeration, {{RELIEF}} mm printed relief`,
     `Export detail: ${state.detail === 'source' ? 'Source-matched' : 'Fixed spacing'}`,
     'Mesh detail: {{STEP}} mm grid; {{GRID}} x {{GRID}} sampled heights; source {{SOURCE}} at {{PX}} m per sample',
-    'Detail cap: {{LIMIT}}', '', 'Files'];
+    'Sampling control: {{SAMPLEMODE}} (ceiling {{CAP}} x {{CAP}}), minimum useful printed feature {{FEATURE}} mm',
+    'Source raster spacing on print: {{SOURCESTEP}} mm/pixel',
+    'Detail planning: {{LIMIT}}', '', 'Files'];
   if (spread) L.push('  *-pieces-spread — the pieces only, moved apart so no tab sits in its socket. One plate.', `  *-frame — the frame${p.border === 'lettered' ? ' and lettering' : ''}, a second plate.`, '  *-assembled.3mf — everything in place, for reference only.');
   else if (p.separate) L.push('  *-1-terrain — the terrain on its own, flat on the plate.', '  *-2-frame — the frame' + (p.border === 'lettered' && p.mergeText ? ' with its lettering' : '') + ', flat on the plate.', '  *-assembled.3mf — both in place, for reference only.');
   else if (p.product === 'puzzle' && back) L.push('  *-pieces — the pieces in their assembled positions, on their own plate.', '  *-tray — the tray' + (p.border === 'lettered' ? ' and lettering' : '') + ', on a second plate.', '  *-assembled.3mf — everything in place, for reference only.');
@@ -511,6 +552,11 @@ $('export').onclick = async () => {
   try {
     if (state.border === 'lettered') await ensureFont(state.font);
     const p = params(state.detail);
+    const preflight = await call({ type: 'plan', q: query(state.detail) });
+    if (preflight.plan.N > 1441 && !confirm(
+      'This export will sample ' + preflight.plan.N.toLocaleString('en-US') +
+      ' × ' + preflight.plan.N.toLocaleString('en-US') +
+      ' heights and may require substantial RAM and processing time. Continue?')) return;
     const L = WORLDS[state.world].marks.find(x => x.id === state.mark);
     const slug = ((L ? L.name : WORLDS[state.world].name + ' ' + fmtLat(state.lat) + ' ' + fmtLon(state.lon)) + ' ' + p.product + ' ' + p.shape).toLowerCase().replace(/°/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     btn.textContent = 'Loading elevation…';

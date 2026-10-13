@@ -243,14 +243,37 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <input type="radio" class="btn-check" name="detail" id="d-std" value="0.5"><label class="btn btn-tp" for="d-std">Standard</label>
         <input type="radio" class="btn-check" name="detail" id="d-fine" value="0.35" checked><label class="btn btn-tp" for="d-fine">Fine</label>
         <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra</label>
-        <input type="radio" class="btn-check" name="detail" id="d-source" value="source"><label class="btn btn-tp" for="d-source" title="Sample to match the installed elevation source, within a 721 × 721 point limit">Auto</label>
+        <input type="radio" class="btn-check" name="detail" id="d-source" value="source"><label class="btn btn-tp" for="d-source" title="Match export sampling to the installed elevation source and minimum printable feature">Auto</label>
       </div>
       <div class="form-check form-switch mt-2">
         <input class="form-check-input" type="checkbox" role="switch" id="preview-high">
         <label class="form-check-label" for="preview-high">High-detail preview (match export)</label>
       </div>
       <p class="tp-hint" id="preview-hint">Fast preview for responsive editing. Enable to see the selected export mesh before downloading.</p>
-      <p class="tp-hint">Source-matched selects a denser export grid where terrain data supports it (up to 721 × 721 height samples). Large regions may export slowly or produce large 3MF files. Standard, Fine and Ultra retain predictable sizes.</p>
+      <div class="row g-2 mt-1">
+        <div class="col-6">
+          <label class="tp-label" for="sampling-limit">Terrain sampling limit</label>
+          <select class="form-select form-select-sm" id="sampling-limit">
+            <option value="auto" selected>Auto (useful detail)</option>
+            <option value="721">721 × 721</option>
+            <option value="1441">1,441 × 1,441</option>
+            <option value="2881">2,881 × 2,881</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="tp-label" for="min-feature">Smallest printable feature</label>
+          <select class="form-select form-select-sm" id="min-feature">
+            <option value="0.2">0.2 mm (very fine)</option>
+            <option value="0.4" selected>0.4 mm (typical)</option>
+            <option value="0.6">0.6 mm</option>
+            <option value="0.8">0.8 mm</option>
+            <option value="1">1.0 mm</option>
+          </select>
+        </div>
+      </div>
+      <p class="tp-hint mt-1" id="grid-plan">Calculating useful sampling density…</p>
+      <p class="tp-hint" id="grid-plan-note" role="status">Auto considers both the downloaded DEM resolution and printed feature size; a manual ceiling overrides this optimization.</p>
+      <p class="tp-hint">High-resolution exports may require substantial memory and produce large 3MF/STL files. Maximum sample grid is 2,881 × 2,881.</p>
       <p class="tp-hint">Prints up to 1,000 mm wide are supported. For large puzzles, check each piece against your printer's build volume.</p>
       <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
     </section>
