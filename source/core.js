@@ -606,7 +606,7 @@
     const ring = (x, y, side) => {
       const out = [];
       for (let k = 0; k < 6; k++) {
-        const a = k * Math.PI / 3;
+        const a = Math.PI / 6 + k * Math.PI / 3;
         out.push([x + side * Math.cos(a), y + side * Math.sin(a)]);
       }
       return out;
@@ -624,35 +624,41 @@
     if (layout === 'round') {
       let rings = 1;
       for (let r=2; r<=6; r++) if (Math.abs(total(r)-target) < Math.abs(total(rings)-target)) rings=r;
-      side = W/(3 * rings + 2);
+      side = W / Math.max(root3 * (2 * rings + 1), 3 * rings + 2);
       cells = [];
       for (let q=-rings;q<=rings;q++) for (let r=-rings;r<=rings;r++) {
         if (Math.abs(q+r)>rings) continue;
-        const x = 1.5 * side * q, y = root3 * side * (r + q/2);
+        const x = root3 * side * (q + r/2), y = 1.5 * side * r;
         cells.push({i:q,j:r,pts:ring(x,y,side),partial:false});
       }
     } else if (layout === 'square') {
       const cols = Math.max(2,Math.round(Math.sqrt(target)));
       const rows = Math.max(2,Math.round(target / cols));
-      const spanX = 1.5 * (cols - 1) + 2, spanY = root3 * (rows + 0.5);
+      const spanX = root3 * (cols + 0.5), spanY = 1.5 * (rows - 1) + 2;
       side = W / Math.max(spanX,spanY);
       cells = [];
       for (let col=0; col<cols;col++) for (let row=0;row<rows;row++) {
-        const x = 1.5*side*(col-(cols-1)/2);
-        const y = root3*side*(row-(rows-1)/2+(col%2 ? 0.25 : -0.25));
+        const x = root3 * side * (col - (cols - 1)/2 + (row%2 ? 0.25 : -0.25));
+        const y = 1.5 * side * (row - (rows - 1)/2);
         cells.push({i:col,j:row,pts:ring(x,y,side),partial:false});
       }
     } else {
-      const outer = ccw(shapeOutline('hexagon',W));
+      // The user's reference outlines stand on a top and bottom vertex.
+      // W bounds the maximal dimension; the pointy hex is W high and
+      // sqrt(3)*W/2 wide, staying inside the sampled W x W source square.
+      const outer = ccw(Array.from({length:6},(_,k)=>{
+        const a = Math.PI / 6 + k * Math.PI / 3;
+        return [Math.cos(a)*W/2,Math.sin(a)*W/2];
+      }));
       const board = [outer], fullArea = s => 1.5 * root3 * s * s;
       const build = s => {
         const result = [];
-        const qMax = Math.ceil((W/2 + s)/(1.5*s)) + 1;
-        const rMax = Math.ceil(W/(root3*s)) + qMax;
-        const shiftX = layout==='alternating' ? s * 0.75 : 0;
-        const shiftY = layout==='alternating' ? root3*s * 0.34 : 0;
+        const qMax = Math.ceil(W/(root3*s)) + 3;
+        const rMax = Math.ceil(W/(1.5*s)) + 3;
+        const shiftX = layout==='alternating' ? root3*s*0.48 : 0;
+        const shiftY = layout==='alternating' ? s*0.75 : 0;
         for (let q=-qMax;q<=qMax;q++) for (let r=-rMax;r<=rMax;r++) {
-          const x = 1.5*s*q+shiftX, y = root3*s*(r+q/2)+shiftY;
+          const x = root3*s*(q+r/2)+shiftX, y = 1.5*s*r+shiftY;
           if (Math.abs(x)>W/2+s || Math.abs(y)>W*root3/4+s) continue;
           const intersections = boolOp(CL.ClipType.ctIntersection,[ring(x,y,s)],board);
           for (const shape of intersections) {
@@ -680,8 +686,10 @@
     // Whole-hex clusters have a stepped external silhouette. Union the actual
     // tiles rather than clipping them to a hex/square and creating half-pieces.
     const clipped = layout==='edge' || layout==='alternating';
-    const outline = clipped ? shapeOutline('hexagon',W)
-      : exPolysFrom(cells.map(c=>c.pts)).sort((a,b)=>exArea(b)-exArea(a))[0].outer;
+    const outline = clipped ? ccw(Array.from({length:6},(_,k)=>{
+        const a = Math.PI/6+k*Math.PI/3;
+        return [Math.cos(a)*W/2,Math.sin(a)*W/2];
+      })) : exPolysFrom(cells.map(c=>c.pts)).sort((a,b)=>exArea(b)-exArea(a))[0].outer;
     const bb = bounds(cells.map(c=>c.pts));
     return {cells,outline,clip:clipped,side,cellW:2*side,cellH:root3*side,
       width:bb.width,depth:bb.depth,target,actual:cells.length,layout};
