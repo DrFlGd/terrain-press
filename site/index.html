@@ -215,7 +215,23 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
             <option value="flat">Flat border pieces (base height)</option>
           </select>
         </div>
-        <p id="hex-count-hint" class="tp-hint mt-1">Choose a target number of hexagons. Actual count is shown after rendering; whole-hex clusters use complete rows or rings.</p>
+        <div id="hex-rings-wrap" class="mt-2">
+          <label class="tp-label" for="hex-rings">Hex ring size</label>
+          <select id="hex-rings" class="form-select form-select-sm">
+            <option value="1">1 ring · 7 nominal hexes</option>
+            <option value="2" selected>2 rings · 19 nominal hexes</option>
+            <option value="3">3 rings · 37 nominal hexes</option>
+            <option value="4">4 rings · 61 nominal hexes</option>
+            <option value="5">5 rings · 91 nominal hexes</option>
+            <option value="6">6 rings · 127 nominal hexes</option>
+          </select>
+        </div>
+        <div id="hex-square-wrap" class="mt-2" hidden>
+          <label class="tp-label" for="hex-across">Hexagons across and down (N × N)</label>
+          <input class="form-control form-control-sm tp-num" id="hex-across" type="number" min="2" max="12" step="1" value="5">
+          <p class="tp-hint">For example, 5 across and 5 down gives exactly 25 complete hexagons, arranged in staggered rows.</p>
+        </div>
+        <p id="hex-count-hint" class="tp-hint mt-1">Select a ring size. Borders are lattice-aligned, with no tiny leftover slivers.</p>
       </div>
       <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
       <div class="row g-2">
@@ -567,10 +583,15 @@ function params(step) {
   return {
     shape: state.shape, product, widthMm: +$('width').value, exag: exFromSlider(+$('exag').value),
     hexLayout: $('hex-layout').value, hexEdge: $('hex-edge').value,
+    hexRings: +$('hex-rings').value,
+    hexAcross: Math.round(clamp(+$('hex-across').value, 2, 12, 5)),
     baseMm: clamp(+$('base').value, 1, 8, 2), frameMm: clamp(+$('frame').value, 4, 14, 7), rimMm: clamp(+$('rim').value, 0.5, 30, 3), rimAuto: $('rim-auto').checked, textMm: 0.8,
     textTop: $('t-top').value.trim(), textBottom: $('t-bottom').value.trim(),
-    pieces: Math.round(clamp(+$('pieces').value, state.shape === 'hexgrid' ? 7 : 2,
-      state.shape === 'hexgrid' ? 150 : 12, state.shape === 'hexgrid' ? 19 : 5)),
+    pieces: state.shape === 'hexgrid'
+      ? ($('hex-layout').value === 'square'
+        ? Math.round(clamp(+$('hex-across').value,2,12,5)) ** 2
+        : 1 + 3 * (+$('hex-rings').value) * (+$('hex-rings').value + 1))
+      : Math.round(clamp(+$('pieces').value, 2, 12, 5)),
     gapMm: clamp(+$('gap').value, 0.1, 0.6, 0.3),
     separate: product === 'ornament' && border !== 'none' && $('separate').checked,
     loop: product === 'ornament' && border !== 'none' && $('loop').checked,
@@ -653,7 +674,9 @@ function showStats(p, r) {
   const n = r.parts.filter(x => x.role === 'terrain').length;
   $('st-parts').innerHTML = p.product === 'puzzle' ? `${n} pieces <small>${p.shape === 'hexgrid' ? 'hex tessellation' : (p.border === 'none' ? 'no frame' : (p.back && p.border !== 'none' ? '+ tray' : '+ frame'))}</small>` : `${(p.separate ? 2 : r.parts.length)} <small>${p.separate ? 'prints' : 'colours'}</small>`;
   if (p.shape === 'hexgrid') $('hex-count-hint').textContent =
-    'Requested ' + p.pieces + ' · rendered ' + n + ' hex pieces. Rounded layouts use full rings (7, 19, 37, 61, 91 or 127).';
+    (p.hexLayout === 'square' ? p.hexAcross + ' × ' + p.hexAcross + ' whole hexes'
+      : p.hexRings + ' ring(s) · ' + p.pieces + ' nominal hexes') +
+    ' · rendered ' + n + ' printable pieces.';
   const rel = s.reliefMm;
   $('exag-hint').textContent = `${p.exag}× · 1× is true scale. ` + (rel < 2 ? 'Relief is shallow; try more exaggeration.' : rel > 25 ? 'Tall; check the slicer for steep walls.' : 'Reads well at this width.');
   // Pluto: warn when the region strays into the unmapped half
@@ -923,14 +946,12 @@ function syncMode() {
   const hex = state.shape === 'hexgrid', clippedHex = hex && ['edge','alternating'].includes($('hex-layout').value);
   $('hex-opts').hidden = !hex;
   $('hex-edge-wrap').hidden = !clippedHex;
+  $('hex-rings-wrap').hidden = !hex || $('hex-layout').value === 'square';
+  $('hex-square-wrap').hidden = !hex || $('hex-layout').value !== 'square';
   $('frame-options-section').hidden = hex;
-  $('pieces-label').textContent = hex ? 'Target hex pieces' : 'Pieces across';
-  const previousMax = +$('pieces').max;
-  $('pieces').min = hex ? '7' : '2'; $('pieces').max = hex ? '150' : '12';
-  if (hex && previousMax !== 150) $('pieces').value = '19';
-  else if (!hex && previousMax === 150) $('pieces').value = '5';
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
-  $('fit-row').hidden = !(state.product === 'puzzle' || sep); $('pieces-wrap').hidden = state.product !== 'puzzle';
+  $('fit-row').hidden = !(state.product === 'puzzle' || sep);
+  $('pieces-wrap').hidden = state.product !== 'puzzle' || hex;
   $('spread-opts').hidden = state.product !== 'puzzle'; $('spread-row').hidden = !$('spread').checked;
   $('back-opts').hidden = !framed; $('back-row').hidden = !$('back').checked;
   $('letter-opts').hidden = state.border !== 'lettered';
@@ -981,6 +1002,11 @@ for (const id of ['sampling-limit', 'min-feature']) {
 ['separate', 'loop', 'spread', 'back', 'merge', 'rim-auto'].forEach(id => $(id).addEventListener('change', () => { syncMode(); schedule(); }));
 ['base', 'frame', 'rim', 'pieces', 'gap', 'spread-gap', 'back-mm', 't-top', 't-bottom'].forEach(id => $(id).addEventListener('input', () => schedule()));
 $('hex-layout').addEventListener('change', () => { syncMode(); schedule(); });
+$('hex-rings').addEventListener('change', schedule);
+$('hex-across').addEventListener('change', () => {
+  $('hex-across').value = String(Math.round(clamp(+$('hex-across').value,2,12,5)));
+  schedule();
+});
 $('hex-edge').addEventListener('change', schedule);
 const updateWidth = value => {
   const max = $('unlock-size').checked ? 5000 : 1000;
@@ -1017,7 +1043,7 @@ function readmeTemplate(p, slug) {
     `World: ${W.name}`, `Centre: ${fmtLat(state.lat)} ${fmtLon(state.lon)}`, `Region width: ${state.size} km (azimuthal equidistant projection)`,
     `Elevation range: {{LOW}} m to {{HIGH}} m (${W.datum})`,
     `Model: ${p.product}, ${p.shape}, ${p.widthMm} mm terrain, ${p.exag}x relief exaggeration, {{RELIEF}} mm printed relief`,
-    ...(p.shape === 'hexgrid' ? [`Hex layout: ${p.hexLayout}; target pieces: ${p.pieces}; clipped border surface: ${p.hexEdge}. Actual count in STL/3MF may differ to keep complete hexagons.`] : []),
+    ...(p.shape === 'hexgrid' ? [`Hex layout: ${p.hexLayout}; ${p.hexLayout==='square' ? p.hexAcross+' across and down' : p.hexRings+' rings'}; ${p.pieces} nominal pieces; ${p.hexLayout==='round'||p.hexLayout==='square' ? 'all whole hexes' : 'lattice-aligned edge cuts, including half-hex border pieces'}; edge surface: ${p.hexEdge}.`] : []),
     ...(p.widthMm > 1000 ? ['OVERSIZE: width exceeds 1,000 mm; check RAM and printer build volume before slicing.'] : []),
     `Terrain resolution: ${$('resolution-auto').checked ? 'Automatic (DEM and printer-aware)' : 'Advanced (manual mesh spacing and sample limit)'}`,
     `Export detail: ${state.detail === 'source' ? 'Source-matched' : 'Fixed spacing'}`,
