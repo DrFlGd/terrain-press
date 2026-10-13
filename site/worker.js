@@ -144,7 +144,7 @@ function exportFiles(model, p, x) {
       // number in reading order: squares row by row; circles and hexagons centre first, then ring by ring clockwise from 12 o'clock
       const pcs = model.parts.filter(o => o.cell).map(o => ({ o, lp: o.ring ? labelPoint(o.ring).at : [0, 0] })), pad = String(pcs.length).length;
       const cw = model.grid ? Math.min(model.grid.cellW || 1e9, model.grid.cellH || 1e9) : p.widthMm / 5;
-      if (p.shape === 'square') pcs.sort((a, b) => Math.round(b.o.ring ? ctr(b.o.ring)[1] / cw : 0) - Math.round(a.o.ring ? ctr(a.o.ring)[1] / cw : 0) || ctr(a.o.ring)[0] - ctr(b.o.ring)[0]);
+      if (p.shape === 'square' || p.shape === 'hexgrid') pcs.sort((a, b) => Math.round(b.o.ring ? ctr(b.o.ring)[1] / cw : 0) - Math.round(a.o.ring ? ctr(a.o.ring)[1] / cw : 0) || ctr(a.o.ring)[0] - ctr(b.o.ring)[0]);
       else {
         const key = q => { const c = ctr(q.o.ring); return [q.o.cell[1], q.o.cell[1] === 0 ? -1 : (Math.atan2(c[0], c[1]) + 2 * Math.PI) % (2 * Math.PI)]; };
         pcs.forEach(q => q.k = key(q)); pcs.sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1]);
@@ -178,7 +178,8 @@ self.onmessage = async e => {
         model.parts = C.spreadPreview(model.parts, model.grid, m.spreadGap, model.floorZ || 0);
       }
       const { parts, transfer } = pack(model, true);
-      self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited, cap: hf.plan.cap,
+      self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, widthMm: model.widthMm, depthMm: model.depthMm,
+        actualPieces: model.actualPieces, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited, cap: hf.plan.cap,
         detailOptimized: hf.plan.detailOptimized }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label } }, transfer);
       return;
     }

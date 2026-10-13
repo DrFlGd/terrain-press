@@ -180,8 +180,34 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <input type="radio" class="btn-check" name="shape" id="s-circle" value="circle" checked><label class="btn btn-tp" for="s-circle">Circle</label>
         <input type="radio" class="btn-check" name="shape" id="s-square" value="square"><label class="btn btn-tp" for="s-square">Square</label>
         <input type="radio" class="btn-check" name="shape" id="s-hexagon" value="hexagon"><label class="btn btn-tp" for="s-hexagon">Hexagon</label>
+        <input type="radio" class="btn-check" name="shape" id="s-hexgrid" value="hexgrid"><label class="btn btn-tp" for="s-hexgrid">Hex Grid</label>
       </div>
-      <div><div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div><input type="range" class="form-range" id="width" min="60" max="1000" step="5" value="100"></div>
+      <div>
+        <div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div>
+        <input type="range" class="form-range" id="width" min="60" max="1000" step="5" value="100">
+        <div class="row g-2 align-items-end">
+          <div class="col-5"><label class="tp-label" for="width-num">Exact width · mm</label><input class="form-control form-control-sm tp-num" type="number" id="width-num" min="60" max="1000" step="5" value="100"></div>
+          <div class="col-7"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="unlock-size"><label class="form-check-label" for="unlock-size">Unlock over 1,000 mm</label></div></div>
+        </div>
+        <p id="size-warning" class="tp-hint" role="status" hidden>Unlocked: maximum 5,000 mm. Large exports and spread layouts can exhaust RAM or exceed printer build volumes. Verify the mesh size before printing.</p>
+      </div>
+      <div id="hex-opts" hidden>
+        <label class="tp-label" for="hex-layout">Hex Grid arrangement</label>
+        <select id="hex-layout" class="form-select form-select-sm">
+          <option value="edge">Hex outline · half-hex border</option>
+          <option value="alternating">Hex outline · alternating edge pieces</option>
+          <option value="round">Rounded hex cluster · whole hexes only</option>
+          <option value="square">Square hex cluster · whole hexes only</option>
+        </select>
+        <div id="hex-edge-wrap" class="mt-2">
+          <label class="tp-label" for="hex-edge">Half-hex border surface</label>
+          <select id="hex-edge" class="form-select form-select-sm">
+            <option value="terrain" selected>Terrain relief (continuous landscape)</option>
+            <option value="flat">Flat border pieces (base height)</option>
+          </select>
+        </div>
+        <p id="hex-count-hint" class="tp-hint mt-1">Choose a target number of hexagons. Actual count is shown after rendering; whole-hex clusters use complete rows or rings.</p>
+      </div>
       <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
       <div class="row g-2">
         <div class="col-4"><label class="tp-label" for="base">Base mm</label><input class="form-control form-control-sm tp-num" id="base" type="number" step="0.2" min="1" max="8" value="2"></div>
@@ -194,7 +220,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <div class="form-check form-switch" id="loop-wrap"><input class="form-check-input" type="checkbox" role="switch" id="loop"><label class="form-check-label" for="loop">Hanging loop on the frame</label></div>
       </div>
       <div class="row g-2" id="fit-row">
-        <div class="col-6" id="pieces-wrap"><label class="tp-label" for="pieces">Pieces across</label><input class="form-control form-control-sm tp-num" id="pieces" type="number" step="1" min="2" max="12" value="5"></div>
+        <div class="col-6" id="pieces-wrap"><label class="tp-label" for="pieces" id="pieces-label">Pieces across</label><input class="form-control form-control-sm tp-num" id="pieces" type="number" step="1" min="2" max="12" value="5"></div>
         <div class="col-6"><label class="tp-label" for="gap">Clearance mm</label><input class="form-control form-control-sm tp-num" id="gap" type="number" step="0.05" min="0.1" max="0.6" value="0.3"></div>
       </div>
       <div id="spread-opts" class="d-flex flex-column gap-2">
@@ -205,7 +231,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
       <p class="tp-hint" id="model-hint"></p>
     </section>
 
-    <section class="tp-sec">
+    <section class="tp-sec" id="frame-options-section">
       <h2>Frame &amp; lettering</h2>
       <div class="btn-group tp-seg" role="group" aria-label="Border">
         <input type="radio" class="btn-check" name="border" id="b-lettered" value="lettered" checked><label class="btn btn-tp" for="b-lettered">Frame + text</label>
@@ -278,7 +304,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
       <p class="tp-hint mt-1" id="grid-plan">Calculating useful sampling density…</p>
       <p class="tp-hint" id="grid-plan-note" role="status">Automatic resolution matches the terrain dataset and your printable-feature setting.</p>
       <p class="tp-hint">Very dense exports may require substantial memory and produce large 3MF/STL files. Hard limit: 2,881 × 2,881 samples.</p>
-      <p class="tp-hint">Prints up to 1,000 mm wide are supported. For large puzzles, check each piece against your printer's build volume.</p>
+      <p class="tp-hint">Widths above 1,000 mm require explicitly unlocking the size limit. High-resolution or multi-piece projects can exhaust memory even below 5,000 mm; always check your printer's build volume.</p>
       <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
     </section>
 

@@ -137,9 +137,12 @@ function params(step) {
   const product = state.product, border = state.border;
   return {
     shape: state.shape, product, widthMm: +$('width').value, exag: exFromSlider(+$('exag').value),
+    hexLayout: $('hex-layout').value, hexEdge: $('hex-edge').value,
     baseMm: clamp(+$('base').value, 1, 8, 2), frameMm: clamp(+$('frame').value, 4, 14, 7), rimMm: clamp(+$('rim').value, 0.5, 30, 3), rimAuto: $('rim-auto').checked, textMm: 0.8,
     textTop: $('t-top').value.trim(), textBottom: $('t-bottom').value.trim(),
-    pieces: Math.round(clamp(+$('pieces').value, 2, 12, 5)), gapMm: clamp(+$('gap').value, 0.1, 0.6, 0.3),
+    pieces: Math.round(clamp(+$('pieces').value, state.shape === 'hexgrid' ? 7 : 2,
+      state.shape === 'hexgrid' ? 150 : 12, state.shape === 'hexgrid' ? 19 : 5)),
+    gapMm: clamp(+$('gap').value, 0.1, 0.6, 0.3),
     separate: product === 'ornament' && border !== 'none' && $('separate').checked,
     loop: product === 'ornament' && border !== 'none' && $('loop').checked,
     stepMm: typeof step === 'number' ? step : 0.5, border, mergeText: $('merge').checked, back: $('back').checked, backMm: clamp(+$('back-mm').value, 0.8, 4, 1.6),
@@ -215,10 +218,13 @@ function showStats(p, r) {
     : 'Fast preview for responsive editing. Enable to see the selected export mesh before downloading.';
   $('st-low').textContent = fmtM(s.hMin); $('st-high').textContent = fmtM(s.hMax);
   $('st-relief').innerHTML = `${s.reliefMm.toFixed(1)} mm <small>${((s.hMax - s.hMin) / 1000).toFixed(1)} km real</small>`;
-  const H = p.shape === 'hexagon' ? p.widthMm * Math.sqrt(3) / 2 : p.widthMm, fr = p.border === 'none' ? 0 : p.frameMm;
-  $('st-foot').innerHTML = `${Math.round(p.widthMm + 2 * fr)} × ${Math.round(H + 2 * fr + (p.loop ? 11 : 0))} <small>mm</small>`;
+  const H = r.stats.depthMm || (p.shape === 'hexagon' ? p.widthMm * Math.sqrt(3) / 2 : p.widthMm),
+    terrainW = r.stats.widthMm || p.widthMm, fr = p.border === 'none' ? 0 : p.frameMm;
+  $('st-foot').innerHTML = `${Math.round(terrainW + 2 * fr)} × ${Math.round(H + 2 * fr + (p.loop ? 11 : 0))} <small>mm</small>`;
   const n = r.parts.filter(x => x.role === 'terrain').length;
-  $('st-parts').innerHTML = p.product === 'puzzle' ? `${n} pieces <small>${p.border === 'none' ? 'no frame' : (p.back && p.border !== 'none' ? '+ tray' : '+ frame')}</small>` : `${(p.separate ? 2 : r.parts.length)} <small>${p.separate ? 'prints' : 'colours'}</small>`;
+  $('st-parts').innerHTML = p.product === 'puzzle' ? `${n} pieces <small>${p.shape === 'hexgrid' ? 'hex tessellation' : (p.border === 'none' ? 'no frame' : (p.back && p.border !== 'none' ? '+ tray' : '+ frame'))}</small>` : `${(p.separate ? 2 : r.parts.length)} <small>${p.separate ? 'prints' : 'colours'}</small>`;
+  if (p.shape === 'hexgrid') $('hex-count-hint').textContent =
+    'Requested ' + p.pieces + ' · rendered ' + n + ' hex pieces. Rounded layouts use full rings (7, 19, 37, 61, 91 or 127).';
   const rel = s.reliefMm;
   $('exag-hint').textContent = `${p.exag}× · 1× is true scale. ` + (rel < 2 ? 'Relief is shallow; try more exaggeration.' : rel > 25 ? 'Tall; check the slicer for steep walls.' : 'Reads well at this width.');
   // Pluto: warn when the region strays into the unmapped half
@@ -374,7 +380,7 @@ function makeGlobe() {
     const c = rho / R, sc = Math.sin(c), cc = Math.cos(c);
     return [Math.asin(Math.max(-1, Math.min(1, cc * Math.sin(p0) + y * sc * Math.cos(p0) / rho))) * 180 / Math.PI, (l0 + Math.atan2(x * sc, rho * Math.cos(p0) * cc - y * Math.sin(p0) * sc)) * 180 / Math.PI];
   }
-  function outline(shape) { const n = shape === 'circle' ? 96 : shape === 'hexagon' ? 6 : 4, pts = []; for (let i = 0; i < n; i++) { const a = shape === 'square' ? Math.PI / 4 + i * Math.PI / 2 : i * 2 * Math.PI / n, r = shape === 'square' ? Math.SQRT1_2 : 0.5; pts.push([Math.cos(a) * r, Math.sin(a) * r]); } return pts; }
+  function outline(shape) { const n = shape === 'circle' ? 96 : (shape === 'hexagon' || shape === 'hexgrid') ? 6 : 4, pts = []; for (let i = 0; i < n; i++) { const a = shape === 'square' ? Math.PI / 4 + i * Math.PI / 2 : i * 2 * Math.PI / n, r = shape === 'square' ? Math.SQRT1_2 : 0.5; pts.push([Math.cos(a) * r, Math.sin(a) * r]); } return pts; }
   function refresh() {
     const R = meta[state.world].radiusKm, S = state.size, ring = outline(state.shape), pts = [], per = Math.max(4, Math.round(192 / ring.length));
     for (let i = 0; i < ring.length; i++) { const a = ring[i], b = ring[(i + 1) % ring.length]; for (let k = 0; k < per; k++) { const t = k / per, ll = inv((a[0] + (b[0] - a[0]) * t) * S, (a[1] + (b[1] - a[1]) * t) * S, state.lat, state.lon, R); pts.push(toVec(ll[0], ll[1], 1.004 * rAt(ll[0], ll[1]))); } }
@@ -478,12 +484,22 @@ function showTab(t) {
 }
 $('tab-model').onclick = () => showTab('model'); $('tab-globe').onclick = () => showTab('globe');
 function syncMode() {
-  state.product = radio('product'); state.shape = radio('shape'); state.border = radio('border'); state.font = radio('font');
+  state.product = radio('product'); state.shape = radio('shape');
+  state.border = state.shape === 'hexgrid' ? 'none' : radio('border'); state.font = radio('font');
   const automaticResolution = radio('resolution-mode') === 'auto';
   state.detail = automaticResolution ? 'source' : +radio('detail');
   $('auto-options').hidden = !automaticResolution;
   $('advanced-options').hidden = automaticResolution;
   const orn = state.product === 'ornament', framed = state.border !== 'none', sep = orn && framed && $('separate').checked;
+  const hex = state.shape === 'hexgrid', clippedHex = hex && ['edge','alternating'].includes($('hex-layout').value);
+  $('hex-opts').hidden = !hex;
+  $('hex-edge-wrap').hidden = !clippedHex;
+  $('frame-options-section').hidden = hex;
+  $('pieces-label').textContent = hex ? 'Target hex pieces' : 'Pieces across';
+  const previousMax = +$('pieces').max;
+  $('pieces').min = hex ? '7' : '2'; $('pieces').max = hex ? '150' : '12';
+  if (hex && previousMax !== 150) $('pieces').value = '19';
+  else if (!hex && previousMax === 150) $('pieces').value = '5';
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
   $('fit-row').hidden = !(state.product === 'puzzle' || sep); $('pieces-wrap').hidden = state.product !== 'puzzle';
   $('spread-opts').hidden = state.product !== 'puzzle'; $('spread-row').hidden = !$('spread').checked;
@@ -494,12 +510,16 @@ function syncMode() {
   $('font-hint').textContent = FONT_INFO[state.font];
   const back = framed && $('back').checked;
   $('model-hint').textContent = state.product === 'puzzle'
-    ? (back ? 'Pieces drop into the tray. The pieces and the tray come as separate files so the pieces don\'t fuse to its floor.' : ($('spread').checked ? 'Pieces are moved apart until every tab clears its socket; the frame gets its own file.' : 'Pieces print in place inside the frame.'))
+    ? (state.shape === 'hexgrid' ? 'Hexagon tiles tessellate edge to edge with printable clearance. Choose Spread for separate print-plate layout; no frame is generated.' :
+      (back ? 'Pieces drop into the tray. The pieces and the tray come as separate files so the pieces don\'t fuse to its floor.' : ($('spread').checked ? 'Pieces are moved apart until every tab clears its socket; the frame gets its own file.' : 'Pieces print in place inside the frame.')))
     : (sep ? 'Two single-colour prints: the terrain drops into the frame' + (back ? ' tray.' : '.') : (back ? 'The terrain prints fused to the tray floor, so the ornament is one solid piece.' : 'Terrain and frame print together.'));
   $('export-note').textContent = (state.product === 'puzzle' && back) || sep || (state.product === 'puzzle' && $('spread').checked) ? 'A .zip with one file per print plate (STL and 3MF).' : 'A .zip with STL and multicolour 3MF files.';
   if (state.product === 'puzzle' && $('per-piece').checked) $('export-note').textContent += ' Plus a single-pieces folder: one STL per piece and a numbered map.';
 }
 document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => {
+  if (el.name === 'shape' && el.value === 'hexgrid') $('p-puzzle').checked = true;
+  if (el.name === 'product' && el.value === 'ornament' && $('s-hexgrid').checked)
+    $('s-hexagon').checked = true;
   syncMode();
   if (el.name === 'shape' && globe) globe.refresh();
   const resolutionSetting = el.name === 'detail' || el.name === 'resolution-mode';
@@ -531,7 +551,26 @@ for (const id of ['sampling-limit', 'min-feature']) {
 }
 ['separate', 'loop', 'spread', 'back', 'merge', 'rim-auto'].forEach(id => $(id).addEventListener('change', () => { syncMode(); schedule(); }));
 ['base', 'frame', 'rim', 'pieces', 'gap', 'spread-gap', 'back-mm', 't-top', 't-bottom'].forEach(id => $(id).addEventListener('input', () => schedule()));
-$('width').addEventListener('input', () => { $('o-width').textContent = $('width').value + ' mm'; schedule(); });
+$('hex-layout').addEventListener('change', () => { syncMode(); schedule(); });
+$('hex-edge').addEventListener('change', schedule);
+const updateWidth = value => {
+  const max = $('unlock-size').checked ? 5000 : 1000;
+  const mm = clamp(Math.round((+value || 100) / 5) * 5, 60, max, 100);
+  $('width').max = $('width-num').max = String(max);
+  $('width').value = $('width-num').value = String(mm);
+  $('o-width').textContent = mm + ' mm';
+  $('size-warning').hidden = !$('unlock-size').checked;
+  schedule();
+};
+$('width').addEventListener('input', () => updateWidth($('width').value));
+$('width-num').addEventListener('change', () => updateWidth($('width-num').value));
+$('unlock-size').addEventListener('change', () => {
+  if ($('unlock-size').checked && !confirm(
+    'Unlock terrain widths up to 5,000 mm? Large meshes and hex grids can use multiple gigabytes of RAM, take a long time to export, and exceed printer build volumes.')) {
+    $('unlock-size').checked = false;
+  }
+  updateWidth($('width').value);
+});
 $('exag').addEventListener('input', () => { $('o-exag').textContent = exFromSlider(+$('exag').value) + '×'; schedule(); });
 $('sun').addEventListener('input', () => { $('o-sun').textContent = $('sun').value + '°'; bench.setSun(+$('sun').value); });
 $('mark-filter').addEventListener('input', renderMarks);
@@ -549,6 +588,8 @@ function readmeTemplate(p, slug) {
     `World: ${W.name}`, `Centre: ${fmtLat(state.lat)} ${fmtLon(state.lon)}`, `Region width: ${state.size} km (azimuthal equidistant projection)`,
     `Elevation range: {{LOW}} m to {{HIGH}} m (${W.datum})`,
     `Model: ${p.product}, ${p.shape}, ${p.widthMm} mm terrain, ${p.exag}x relief exaggeration, {{RELIEF}} mm printed relief`,
+    ...(p.shape === 'hexgrid' ? [`Hex layout: ${p.hexLayout}; target pieces: ${p.pieces}; clipped border surface: ${p.hexEdge}. Actual count in STL/3MF may differ to keep complete hexagons.`] : []),
+    ...(p.widthMm > 1000 ? ['OVERSIZE: width exceeds 1,000 mm; check RAM and printer build volume before slicing.'] : []),
     `Terrain resolution: ${$('resolution-auto').checked ? 'Automatic (DEM and printer-aware)' : 'Advanced (manual mesh spacing and sample limit)'}`,
     `Export detail: ${state.detail === 'source' ? 'Source-matched' : 'Fixed spacing'}`,
     'Mesh detail: {{STEP}} mm grid; {{GRID}} x {{GRID}} sampled heights; source {{SOURCE}} at {{PX}} m per sample',
@@ -581,6 +622,8 @@ $('export').onclick = async () => {
       ' × ' + preflight.plan.N.toLocaleString('en-US') +
       ' heights and may require substantial RAM and processing time. Continue?')) return;
     const L = WORLDS[state.world].marks.find(x => x.id === state.mark);
+    if (p.widthMm > 1000 && !confirm(
+      'Export a ' + p.widthMm.toLocaleString('en-US') + ' mm-wide model? Hex pieces and high-detail meshes may use substantial RAM and produce very large print files. Continue?')) return;
     const slug = ((L ? L.name : WORLDS[state.world].name + ' ' + fmtLat(state.lat) + ' ' + fmtLon(state.lon)) + ' ' + p.product + ' ' + p.shape).toLowerCase().replace(/°/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     btn.textContent = 'Loading elevation…';
     const pr = call({ type: 'export', q: query(state.detail), p, font: state.border === 'lettered' ? state.font : null, readme: readmeTemplate(p, slug),
@@ -697,6 +740,7 @@ function initTerrainDataManager() {
 
 // ---------------- boot ----------------
 (async () => {
+  $('width-num').value = $('width').value;
   $('o-width').textContent = $('width').value + ' mm'; $('o-sun').textContent = $('sun').value + '°'; $('o-exag').textContent = exFromSlider(+$('exag').value) + '×';
   busy('Loading…');
   try {
