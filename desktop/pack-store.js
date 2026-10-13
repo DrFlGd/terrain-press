@@ -12,6 +12,10 @@ const SHA = /^[a-f0-9]{64}$/;
 const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 const CATALOG = require('./packs/catalog.json');
 const NASA = require('./nasa-lola');
+const MOLA = require('./nasa-mola');
+// Driver is selected only by a catalog-controlled format.
+const rasterDriver = pack => pack.format === 'nasa-pds-img' ? NASA :
+  pack.format === 'nasa-mola-img' ? MOLA : null;
 
 function httpsUrl(url) {
   try {
@@ -75,12 +79,14 @@ class PackStore {
   catalogPack(id) { return CATALOG.packs.find(p => p.id === id); }
   status() {
     const installed = [...this.installed].map(id => this.catalogPack(id)).filter(Boolean)
-      .filter(p => p.format === 'nasa-pds-img'
-        ? NASA.complete(path.join(this.root, p.id), p.ppd)
-        : fs.existsSync(path.join(this.root, p.id)));
+      .filter(p => {
+        const driver = rasterDriver(p);
+        return driver ? driver.complete(path.join(this.root, p.id), p.ppd)
+          : fs.existsSync(path.join(this.root, p.id));
+      });
     return {
       root: this.root, bundled: CATALOG.builtIn, catalog: CATALOG.packs,
-      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: p.format === 'nasa-pds-img' ? 'png' : 'webp' })),
+      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) ? 'png' : 'webp' })),
       active: this.active ? this.active.progress : null
     };
   }
@@ -105,19 +111,25 @@ class PackStore {
     const pack = this.catalogPack(match[1]);
     if (!pack) return null;
     const dir = path.join(this.root, pack.id);
-    if (pack.format !== 'nasa-pds-img') {
+    const driver = rasterDriver(pack);
+    if (!driver) {
       if (!match[2].endsWith('.webp') || !fs.existsSync(dir)) return null;
       return path.join(dir, match[2]);
     }
-    if (!match[2].endsWith('.png') || !NASA.complete(dir, pack.ppd)) return null;
-    try { NASA.tileInfo(pack.ppd, match[2]); } catch { return null; }
+    if (!match[2].endsWith('.png') || !driver.complete(dir, pack.ppd)) return null;
+    try {
+      if (pack.format === 'nasa-mola-img') driver.tileInfo(match[2]);
+      else driver.tileInfo(pack.ppd, match[2]);
+    } catch { return null; }
     const cache = path.join(dir, 'cache'), tile = path.join(cache, match[2]);
     if (fs.existsSync(tile)) return tile;
     if (!this.tileJobs.has(tile)) {
       const job = (async () => {
         await fs.promises.mkdir(cache, { recursive: true });
         // Convert the needed native IMG cells only; never build a second whole-planet copy.
-        const png = NASA.generateTile(dir, pack.ppd, match[2]);
+        const png = pack.format === 'nasa-mola-img'
+          ? driver.generateTile(dir, match[2])
+          : driver.generateTile(dir, pack.ppd, match[2]);
         const partial = tile + '.' + process.pid + '.partial';
         try {
           await fs.promises.writeFile(partial, png);
@@ -155,8 +167,10 @@ class PackStore {
     const destination = path.join(this.root, pack.id);
     try {
       if (fs.existsSync(destination)) throw new Error('Destination already exists');
-      await NASA.install({ ppd: pack.ppd, staging, signal: controller.signal, progress, report });
-      if (!NASA.complete(staging, pack.ppd)) throw new Error('Dataset verification failed');
+      const driver = rasterDriver(pack);
+      if (!driver) throw new Error('Unknown NASA terrain format');
+      await driver.install({ ppd: pack.ppd, staging, signal: controller.signal, progress, report });
+      if (!driver.complete(staging, pack.ppd)) throw new Error('Dataset verification failed');
       fs.renameSync(staging, destination);
       this.installed.add(pack.id);
       this.save();
@@ -172,7 +186,7 @@ class PackStore {
   }
   async download(id) {
     const pack = this.catalogPack(id);
-    if (pack && pack.status === 'published' && pack.format === 'nasa-pds-img') {
+    if (pack && pack.status === 'published' && rasterDriver(pack)) {
       return this.downloadNasa(pack);
     }
     if (!pack || pack.status !== 'published' || !httpsUrl(pack.manifestUrl) ||

@@ -632,8 +632,8 @@ function initTerrainDataManager() {
       list.appendChild(make('div', built.name + ' · ' + built.w + ' × ' + built.h +
         ' · ' + format(built.bytes) + ' compressed · Included', 'tp-data-row'));
     }
-    list.appendChild(make('h3', 'Optional whole-planet downloads', 'h6 mt-3'));
-    list.appendChild(make('p', 'Moon upgrades download original LOLA IMG elevation files from NASA PDS. These are multi-gigabyte downloads; the app converts needed tiles locally on demand.', 'tp-data-muted'));
+    list.appendChild(make('h3', 'Optional planetary downloads', 'h6 mt-3'));
+    list.appendChild(make('p', 'Moon LOLA and Mars MOLA beta source data come directly from NASA PDS. Downloaded native IMG files are kept offline; only the elevation tiles you use are converted locally. Mars is a first integration test, not yet verified end-to-end on Windows.', 'tp-data-muted'));
     const installed = new Set(s.installed.map(p => p.id));
     for (const pack of s.catalog) {
       const row = make('div', '', 'tp-data-row');
@@ -641,7 +641,7 @@ function initTerrainDataManager() {
       details.appendChild(make('strong', pack.name));
       details.appendChild(make('div', pack.note || pack.body, 'tp-data-muted'));
       if (pack.downloadBytes) details.appendChild(make('div',
-        'Original NASA download: ' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
+        'NASA download: ' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
       row.appendChild(details);
       const button = make('button', installed.has(pack.id) ? 'Remove' :
         pack.status === 'published' ? 'Download' : 'Planned', 'btn btn-sm btn-tp');
