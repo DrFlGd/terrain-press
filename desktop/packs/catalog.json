@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "builtIn": [
+    {
+      "body": "moon",
+      "name": "Moon",
+      "w": 8192,
+      "h": 4096,
+      "bytes": 31697854
+    },
+    {
+      "body": "mars",
+      "name": "Mars",
+      "w": 8192,
+      "h": 4096,
+      "bytes": 24176978
+    },
+    {
+      "body": "mercury",
+      "name": "Mercury",
+      "w": 10240,
+      "h": 5120,
+      "bytes": 35255162
+    },
+    {
+      "body": "venus",
+      "name": "Venus",
+      "w": 8192,
+      "h": 4096,
+      "bytes": 25923780
+    },
+    {
+      "body": "ceres",
+      "name": "Ceres",
+      "w": 8192,
+      "h": 4096,
+      "bytes": 20622412
+    },
+    {
+      "body": "vesta",
+      "name": "Vesta",
+      "w": 8192,
+      "h": 4096,
+      "bytes": 18562608
+    },
+    {
+      "body": "pluto",
+      "name": "Pluto",
+      "w": 8192,
+      "h": 4096,
+      "bytes": 15197304
+    }
+  ],
+  "packs": [
+    {
+      "id": "moon-lola-128",
+      "body": "moon",
+      "name": "LOLA LDEM 128 px/degree",
+      "w": 46080,
+      "h": 23040,
+      "tile": 1024,
+      "status": "planned",
+      "note": "About 237 m/pixel at the equator; dataset conversion and hosting required."
+    },
+    {
+      "id": "moon-lola-256",
+      "body": "moon",
+      "name": "LOLA LDEM 256 px/degree",
+      "w": 92160,
+      "h": 46080,
+      "tile": 1024,
+      "status": "planned",
+      "note": "About 118 m/pixel at the equator; verify coverage and fill provenance."
+    },
+    {
+      "id": "moon-lola-512",
+      "body": "moon",
+      "name": "LOLA LDEM 512 px/degree",
+      "w": 184320,
+      "h": 92160,
+      "tile": 1024,
+      "status": "planned",
+      "note": "About 59 m/pixel at the equator; requires tiled multi-GB distribution."
+    }
+  ]
+}
