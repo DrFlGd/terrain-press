@@ -592,6 +592,101 @@
     return { cells, cellArea: a * a, cellW: a, cellH: a, cols: 1, rows: 1 };
   }
 
+
+  // ---------- Hex Grid: true edge-to-edge regular hex tessellation ----------
+  // 'edge' and 'alternating' are regular hex-shaped boards with cropped edge
+  // hexes; 'round' and 'square' use ONLY complete regular hexagons.
+  // Requested piece count is approximate where complete rings/rows are needed.
+  function hexGridCells(W, wanted, layout = 'edge') {
+    if (!Number.isFinite(W) || W <= 0) throw new Error('Invalid hex grid width');
+    if (!['edge', 'alternating', 'round', 'square'].includes(layout))
+      throw new Error('Unknown hex grid layout');
+    const target = Math.max(7, Math.min(150, Math.round(Number(wanted) || 19)));
+    const root3 = Math.sqrt(3);
+    const ring = (x, y, side) => {
+      const out = [];
+      for (let k = 0; k < 6; k++) {
+        const a = k * Math.PI / 3;
+        out.push([x + side * Math.cos(a), y + side * Math.sin(a)]);
+      }
+      return out;
+    };
+    const bounds = paths => {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const poly of paths) for (const [x,y] of poly) {
+        x0 = Math.min(x0,x); x1 = Math.max(x1,x);
+        y0 = Math.min(y0,y); y1 = Math.max(y1,y);
+      }
+      return { minX:x0,maxX:x1,minY:y0,maxY:y1,width:x1-x0,depth:y1-y0 };
+    };
+    const total = k => 1 + 3 * k * (k + 1);
+    let paths, cells, side;
+    if (layout === 'round') {
+      let rings = 1;
+      for (let r=2; r<=7; r++) if (Math.abs(total(r)-target) < Math.abs(total(rings)-target)) rings=r;
+      side = W/(3 * rings + 2);
+      cells = [];
+      for (let q=-rings;q<=rings;q++) for (let r=-rings;r<=rings;r++) {
+        if (Math.abs(q+r)>rings) continue;
+        const x = 1.5 * side * q, y = root3 * side * (r + q/2);
+        cells.push({i:q,j:r,pts:ring(x,y,side),partial:false});
+      }
+    } else if (layout === 'square') {
+      const cols = Math.max(2,Math.round(Math.sqrt(target)));
+      const rows = Math.max(2,Math.round(target / cols));
+      const spanX = 1.5 * (cols - 1) + 2, spanY = root3 * (rows + 0.5);
+      side = W / Math.max(spanX,spanY);
+      cells = [];
+      for (let col=0; col<cols;col++) for (let row=0;row<rows;row++) {
+        const x = 1.5*side*(col-(cols-1)/2);
+        const y = root3*side*(row-(rows-1)/2+(col%2 ? 0.25 : -0.25));
+        cells.push({i:col,j:row,pts:ring(x,y,side),partial:false});
+      }
+    } else {
+      const outer = ccw(shapeOutline('hexagon',W));
+      const board = [outer], fullArea = s => 1.5 * root3 * s * s;
+      const build = s => {
+        const result = [];
+        const qMax = Math.ceil((W/2 + s)/(1.5*s)) + 1;
+        const rMax = Math.ceil(W/(root3*s)) + qMax;
+        const shiftX = layout==='alternating' ? s * 0.75 : 0;
+        const shiftY = layout==='alternating' ? root3*s * 0.34 : 0;
+        for (let q=-qMax;q<=qMax;q++) for (let r=-rMax;r<=rMax;r++) {
+          const x = 1.5*s*q+shiftX, y = root3*s*(r+q/2)+shiftY;
+          if (Math.abs(x)>W/2+s || Math.abs(y)>W*root3/4+s) continue;
+          const intersections = boolOp(CL.ClipType.ctIntersection,[ring(x,y,s)],board);
+          for (const shape of intersections) {
+            const ar = exArea(shape);
+            if (ar <= 1e-5) continue;
+            result.push({i:q,j:r,pts:shape.outer,partial:ar < 0.985*fullArea(s)});
+          }
+        }
+        return result;
+      };
+      side = W/(2*Math.sqrt(target));
+      let best = null, score = Infinity;
+      for (let k=0;k<7;k++) {
+        const candidate = build(side);
+        const cost = Math.abs(candidate.length-target);
+        if (candidate.length && cost < score) {
+          best = {side,cells:candidate};score=cost;
+        }
+        if (cost===0) break;
+        side *= Math.max(0.78,Math.min(1.22,Math.sqrt(Math.max(1,candidate.length)/target)));
+      }
+      side = best.side; cells = best.cells;
+    }
+    if (!cells.length) throw new Error('Hex grid produced no printable cells');
+    // Whole-hex clusters have a stepped external silhouette. Union the actual
+    // tiles rather than clipping them to a hex/square and creating half-pieces.
+    const clipped = layout==='edge' || layout==='alternating';
+    const outline = clipped ? shapeOutline('hexagon',W)
+      : exPolysFrom(cells.map(c=>c.pts)).sort((a,b)=>exArea(b)-exArea(a))[0].outer;
+    const bb = bounds(cells.map(c=>c.pts));
+    return {cells,outline,clip:clipped,side,cellW:2*side,cellH:root3*side,
+      width:bb.width,depth:bb.depth,target,actual:cells.length,layout};
+  }
+
   // ---------- text ----------
   function exPolysEO(paths) { // even-odd: right for any outline direction (TrueType or CFF)
     const c = new CL.Clipper(); c.AddPaths(paths.map(toCL), CL.PolyType.ptSubject, true);
@@ -645,8 +740,10 @@
   // hf: {heights Float32Array, N, sizeKm}
   function buildModel(p, hf, font) {
     const W = p.widthMm, N = hf.N, sizeKm = hf.sizeKm;
-    const outline = shapeOutline(p.shape, W);
-    const H = p.shape === 'hexagon' ? W * Math.sqrt(3) / 2 : W;
+    const hex = p.shape === 'hexgrid' && p.product === 'puzzle'
+      ? hexGridCells(W, p.pieces, p.hexLayout || 'edge') : null;
+    const outline = hex ? hex.outline : shapeOutline(p.shape, W);
+    const H = hex ? hex.depth : p.shape === 'hexagon' ? W * Math.sqrt(3) / 2 : W;
     const mmPerM = W / (sizeKm * 1000);
     // reference height = lowest point inside outline
     let hMin = Infinity, hMax = -Infinity;
@@ -679,11 +776,36 @@
     const terrain = [];
     if (p.product === 'puzzle') {
       const inner = offset([outline], -p.gapMm / 2, join);
-      const jc = p.shape === 'square' ? jigsawCells(W, H, p.pieces, p.seed) : radialCells(p.shape === 'circle' ? 'circle' : 'hex', W, p.pieces, p.seed), { cells, cellArea } = jc;
+      const jc = hex || (p.shape === 'square' ? jigsawCells(W, H, p.pieces, p.seed) :
+        radialCells(p.shape === 'circle' ? 'circle' : 'hex', W, p.pieces, p.seed));
+      const { cells, cellArea } = hex ? {cells:hex.cells,cellArea:1.5*Math.sqrt(3)*hex.side**2} : jc;
       grid = jc;
       let pieces = [];
       for (const c of cells) for (const e of boolOp(CL.ClipType.ctIntersection, [c.pts], inner)) pieces.push({ ex: e, a: exArea(e), cell: c });
       // merge slivers into a neighbour
+      if (hex) {
+        // Keep complete-hex clusters complete; shrink each tile independently.
+        // Clipped layouts use the same -gap/2 outer inset as existing jigsaws.
+        pieces = [];
+        const edgeInset = hex.clip ? offset([outline],-p.gapMm/2,'miter') : null;
+        for (const c of cells) {
+          const shapes = hex.clip
+            ? boolOp(CL.ClipType.ctIntersection,[c.pts],edgeInset)
+            : [{outer:c.pts,holes:[]}];
+          for (const ex of shapes) {
+            const shr = exPolysFrom(offset([ex.outer,...ex.holes],-p.gapMm/2,'miter'));
+            for (const s of shr) {
+              const ring = densify(s.outer,Math.max(0.6,step*1.5));
+              const tris=[];
+              const flat = hex.clip && c.partial && p.hexEdge === 'flat';
+              solid({outer:ring,holes:s.holes},flat ? floorZ+base : topZ,floorZ,step,tris);
+              if (tris.length) parts.push({name:(c.partial?'Edge hex ':'Hex ')+(parts.length+1),
+                role:'terrain',tris:new Float32Array(tris),cell:[c.i,c.j],ring:s.outer,
+                partial:c.partial,flat});
+            }
+          }
+        }
+      } else {
       pieces.sort((a, b) => a.a - b.a);
       const big = pieces.filter(q => q.a >= cellArea * 0.35), small = pieces.filter(q => q.a < cellArea * 0.35);
       for (const s of small) {
@@ -734,6 +856,7 @@
           solid({ outer: densify(fix[0].outer, Math.max(0.6, step * 1.5)), holes: fix[0].holes }, topZ, floorZ, step, tris);
         }
         parts.push({ name: `Piece ${++n}`, role: 'terrain', tris: new Float32Array(tris), cell: [q.cell.i, q.cell.j], ring });
+      }
       }
     } else {
       const tOut = p.separate ? densify(offset([outline], -p.gapMm / 2, join)[0], Math.max(0.6, step * 1.5)) : outlineD;
@@ -792,7 +915,8 @@
         } else parts.push({ name: 'Lettering', role: 'text', tris: new Float32Array(tt) });
       }
     }
-    return { parts, hMin, hMax, reliefMm, mmPerM, frameTop, grid, floorZ };
+    return { parts, hMin, hMax, reliefMm, mmPerM, frameTop, grid, floorZ,
+      widthMm:hex ? hex.width : W, depthMm:H, actualPieces:hex ? parts.filter(o=>o.cell).length : null };
   }
 
   // Move puzzle pieces apart so every tab clears its socket. Returns new parts and the layout size.
@@ -939,5 +1063,5 @@
     return out;
   }
 
-  root.TPCore = { makeStore, meshPlan, buildModel, spreadPieces, spreadPreview, stl, model3mf, zip, weld, shapeOutline };
+  root.TPCore = { makeStore, meshPlan, buildModel, hexGridCells, spreadPieces, spreadPreview, stl, model3mf, zip, weld, shapeOutline };
 })(typeof self !== 'undefined' ? self : globalThis);
