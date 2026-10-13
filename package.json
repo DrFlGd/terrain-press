@@ -52,6 +52,7 @@
     }
   },
   "dependencies": {
-    "pngjs": "7.0.0"
+    "pngjs": "7.0.0",
+    "geotiff": "3.0.5"
   }
 }

@@ -103,6 +103,43 @@
       "format": "nasa-mola-img",
       "ppd": 64,
       "downloadBytes": 530841600
+    },
+    {
+      "id": "mercury-messenger-64",
+      "body": "mercury",
+      "name": "MESSENGER USGS Global DEM 64 px/degree · beta",
+      "w": 23040,
+      "h": 11520,
+      "tile": 1024,
+      "status": "published",
+      "format": "usgs-geotiff",
+      "downloadBytes": 506000000,
+      "notes": "665 m/pixel at equator · NASA MESSENGER/USGS stereo topography GeoTIFF · beta",
+      "note": "665 m/pixel at equator · USGS elevation GeoTIFF (~506 MB) · beta"
+    },
+    {
+      "id": "ceres-dawn-60",
+      "body": "ceres",
+      "name": "Dawn Ceres HAMO DTM 60 px/degree · beta",
+      "w": 21600,
+      "h": 10800,
+      "tile": 1024,
+      "status": "published",
+      "format": "usgs-geotiff",
+      "downloadBytes": 446000000,
+      "note": "137 m/pixel · ~98% observed; shadows interpolated · USGS GeoTIFF (~446 MB) · beta"
+    },
+    {
+      "id": "vesta-dawn-48",
+      "body": "vesta",
+      "name": "Dawn Vesta HAMO DTM 48 px/degree · beta",
+      "w": 17280,
+      "h": 8640,
+      "tile": 1024,
+      "status": "published",
+      "format": "usgs-geotiff",
+      "downloadBytes": 570000000,
+      "note": "93 m/pixel · ~95% stereo coverage, Claudia Double Prime longitude · USGS GeoTIFF (~570 MB) · beta"
     }
   ]
 }
