@@ -24,7 +24,13 @@ test('Hex Grid is a separate overall shape with all four tessellation choices',(
   assert.match(app,/hexEdge: \$\('hex-edge'\)\.value/);
   assert.match(app,/state\.shape === 'hexgrid' \? 'none' : radio\('border'\)/);
   assert.match(app,/\$\('p-puzzle'\)\.checked = true/);
-  assert.match(app,/\$\('pieces'\)\.max = hex \? '150' : '12'/);
+  assert.match(html,/id="hex-rings"/);
+  assert.match(html,/id="hex-across"/);
+  assert.match(html,/id="hex-square-wrap"/);
+  assert.match(app,/hexAcross: Math\.round/);
+  assert.match(app,/hexRings: \+\$\('hex-rings'\)\.value/);
+  assert.match(app,/\$\('pieces-wrap'\)\.hidden = state\.product !== 'puzzle' \|\| hex/);
+
 });
 test('size unlock is opt-in with exact widths and a 5000mm cap',()=>{
   assert.match(html,/id="width" min="60" max="1000"/);
@@ -48,28 +54,40 @@ test('round whole hex clusters obey actual hex ring count and tile area',()=>{
     assert.ok(g.width<=460.0001);
   }
 });
-test('square whole hex clusters are gapless regular hexagon tessellations',()=>{
-  for(const count of [9,25,40,100,150]) {
-    const g=C.hexGridCells(460,count,'square');
-    assert.equal(g.cells.length,Math.round(Math.sqrt(count))*Math.max(2,Math.round(count/Math.round(Math.sqrt(count)))));
+test('square whole hex clusters use exactly N columns and N rows',()=>{
+  for(const n of [2,3,5,8,10,12]) {
+    const g=C.hexGridCells(460,n*n,'square',0.3,n);
+    assert.equal(g.cells.length,n*n);
+    assert.equal(g.across,n);
+    assert.equal(new Set(g.cells.map(c=>c.i)).size,n);
+    assert.equal(new Set(g.cells.map(c=>c.j)).size,n);
     assert.equal(g.cells.every(c=>c.pts.length===6&&!c.partial),true);
-    const total=g.cells.reduce((n,c)=>n+geomArea(c.pts),0);
+    const total=g.cells.reduce((sum,c)=>sum+geomArea(c.pts),0);
     assert.ok(Math.abs(total/g.cells.length-fullArea(g.side))<1e-5);
     assert.ok(g.width<=460.001 && g.depth<=460.001);
-    assert.ok(g.outline.length>=6,'union creates a single board boundary');
+    assert.ok(g.outline.length>=6,'union creates one stepped outer boundary');
   }
 });
-test('hex outline with cropped edge pieces has full hexes and fractional border hexes',()=>{
-  for(const layout of ['edge','alternating']) {
-    const g=C.hexGridCells(460,37,layout);
+test('clipped hex board uses lattice-locked rings with no slivers or gaps',()=>{
+  for(const layout of ['edge','alternating'])for(const rings of [1,2,3,4,5,6]) {
+    const W=460, nominal=1+3*rings*(rings+1);
+    const g=C.hexGridCells(W,nominal,layout,0.3);
     assert.equal(g.clip,true);
-    assert.ok(g.cells.length>10);
-    assert.ok(g.cells.some(c=>c.partial),layout+' must have partial hex borders');
-    assert.ok(g.cells.some(c=>!c.partial),layout+' must have complete interior hexes');
-    assert.equal(g.outline.length,6,'outer shape remains a regular hexagon');
+    assert.equal(g.rings,rings);
+    assert.equal(g.cells.length,nominal,layout+' ring count');
+    assert.ok(g.cells.some(c=>c.partial));
+    assert.ok(g.cells.some(c=>!c.partial));
+    assert.equal(g.outline.length,6);
     assert.ok(g.cells.every(c=>c.pts.length>=3&&c.pts.flat().every(Number.isFinite)));
+    const occupied=g.cells.reduce((sum,c)=>sum+geomArea(c.pts),0);
+    const board=geomArea(g.outline);
+    assert.ok(Math.abs(occupied/board-1)<.0005,
+      layout+' full board coverage '+occupied+'/'+board);
+    const minimum=Math.min(...g.cells.map(c=>geomArea(c.pts)/fullArea(g.side)));
+    assert.ok(minimum>.18,layout+' must avoid slivers (minimum '+minimum+')');
   }
 });
+
 test('sampled hex pieces extrude watertight and support flat/terrain border variants',()=>{
   const N=21,heights=new Float32Array(N*N);
   for (let i=0;i<N;i++) for(let j=0;j<N;j++) heights[i*N+j]=1000 + i*10 + j*5;
@@ -80,8 +98,8 @@ test('sampled hex pieces extrude watertight and support flat/terrain border vari
     pieces:19,gapMm:.3,stepMm:8,seed:12,hexEdge:'terrain'
   };
   for(const layout of ['edge','alternating','round','square']){
-    const m=C.buildModel({...basic,hexLayout:layout},hf,null);
-    const g=C.hexGridCells(120,19,layout);
+    const m=C.buildModel({...basic,hexLayout:layout,hexAcross:layout==='square'?5:null},hf,null);
+    const g=C.hexGridCells(120,19,layout,0.3,layout==='square'?5:null);
     assert.ok(m.parts.length>0);
     const lost=g.cells.filter(c=>!m.parts.some(p=>p.cell[0]===c.i && p.cell[1]===c.j))
       .map(c=>({i:c.i,j:c.j,partial:c.partial,area:geomArea(c.pts)}));
@@ -114,4 +132,16 @@ test('preview and export integrate Hex Grid in existing worker paths',()=>{
   assert.match(worker,/C\.spreadPreview\(model\.parts, model\.grid/);
   assert.match(worker,/C\.spreadPieces\(model\.parts, model\.grid/);
   assert.match(worker,/model\.actualPieces/);
+});
+
+test('a square layout exports exactly N by N printable cells at 460 mm',()=>{
+  const N=11,hf={N,sizeKm:200,heights:new Float32Array(N*N).fill(1200)};
+  for(const n of [2,3,5,7]){
+    const model=C.buildModel({shape:'hexgrid',widthMm:460,product:'puzzle',
+      exag:2,baseMm:2,frameMm:7,rimMm:3,rimAuto:false,back:false,
+      border:'none',pieces:n*n,hexAcross:n,hexLayout:'square',
+      gapMm:0.3,stepMm:35},hf,null);
+    assert.equal(model.parts.length,n*n);
+    assert.ok(model.parts.every(p=>!p.partial&&p.tris.every(Number.isFinite)));
+  }
 });
