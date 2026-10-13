@@ -1026,7 +1026,11 @@ function readmeTemplate(p, slug) {
     ...($('resolution-auto').checked ? ['Smallest printable feature: {{FEATURE}} mm'] : ['Manual spacing overrides printable-feature optimization']),
     'Source raster spacing on print: {{SOURCESTEP}} mm/pixel',
     'Detail planning: {{LIMIT}}', '', 'Files'];
-  if (spread) L.push('  *-pieces-spread — the pieces only, moved apart so no tab sits in its socket. One plate.', `  *-frame — the frame${p.border === 'lettered' ? ' and lettering' : ''}, a second plate.`, '  *-assembled.3mf — everything in place, for reference only.');
+  if (spread) {
+    L.push('  *-pieces-spread — the pieces only, spaced for separate printing on one or more build plates.');
+    if (p.border !== 'none') L.push(`  *-frame — the frame${p.border === 'lettered' ? ' and lettering' : ''}, a separate plate.`);
+    L.push('  *-assembled.3mf — everything in place, for reference only.');
+  }
   else if (p.separate) L.push('  *-1-terrain — the terrain on its own, flat on the plate.', '  *-2-frame — the frame' + (p.border === 'lettered' && p.mergeText ? ' with its lettering' : '') + ', flat on the plate.', '  *-assembled.3mf — both in place, for reference only.');
   else if (p.product === 'puzzle' && back) L.push('  *-pieces — the pieces in their assembled positions, on their own plate.', '  *-tray — the tray' + (p.border === 'lettered' ? ' and lettering' : '') + ', on a second plate.', '  *-assembled.3mf — everything in place, for reference only.');
   else L.push(`  ${slug}.3mf — one object with separate parts; assign a filament to each part in your slicer.`, '  *-all.stl — everything in one file, single colour.', '  The other STLs are the same parts on their own, positioned to load together.');

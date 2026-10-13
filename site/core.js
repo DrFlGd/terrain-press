@@ -623,7 +623,7 @@
     let paths, cells, side;
     if (layout === 'round') {
       let rings = 1;
-      for (let r=2; r<=7; r++) if (Math.abs(total(r)-target) < Math.abs(total(rings)-target)) rings=r;
+      for (let r=2; r<=6; r++) if (Math.abs(total(r)-target) < Math.abs(total(rings)-target)) rings=r;
       side = W/(3 * rings + 2);
       cells = [];
       for (let q=-rings;q<=rings;q++) for (let r=-rings;r<=rings;r++) {
@@ -781,7 +781,9 @@
       const { cells, cellArea } = hex ? {cells:hex.cells,cellArea:1.5*Math.sqrt(3)*hex.side**2} : jc;
       grid = jc;
       let pieces = [];
-      for (const c of cells) for (const e of boolOp(CL.ClipType.ctIntersection, [c.pts], inner)) pieces.push({ ex: e, a: exArea(e), cell: c });
+      if (!hex) for (const c of cells)
+        for (const e of boolOp(CL.ClipType.ctIntersection, [c.pts], inner))
+          pieces.push({ ex: e, a: exArea(e), cell: c });
       // merge slivers into a neighbour
       if (hex) {
         // Keep complete-hex clusters complete; shrink each tile independently.
