@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.4.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.5.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.4.0-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.5.0-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,4 +57,12 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.4.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.5.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+
+## Automatic terrain sampling and advanced ceilings (v1.5.0)
+
+**Print → Terrain sampling limit** now offers **Auto (recommended)**, 721 × 721, 1,441 × 1,441 and 2,881 × 2,881. This is separate from the **Export detail** choice (Standard, Fine, Ultra or Auto). The Auto sampling limit estimates only the number of elevation samples useful for the selected real DEM resolution, chosen real-world region width, printed model width and smallest printable feature. For example, on a 100-mm print of a 100-km lunar region, a 59-m DEM and a 0.4-mm minimum feature need about 501 × 501 height samples; the application need not generate 2,881 × 2,881. On a 1,000-mm print of the same region, the same constraints warrant about 2,544 × 2,544.
+
+The **Smallest printable feature** selector offers 0.2, 0.4 (default), 0.6, 0.8 and 1.0 mm. This is an approximation of usable XY detail, **not the printer's layer height**; adjust it to your process/nozzle/printer settings. Auto uses 1.5 samples per DEM pixel and 2 per printable feature, taking the coarser required spacing. In automatic mode, fixed detail presets also avoid excessive tessellation where the native terrain data or printer cannot benefit. Manual ceilings bypass this optimization: they preserve the selected fixed spacing as far as their numeric limit permits.
+
+The Print panel shows the planned sample grid and effective model spacing before export. The generated ZIP README records the selected ceiling, source sample size on the model, printable feature value, actual grid and cap status. Exports and high-detail previews with more than 1,441 samples per side warn about substantial CPU/RAM use; they may still take a long time or exhaust memory on modest systems. The hard maximum remains 2,881 × 2,881. This is a **uniform sampled grid**, not spatially adaptive triangulation, and the printed detail ultimately depends on the DEM quality and real printer resolution.

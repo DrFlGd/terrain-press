@@ -20,25 +20,27 @@ async function decode(path) {
   return out;
 }
 
+// Probe the coordinate-specific DEM cheaply, before allocating large grids.
+function planHeights(q) {
+  const probeN = Math.min(201, Math.round(q.widthMm / 0.5) + 1);
+  const source = store.chooseSource(q.world, q.lat, q.lon, q.size, probeN);
+  const plan = C.meshPlan(q.widthMm, q.size, source.pxKm, q.step,
+    q.samplingLimit === undefined ? 721 : q.samplingLimit, q.featureMm ?? 0.4);
+  return { plan, source };
+}
 async function heights(q, onProgress) {
-  // Resolve the source for these coordinates before choosing the printable grid.
-  // Source-matched mode uses a standard-density footprint to decide between a
-  // bundled landmark patch and the finest installed global raster.
-  const probeN = Math.min(721, Math.round(q.widthMm / 0.5) + 1);
-  const probe = store.chooseSource(q.world, q.lat, q.lon, q.size, probeN);
-  const plan = C.meshPlan(q.widthMm, q.size, probe.pxKm, q.step);
+  const { plan } = planHeights(q);
   const s = await store.sample(q.world, q.lat, q.lon, q.size, plan.N, onProgress);
   return { heights: s.heights, N: plan.N, sizeKm: q.size, source: s.source,
-    stepMm: plan.stepMm, limited: plan.limited };
+    stepMm: plan.stepMm, limited: plan.limited, plan };
 }
-
 const cache = { key: '', hf: null };
 async function getHF(q, id) {
-  const key = [q.world, q.lat, q.lon, q.size, q.widthMm, q.step].join('|');
+  const key = [q.world, q.lat, q.lon, q.size, q.widthMm,
+    q.step, q.samplingLimit, q.featureMm].join('|');
   if (cache.key !== key) {
-    // Keep an in-flight query out of the cache until successful; cancelled and
-    // failed samples must be retried, not served from a stale heightfield.
-    const hf = await heights(q, (d, n) => n > 1 && self.postMessage({ type: 'progress', id, text: `Loading elevation · ${d}/${n}` }));
+    const hf = await heights(q, (d, n) => n > 1 &&
+      self.postMessage({ type: 'progress', id, text: 'Loading elevation · ' + d + '/' + n }));
     cache.key = key; cache.hf = hf;
   }
   return cache.hf;
@@ -154,6 +156,12 @@ self.onmessage = async e => {
   try {
     if (m.type === 'init') { meta = m.meta; store = C.makeStore(meta, p => decode(p)); self.postMessage({ type: 'ready' }); return; }
     if (m.type === 'font') { fonts[m.id] = m.data; return; }
+    if (m.type === 'plan') {
+      const { plan, source } = planHeights(m.q);
+      self.postMessage({ type: 'planned', id: m.id, plan,
+        source: { pxKm: source.pxKm, label: source.label, kind: source.kind } });
+      return;
+    }
     if (m.type === 'build') {
       const hf = await getHF(m.q, m.id);
       self.postMessage({ type: 'progress', id: m.id, text: 'Building mesh…' });
@@ -168,7 +176,8 @@ self.onmessage = async e => {
         model.parts = [...sp.parts.map(o => mv(o, -cx)), ...rest.map(o => mv(o, shift - cx))];
       }
       const { parts, transfer } = pack(model, true);
-      self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label } }, transfer);
+      self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited, cap: hf.plan.cap,
+        detailOptimized: hf.plan.detailOptimized }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label } }, transfer);
       return;
     }
     if (m.type === 'export') {
@@ -183,7 +192,15 @@ self.onmessage = async e => {
         .replace('{{PX}}', (hf.source.pxKm * 1000).toFixed(0))
         .replace('{{SOURCE}}', hf.source.label).replace('{{STEP}}', hf.stepMm.toFixed(3))
         .replaceAll('{{GRID}}', String(hf.N))
-        .replace('{{LIMIT}}', hf.limited ? 'The 721 x 721 sample limit was reached; some source detail may be lost.' : 'Within the sampling limit.');
+        .replace('{{LIMIT}}', hf.limited
+          ? 'Sampling ceiling ' + hf.plan.cap + ' x ' + hf.plan.cap + ' was reached; some requested detail may be lost.'
+          : hf.plan.detailOptimized
+            ? 'Auto removed redundant detail beyond the DEM / selected printable feature.'
+            : 'Requested mesh detail is within the sampling limit.')
+        .replace('{{CAP}}', String(hf.plan.cap))
+        .replace('{{FEATURE}}', hf.plan.featureMm.toFixed(2))
+        .replace('{{SOURCESTEP}}', hf.plan.sourceStepMm.toFixed(3))
+        .replace('{{SAMPLEMODE}}', String(hf.plan.samplingLimit));
       const z = await exportFiles(model, printParams, { ...m.x, readme });
       self.postMessage({ type: 'exported', id: m.id, zip: z }, [z.buffer]);
     }

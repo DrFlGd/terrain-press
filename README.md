@@ -71,7 +71,7 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.4.0) (the **Terrain-Press-1.4.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.5.0) (the **Terrain-Press-1.5.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
 
 ## Hybrid dataset roadmap (Windows)
 
@@ -84,3 +84,7 @@ The **Print → Export detail → Auto** option now plans a denser STL/3MF grid 
 ### High-detail preview and 1,000-mm puzzles (v1.4.0)
 
 Choose **Print → High-detail preview (match export)** to render the actual detail/heightfield used by the selected export preset before creating the 3MF. The switch is off by default to preserve smooth editing. The preview displays the resulting sample grid, spacing and cap status. The terrain width slider now supports **up to 1,000 mm**, and the 3D camera/virtual build plate scales to fit large puzzle models. Maximum terrain sampling remains **721 × 721**; high-resolution elevation data will not force unbounded memory use, and very large puzzles may still need to be arranged as individual pieces for printing.
+
+### Configurable elevation sampling (v1.5.0)
+
+The Print panel now provides **Terrain sampling limit: Auto / 721² / 1,441² / 2,881²** and a **Smallest printable feature** selector (0.2–1.0 mm, default 0.4 mm). With **Sampling Limit → Auto**, the elevation sampler derives a useful sampling interval from the best available DEM's pixel spacing projected onto the print (about 1.5 interpolation samples per raster pixel) and the physical feature size the printer can resolve (about 2 height samples per feature). It selects the less demanding spacing and does not generate redundant geometry beyond either bound. A live readout estimates the actual grid, source spacing on the model and whether the limit is reached. Users who need additional fidelity may select explicit ceilings, though these override the waste-avoiding Auto rule and can demand much more memory. **The 2,881² ceiling is a practical bound on heightfield sampling, not a guarantee of slicer compatibility or of recorded DEM accuracy.** Automatic sampling is still uniformly spaced; curvature-adaptive triangulation remains a future roadmap phase.

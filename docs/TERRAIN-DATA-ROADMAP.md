@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** v1.4.0 adds optional export-matched high-detail preview and up to 1,000-mm model width, with the 721 × 721 grid cap preserved. True spatial adaptive meshing remains a future geometry milestone. Complete 2 GB+ direct NASA-transfer validation is still outstanding.
+**Status:** v1.5.0 introduces user-configurable terrain sampling budgets (Auto / 721 / 1,441 / 2,881) and printer-/DEM-aware Auto optimization. True spatial adaptive meshing remains a future geometry milestone. Complete 2 GB+ direct NASA-transfer validation is still outstanding.
 
 ## Product objective
 
@@ -67,7 +67,9 @@ Sources:
 - [ ] Support changing/migrating data directory after installs, optional multiple drives and disk quota management.
 - [x] Add an Auto source-matched export grid that uses the highest available DEM at each selected coordinate and flags the 721 × 721 cap.
 - [x] Add an opt-in high-detail 3D preview using the **same export mesh quality** and actual coordinate-specific DEM source; maintain fast previews by default.
-- [x] Increase model width to **1,000 mm** and scale the virtual camera/plate to large puzzles while keeping the 721 × 721 sample limit.
+- [x] Increase model width to **1,000 mm** and scale the virtual camera/plate to large puzzles.
+- [x] Make terrain sampling ceiling configurable (721 / 1,441 / 2,881) with an Auto mode limited by the source DEM and model's smallest printable feature.
+- [x] Add user-selectable effective printer feature size (0.2–1.0 mm), preflight mesh estimates, and heavy-mesh warnings.
 - [ ] Benchmark high-detail previews and 1,000-mm multi-piece puzzles on representative Windows hardware; profile large export ZIP and slicer import performance.
 - [x] Fix PNG-vs-WebP source lookup when switching 83 m landmark → downloaded NASA global raster → landmark, with automated regression coverage.
 - [ ] Implement true **spatially adaptive triangle meshing** to spend triangles on rough terrain rather than uniform grids.
@@ -115,7 +117,7 @@ The desktop app fetches original LOLA LDEM_128, 256 (4 segments), and 512 (16 se
 
 ## Next geometry milestone — Adaptive mesh by terrain error
 
-The v1.3.0 **Auto** option is an immediate, safe stepping stone: it matches *uniform heightfield grid density* to the selected source at the requested coordinates, maintaining a Standard-quality minimum. It does **not** yet vary triangle sizes across the terrain, and the 721 × 721 heightfield cap still applies.
+The v1.3.0 **Auto** option is an immediate, safe stepping stone: it matches *uniform heightfield grid density* to the selected source at the requested coordinates, maintaining a Standard-quality minimum. It does **not** yet vary triangle sizes across the terrain, and the user-selectable ceiling (up to 2,881 × 2,881) applies; automatic limiting avoids redundant detail.
 
 For genuine spatial adaptivity, the next implementation should:
 
@@ -128,3 +130,11 @@ For genuine spatial adaptivity, the next implementation should:
 7. Leave Standard/Fine/Ultra fixed-grid options for predictable performance and reproducible legacy prints.
 
 **Acceptance:** A 512 px/degree print should resolve all DEM-supported crater detail at the chosen print scale without needlessly subdividing smooth terrain, should never silently fall back to a lower local source, and should be watertight in common slicers.
+
+## v1.5.0: Automatic sampling policy and guardrails
+
+- Derive DEM sample spacing on the physical print as `sourcePxKm * widthMm / regionKm`. Approximate useful height grid spacing as the **larger** of that number divided by 1.5 and the user-selected smallest printable feature divided by 2. At that spacing, a uniform mesh approximates the DEM without using far more vertices than a printer can meaningfully resolve.
+- Select the smaller of the export-detail requested node count, the useful node count, and the 2,881 hard maximum for Sampling Limit = **Auto**. Export detail = **Auto** uses the useful count directly; Standard/Fine/Ultra may reduce redundant samples in automatic-limit mode.
+- Explicit limits 721, 1,441 and 2,881 preserve requested detail until the chosen ceiling, even if this oversamples DEM or printer; users can choose precision/quality trade-offs themselves.
+- The fast preview continues to use the legacy 721 ceiling at 0.7-mm target spacing. High-detail preview uses exactly the export planner. Plans are estimated before export; both preview and export warn when more than 1,441 nodes per side are requested.
+- **Safety/performance limitations:** 2,881² is 8.3 million height samples, with multiple temporary arrays plus potentially large mesh/triangle buffers and STL/3MF output. Real CPU/RAM/slicer limits have not been benchmarked and may be considerably lower; consider adaptive mesh and memory-budget settings next. Printable-feature assumptions are approximate and should not be mistaken for dataset measurement confidence.

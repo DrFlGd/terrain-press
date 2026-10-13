@@ -42,8 +42,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.4.0
-          name: Terrain Press Desktop v1.4.0
+          tag_name: desktop-v1.5.0
+          name: Terrain Press Desktop v1.5.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -51,7 +51,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.4.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.5.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -61,6 +61,9 @@ jobs:
             - NEW: Optional Auto (source-matched) 3MF/STL detail scales the export sampling to installed terrain resolution, capped at 721 x 721; full spatial adaptive triangulation remains on the roadmap.
             - NEW: High-detail preview toggle renders the same mesh sampling as the selected export setting (including Auto), with a fast-preview default.
             - NEW: Terrain model width supports 60 to 1000 mm; the virtual preview plate and camera scale for oversized puzzles.
+            - NEW: Configurable 721 / 1441 / 2881 point sampling ceilings and an automatic DEM/print-feature-aware density planner.
+            - NEW: Configurable smallest printable feature size (default 0.4 mm), live export grid estimate, and large-mesh warnings.
+            - Auto avoids redundant geometry; manual ceilings allow advanced users to explicitly request more detail.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             Source is provided in this repository under AGPL-3.0-or-later.
