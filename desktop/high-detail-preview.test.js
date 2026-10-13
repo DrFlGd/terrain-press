@@ -63,7 +63,7 @@ test('Automatic and Advanced modes preserve the planner contract', () => {
   assert.ok(match, 'query helper must remain separately testable');
   const state = { world: 'moon', lat: 0, lon: 25, size: 100 };
   const controls = {
-    width: { value: '1000' },
+    'width-num': { value: '1000' },
     'resolution-auto': { checked: true },
     'sampling-limit': { value: '1441' },
     'min-feature': { value: '0.4' }
@@ -81,6 +81,9 @@ test('Automatic and Advanced modes preserve the planner contract', () => {
   assert.equal(manual.step, 0.35);
   assert.equal(manual.samplingLimit, 1441);
   assert.equal(query(0.7, true).samplingLimit, 721, 'fast preview always uses legacy cap');
+  controls['width-num'].value = '463';
+  assert.equal(query('source').widthMm, 463, 'typed exact width drives source-aware mesh planning');
+  controls['width-num'].value = '1000';
   assert.match(app, /state\.detail = automaticResolution \? 'source' : \+radio\('detail'\);/);
   assert.match(app, /\$\('auto-options'\)\.hidden = !automaticResolution;/);
   assert.match(app, /\$\('advanced-options'\)\.hidden = automaticResolution;/);

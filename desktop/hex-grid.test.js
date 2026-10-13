@@ -39,7 +39,7 @@ test('size unlock is opt-in with exact widths and a 5000mm cap',()=>{
   assert.match(app,/const max = \$\('unlock-size'\)\.checked \? 5000 : 1000;/);
   assert.match(app,/p\.widthMm > 1000 && !confirm/);
   assert.match(app,/\$\('width'\)\.max = \$\('width-num'\)\.max = String\(max\)/);
-  assert.match(app,/widthMm: \+\$\('width'\)\.value/);
+  assert.match(app,/widthMm: \+\$\('width-num'\)\.value/);
 });
 test('round whole hex clusters obey actual hex ring count and tile area',()=>{
   for(const [target,expected] of [[7,7],[19,19],[37,37],[60,61],[100,91],[150,127]]){
