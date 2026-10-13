@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "body": "io",
+  "phase": "source-validation",
+  "installable": false,
+  "warning": "Research records only. Neither a downloadable Io pack nor a selectable Io world is available yet.",
+  "sources": [
+    {
+      "id": "io-white-2014-global",
+      "name": "White et al. (2014) Voyager/Galileo stereo mosaic",
+      "kind": "partial-global-stereo-dem",
+      "format": "ISIS3",
+      "fileName": "IoDEM.cub",
+      "sourceUrl": "https://agupubs.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1002%2F2013JE004591&file=IoDEM.cub",
+      "landingPage": "https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2013JE004591",
+      "claimedCoveragePercent": 75,
+      "reportedSizeMB": 252.3,
+      "reportedInputResolutionKm": [
+        0.14,
+        4.08
+      ],
+      "observedDownloadStatus": "Publisher supplement link returned HTTP 403 to web inspection; manual acquisition still required",
+      "horizontalReference": "UNVERIFIED: inspect ISIS Mapping group for latitude type, longitude direction, domain and projection",
+      "verticalReference": "UNVERIFIED: use cube label and paper to confirm height units, datum and reference figure",
+      "noDataHandling": "Preserve special-pixel mask; 25% of the globe lacks observed stereo topography",
+      "publication": "White, O. L., et al. (2014), Journal of Geophysical Research: Planets, doi:10.1002/2013JE004591",
+      "status": "research-only"
+    },
+    {
+      "id": "io-tvashtar-900m",
+      "name": "USGS Galileo SSI Tvashtar Paterae DEM",
+      "kind": "regional-stereo-dem",
+      "format": "GTiff",
+      "fileName": "TvashtarPaterae_DEM_900m.tif",
+      "sourceUrl": "https://planetarymaps.usgs.gov/mosaic/Io/TvashtarPaterae_DEM/TvashtarPaterae_DEM_900m.tif",
+      "landingPage": "https://astrogeology.usgs.gov/search/map/io_galileo_ssi_tvashtar_paterae_dem_and_orthoimages_900m",
+      "expectedSize": [
+        286,
+        641
+      ],
+      "resolutionMeters": 900,
+      "boundsDegreesEast": {
+        "west": -128.5941,
+        "east": -110.27389,
+        "south": 55.61571649,
+        "north": 73.7626619
+      },
+      "horizontalReference": "USGS: planetocentric latitude, longitude positive east -180..180, equirectangular",
+      "verticalReference": "USGS: metres with arbitrary zero; must align to global datum before merging",
+      "noDataHandling": "Respect TIFF NoData/mask, never use colorized hillshade as elevation",
+      "status": "research-only"
+    }
+  ]
+}
