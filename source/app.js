@@ -170,7 +170,7 @@ async function build() {
 }
 function showStats(p, r) {
   const W = WORLDS[state.world], src = r.source, s = r.stats, pxM = src.pxKm * 1000;
-  $('chip-src').innerHTML = `<b>${src.kind === 'patch' ? (W.patchName || W.grid) : W.grid}</b> · ${pxM < 1000 ? Math.round(pxM) + ' m' : (pxM / 1000).toFixed(2) + ' km'} per sample`;
+  $('chip-src').innerHTML = `<b>${src.kind === 'pack' ? src.label : (src.kind === 'patch' ? (W.patchName || W.grid) : W.grid)}</b> · ${pxM < 1000 ? Math.round(pxM) + ' m' : (pxM / 1000).toFixed(2) + ' km'} per sample`;
   $('st-low').textContent = fmtM(s.hMin); $('st-high').textContent = fmtM(s.hMax);
   $('st-relief').innerHTML = `${s.reliefMm.toFixed(1)} mm <small>${((s.hMax - s.hMin) / 1000).toFixed(1)} km real</small>`;
   const H = p.shape === 'hexagon' ? p.widthMm * Math.sqrt(3) / 2 : p.widthMm, fr = p.border === 'none' ? 0 : p.frameMm;
@@ -503,12 +503,93 @@ $('export').onclick = async () => {
   finally { btn.disabled = false; btn.textContent = old; }
 };
 
+// ---------------- desktop terrain data manager ----------------
+function initTerrainDataManager() {
+  const api = window.terrainPacks;
+  if (!api) return;
+  const open = $('manage-data'), dialog = $('data-dialog'), list = $('data-packs');
+  const progress = $('data-progress'), folder = $('data-folder');
+  open.hidden = false;
+  const make = (tag, text, cls) => {
+    const el = document.createElement(tag);
+    el.textContent = text;
+    if (cls) el.className = cls;
+    return el;
+  };
+  const format = b => b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + ' GiB'
+    : (b / 1024 ** 2).toFixed(1) + ' MiB';
+  const error = e => { progress.textContent = e && e.message ? e.message : String(e); };
+  function updateProgress(p) {
+    if (!p) return;
+    const percent = p.totalBytes ? Math.min(100, Math.floor(100 * (p.downloadedBytes + (p.currentFileBytes || 0)) / p.totalBytes)) : 0;
+    progress.textContent = p.phase + ' · ' + p.doneFiles + '/' + p.totalFiles +
+      ' tiles' + (p.totalBytes ? ' · ' + percent + '%' : '') + (p.error ? ' · ' + p.error : '');
+    $('data-cancel').hidden = !['manifest', 'downloading'].includes(p.phase);
+    $('data-cancel').onclick = () => api.cancel(p.id);
+  }
+  async function render() {
+    const s = await api.status();
+    list.replaceChildren();
+    folder.textContent = 'Storage: ' + s.root;
+    list.appendChild(make('h3', 'Included offline', 'h6 mt-3'));
+    for (const built of s.bundled) {
+      list.appendChild(make('div', built.name + ' · ' + built.w + ' × ' + built.h +
+        ' · ' + format(built.bytes) + ' compressed · Included', 'tp-data-row'));
+    }
+    list.appendChild(make('h3', 'Optional whole-planet downloads', 'h6 mt-3'));
+    list.appendChild(make('p', 'High-resolution tiers are planned, not downloadable, until verified files are published.', 'tp-data-muted'));
+    const installed = new Set(s.installed.map(p => p.id));
+    for (const pack of s.catalog) {
+      const row = make('div', '', 'tp-data-row');
+      const details = make('div', '', 'tp-data-entry');
+      details.appendChild(make('strong', pack.name));
+      details.appendChild(make('div', pack.note || pack.body, 'tp-data-muted'));
+      row.appendChild(details);
+      const button = make('button', installed.has(pack.id) ? 'Remove' :
+        pack.status === 'published' ? 'Download' : 'Planned', 'btn btn-sm btn-tp');
+      button.type = 'button';
+      button.disabled = pack.status !== 'published' && !installed.has(pack.id);
+      button.onclick = async () => {
+        button.disabled = true;
+        progress.textContent = installed.has(pack.id) ? 'Removing dataset…' : 'Downloading dataset…';
+        try {
+          if (installed.has(pack.id)) await api.remove(pack.id);
+          else await api.download(pack.id);
+          location.reload(); // Refresh worker metadata and resume using best installed source.
+        } catch (e) { error(e); await render(); }
+      };
+      row.appendChild(button);
+      list.appendChild(row);
+    }
+    if (s.active) updateProgress(s.active);
+  }
+  api.onProgress(updateProgress);
+  open.onclick = async () => {
+    dialog.showModal();
+    try { await render(); } catch (e) { error(e); }
+  };
+  $('data-close').onclick = () => dialog.close();
+  $('data-dir').onclick = async () => {
+    try { await api.chooseDirectory(); await render(); }
+    catch (e) { error(e); }
+  };
+}
+
 // ---------------- boot ----------------
 (async () => {
   $('o-width').textContent = $('width').value + ' mm'; $('o-sun').textContent = $('sun').value + '°'; $('o-exag').textContent = exFromSlider(+$('exag').value) + '×';
   busy('Loading…');
   try {
     meta = await fetch('data/meta.json?v=' + BUILD).then(r => r.json());
+    if (window.terrainPacks) {
+      try {
+        const status = await window.terrainPacks.status();
+        for (const p of status.installed) {
+          if (meta[p.body]) (meta[p.body].installedPacks ||= []).push(p);
+        }
+      } catch (e) { console.warn('Optional terrain packs unavailable:', e); }
+    }
+    initTerrainDataManager();
     renderWorlds(); syncMode(); startWorker(); setWorld('moon');
   } catch (e) { console.error(e); busy(null); toast('The elevation data did not load. Reload the page to try again.', 'danger'); }
 })();

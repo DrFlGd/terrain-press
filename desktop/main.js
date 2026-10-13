@@ -2,7 +2,9 @@
 
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { app, BrowserWindow, net, protocol, shell } = require('electron');
+const { app, BrowserWindow, net, protocol, shell, ipcMain, dialog } = require('electron');
+const { PackStore } = require('./pack-store');
+let packStore;
 const { resolveAssetPath } = require('./asset-path');
 
 // A secure, standard origin is necessary for relative assets, fetch() and Web Workers.
@@ -39,6 +41,7 @@ function createWindow() {
     backgroundColor: '#101820',
     autoHideMenuBar: true,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
@@ -61,12 +64,25 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  packStore = new PackStore(app.getPath('userData'), progress => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send('terrain-packs:progress', progress);
+    }
+  });
+  ipcMain.handle('terrain-packs:status', () => packStore.status());
+  ipcMain.handle('terrain-packs:choose-directory', () => packStore.chooseDirectory(dialog));
+  ipcMain.handle('terrain-packs:download', (_, id) => packStore.download(id));
+  ipcMain.handle('terrain-packs:cancel', (_, id) => packStore.cancel(id));
+  ipcMain.handle('terrain-packs:remove', (_, id) => packStore.remove(id));
   const root = siteDirectory();
   protocol.handle('terrain', request => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('Method not allowed', { status: 405 });
     }
-    const file = resolveAssetPath(root, request.url);
+    const pathname = new URL(request.url).pathname;
+    const file = pathname.startsWith('/packs/')
+      ? packStore.assetForUrl(request.url)
+      : resolveAssetPath(root, request.url);
     if (!file) return new Response('Not found', { status: 404 });
     return net.fetch(pathToFileURL(file).toString());
   });

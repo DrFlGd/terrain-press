@@ -40,6 +40,7 @@
       const spacingKm = sizeKm / (N - 1);
       const g = nodeGrid(lat0, lon0, sizeKm, N, R);
       // hi-res patch if region falls entirely inside one
+      let candidatePatch = null;
       if (m.patches) {
         for (const [id, p] of Object.entries(m.patches)) {
           let inside = true;
@@ -49,10 +50,37 @@
           }
           if (inside) {
             const pxKm = (Math.PI * R / 180) / p.ppd;
-            return { kind: 'patch', id, grid: g, pxKm, label: `${p.ppd.toFixed(0)} px/deg`, paths: [`data/${body}/patch_${id}.webp`] };
+            if (!candidatePatch || pxKm < candidatePatch.pxKm)
+              candidatePatch = { kind: 'patch', id, grid: g, pxKm, label: `${p.ppd.toFixed(0)} px/deg`, paths: [`data/${body}/patch_${id}.webp`] };
           }
         }
       }
+      // Use the sharpest installed global pack, retaining any sharper included landmark patch.
+      const packs = (m.installedPacks || []).filter(p =>
+        p && Number.isInteger(p.w) && Number.isInteger(p.h) && Number.isInteger(p.tile) &&
+        p.w > m.w && p.h > 0 && p.tile > 0 && /^[a-z][a-z0-9-]{1,63}$/.test(p.id)
+      ).sort((a, b) => b.w - a.w);
+      if (packs.length) {
+        const p = packs[0], pxKm = 2 * Math.PI * R / p.w;
+        if (!candidatePatch || pxKm < candidatePatch.pxKm) {
+          const set = new Set();
+          for (let k = 0; k < g.lats.length; k++) {
+            const fy = (90 - g.lats[k]) / 180 * p.h - 0.5;
+            const fx = (g.lons[k] + 180) / 360 * p.w - 0.5;
+            for (const yy of [Math.floor(fy), Math.floor(fy) + 1])
+              for (const xx of [Math.floor(fx), Math.floor(fx) + 1]) {
+                const y = Math.max(0, Math.min(p.h - 1, yy));
+                const x = ((xx % p.w) + p.w) % p.w;
+                set.add('t' + ((y / p.tile) | 0) + '_' + ((x / p.tile) | 0) + '.webp');
+              }
+          }
+          const prefix = 'packs/' + p.id;
+          return { kind: 'pack', id: p.id, grid: g, w: p.w, h: p.h,
+            tile: p.tile, prefix, pxKm, label: p.label || (p.w / 360).toFixed(0) + ' px/deg',
+            paths: [...set].map(name => prefix + '/' + name) };
+        }
+      }
+      if (candidatePatch) return candidatePatch;
       const fullPxKm = (2 * Math.PI * R) / m.w;
       const ovPxKm = (2 * Math.PI * R) / m.ovw;
       if (spacingKm > ovPxKm * 0.7) {
@@ -93,10 +121,11 @@
           out[k] = bilinear(A, W, H, fx, fy, true);
         }
       } else {
-        W = m.w; H = m.h; const T = m.tile;
+        W = src.w || m.w; H = src.h || m.h; const T = src.tile || m.tile;
+        const prefix = src.prefix || `data/${body}`;
         const px = (x, y) => {
           y = Math.max(0, Math.min(H - 1, y)); x = ((x % W) + W) % W;
-          const a = byPath.get(`data/${body}/t${(y / T) | 0}_${(x / T) | 0}.webp`);
+          const a = byPath.get(`${prefix}/t${(y / T) | 0}_${(x / T) | 0}.webp`);
           return a[(y % T) * T + (x % T)];
         };
         for (let k = 0; k < out.length; k++) {
