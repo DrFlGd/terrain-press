@@ -31,14 +31,17 @@ test('new installation is offline and has only bundled datasets', () => {
     const store = new PackStore(root);
     assert.equal(store.status().bundled.length, 7);
     assert.deepEqual(store.status().installed, []);
-    assert.equal(store.assetForUrl('terrain://app/packs/moon-test-128/t0_0.webp'), null);
+    // Installed-pack asset resolution is asynchronous.
     assert.equal(store.cancel('moon-lola-128'), false);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
-test('unpublished optional tiers cannot be downloaded', async () => {
+test('NASA direct catalog tiers and storage are present', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'terrain-packs-test-'));
   try {
     const store = new PackStore(root);
-    await assert.rejects(store.download('moon-lola-128'), /not published/i);
+    const p=store.catalogPack('moon-lola-128');
+    assert.equal(p.status,'published');
+    assert.equal(p.downloadBytes,2123366400);
+    assert.equal(await store.assetForUrl('terrain://app/packs/moon-lola-128/t0_0.png'),null);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

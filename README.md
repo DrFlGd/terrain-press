@@ -71,8 +71,8 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.0.0) (the **Terrain-Press-1.0.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.2.0) (the **Terrain-Press-1.2.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
 
 ## Hybrid dataset roadmap (Windows)
 
-The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) tracks future whole-planet resolution downloads and coordinate-based regional packs. Desktop v1.1.0 includes the **Terrain Data Manager** and secure downloaded-tile infrastructure. It continues working offline with the included terrain. Optional higher-resolution global lunar tiers are listed as **planned, not yet downloadable**: conversion, coverage validation, and immutable tile hosting are still needed. The website continues using the bundled dataset.
+The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) documents the hybrid system. Starting with **Windows v1.2.0**, the Terrain Data Manager can download the complete Moon in NASA PDS LOLA 128, 256 or 512 pixels-per-degree native IMG files directly from the [PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Download sizes are 2.12, 8.49 and 33.97 GB, respectively, plus locally cached tiles. Downloads may be resumed and the datasets work offline after installation. The original bundled terrain is always available. Other planets and regional packs remain roadmap items.

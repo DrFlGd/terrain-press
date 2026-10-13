@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** Phase 1 foundation integrated (October 2026). Higher-resolution global packs are not yet produced or hosted.
+**Status:** Phase 2 direct NASA IMG integration added in desktop v1.2.0 (October 2026); complete real NASA transfer and offline print validation still outstanding.
 
 ## Product objective
 
@@ -15,16 +15,16 @@ Offer a small Windows executable that works immediately without the internet usi
 - The source code currently stores encoded elevation heights in integer metres in lossless WebP; metadata supplies the reference radius, grid size, and per-patch coverage.
 - Users can already enter custom coordinates; the 0.01° input step should be reduced to 0.001° or finer.
 
-## Lunar source availability: candidate tiers, not yet downloadable
+## Lunar source availability: direct NASA downloads
 
 The NASA PDS LOLA gridded archive describes 4/16/64/128/256/512 pixels per degree (ppd) in equirectangular products. **1024 ppd products are sparse**, not a guaranteed globally useful tier. Do not advertise 1024 ppd as complete global coverage.
 
 | Candidate | Equatorial spacing | Full equirectangular raster | Raw 16-bit heights | Publication |
 |---|---:|---:|---:|---|
 | Built-in raster | ~1,331 m | 8192 × 4096 | 64 MiB | Shipped |
-| LOLA 128 ppd | ~237 m | 46080 × 23040 | ~1.98 GiB | Not packaged |
-| LOLA 256 ppd | ~118 m | 92160 × 46080 | ~7.91 GiB | Not packaged |
-| LOLA 512 ppd | ~59 m | 184320 × 92160 | ~31.64 GiB | Not packaged |
+| LOLA 128 ppd | ~237 m | 46080 × 23040 | ~1.98 GiB | Download from NASA PDS |
+| LOLA 256 ppd | ~118 m | 92160 × 46080 | ~7.91 GiB | Download from NASA PDS |
+| LOLA 512 ppd | ~59 m | 184320 × 92160 | ~31.64 GiB | Download from NASA PDS |
 | LOLA 1024 ppd | ~30 m | Tile/region based | Not a complete uniform product | Sparse; regional only |
 
 Storage for compressed tiles must be **measured with representative data**; do not extrapolate from low-resolution compressed tiles as a promise. Actual measurement density, NoData, interpolation, vertical reference, and coverage must be recorded in manifests. Consider the SLDEM/Kaguya combined dataset separately; its 512 ppd coverage and quality are not identical to LOLA-only.
@@ -44,15 +44,16 @@ Sources:
 - [x] Add secure, checksum-verified tile download/install/remove backend driven only by published catalog manifests (no arbitrary UI-supplied URLs). Incomplete downloads preserve verified tiles for restart/resume.
 - [x] Add a private app URL for stored tiles and pass installed global grids to the terrain sampler, selecting the sharpest installed source while keeping built-in high-resolution patches when sharper.
 - [x] Add validation tests for manifests, path confinement and source selection.
-- [ ] Publish a real high-resolution lunar pack. **No candidate is downloadable until this box is checked.**
+- [x] Enable global 128/256/512 ppd source downloads directly from NASA PDS (no Terrain Press mirror).
+- [ ] Verify an entire completed PDS download and offline STL export on Windows.
 - [ ] Windows end-to-end test of download -> print export -> offline restart -> delete -> fallback (requires a hosted pack).
 
-### Phase 2 — Publish first end-to-end global upgrade (Moon 128 ppd)
+### Phase 2 — Verify NASA direct Moon 128 ppd upgrade end-to-end
 
 - [ ] Confirm NASA source version, license, coverage, geodetic datum, NoData masks, and correct longitude/origin conventions.
 - [ ] Build reproducible Python conversion pipeline: source product -> tiled, lossless elevation WebP. Retain native sample values where possible; avoid fabricated detail.
 - [ ] Generate per-file SHA-256 and byte counts plus a signed or pinned SHA-256 manifest. Verify every output tile round-trip against input heights and sample checks.
-- [ ] Host tiles and immutable manifest on an appropriate CDN or object store; publish matching catalog entry and choose mirror policy. Do not place multi-gigabyte archives inside the executable.
+- [x] Preserve original NASA PDS IMG files, and convert needed PNG elevation tiles locally instead of hosting duplicate global mirrors.
 - [ ] Test downloads through interruption, cancellation, changed storage location, low disk space, CDN failure, corruption, and upgrade across application versions.
 - [ ] Validate model STL/3MF appearance and sample values at several random and named coordinates; measure performance and actual disk use.
 - [ ] Disclose interpolation/no-data and native resolution in the UI and exported project metadata.
@@ -100,3 +101,9 @@ Installed pack requests are served under terrain://app/packs/{id}/t{row}_{col}.w
 ## Key constraints and risks
 
 Large pack distribution needs hosting/bandwidth cost estimation; GitHub release assets are unsuitable for tens-of-gigabytes single files. Windows user-selected data locations may be removable or network drives; report missing packs rather than crashing. Some existing app labels are approximate and legacy resolution conversions should be verified against the input datasets before publication. Source resolution, encoded raster resolution and STL mesh sampling must remain distinct in all messaging.
+
+## v1.2.0 — direct NASA IMG path
+
+The desktop app fetches original LOLA LDEM_128, 256 (4 segments), and 512 (16 segments) IMG files and PDS labels directly from the official [NASA PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/). Each IMG segment is 2,123,366,400 bytes. The downloader checks PDS label dimensions, signed 16-bit format, sample scaling (0.5 metres), datum radius (1,737,400 metres), and file sizes. After transfer it computes local SHA-256 checksums; these have not been compared to NASA-published canonical SHA-256 values. Completed images are stored outside the executable, interrupted transfers retain their partial files, and resumed requests use HTTP Range where the PDS server permits it. A secure local protocol generates on-demand PNG terrain tiles from the native IMG files, compensating for the PDS 0–360-degree longitude origin. Web builds retain the bundled data.
+
+**Outstanding acceptance checks:** Download real 2.12GB+ data on Windows, verify offline restart and STL heights at representative coordinates, check performance, disk-space behavior and no-data source coverage. Do not imply these tests have passed yet. Adding downloadable datasets for the six other bodies remains planned.

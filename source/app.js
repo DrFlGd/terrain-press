@@ -552,6 +552,9 @@ function initTerrainDataManager() {
       button.type = 'button';
       button.disabled = pack.status !== 'published' && !installed.has(pack.id);
       button.onclick = async () => {
+        if (!installed.has(pack.id) && pack.downloadBytes &&
+            !confirm('Download ' + format(pack.downloadBytes) +
+              ' of original NASA elevation data to ' + s.root + '? Leave space for local tile cache.')) return;
         button.disabled = true;
         progress.textContent = installed.has(pack.id) ? 'Removing dataset…' : 'Downloading dataset…';
         try {
