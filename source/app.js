@@ -136,7 +136,7 @@ async function ensureFont(id) {
 function params(step) {
   const product = state.product, border = state.border;
   return {
-    shape: state.shape, product, widthMm: +$('width').value, exag: exFromSlider(+$('exag').value),
+    shape: state.shape, product, widthMm: +$('width-num').value, exag: exFromSlider(+$('exag').value),
     hexLayout: $('hex-layout').value, hexEdge: $('hex-edge').value,
     hexRings: +$('hex-rings').value,
     hexAcross: Math.round(clamp(+$('hex-across').value, 2, 12, 5)),
@@ -156,7 +156,7 @@ function params(step) {
 }
 const query = (step, fastPreview = false) => ({
   world: state.world, lat: state.lat, lon: state.lon, size: state.size,
-  widthMm: +$('width').value, step,
+  widthMm: +$('width-num').value, step,
   // Fast preview stays inexpensive regardless of configured export ceiling.
   samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
@@ -565,9 +565,12 @@ $('hex-across').addEventListener('change', () => {
 $('hex-edge').addEventListener('change', schedule);
 const updateWidth = value => {
   const max = $('unlock-size').checked ? 5000 : 1000;
-  const mm = clamp(Math.round((+value || 100) / 5) * 5, 60, max, 100);
+  const mm = clamp(Math.round(Number(value)), 60, max, 100);
   $('width').max = $('width-num').max = String(max);
-  $('width').value = $('width-num').value = String(mm);
+  // The range slider still travels in 5 mm increments. The editable number
+  // field is authoritative, preserving exact 1 mm steps for printed sizes.
+  $('width').value = String(Math.round(mm / 5) * 5);
+  $('width-num').value = String(mm);
   $('o-width').textContent = mm + ' mm';
   $('size-warning').hidden = !$('unlock-size').checked;
   schedule();
@@ -579,7 +582,18 @@ $('unlock-size').addEventListener('change', () => {
     'Unlock terrain widths up to 5,000 mm? Large meshes and hex grids can use multiple gigabytes of RAM, take a long time to export, and exceed printer build volumes.')) {
     $('unlock-size').checked = false;
   }
-  updateWidth($('width').value);
+  updateWidth($('width-num').value);
+});
+// Native number fields stay text-editable; these extra arrows are persistent
+// even when Chromium's built-in numeric spinners are hidden by OS styling.
+document.querySelectorAll('.tp-step-button').forEach(button => {
+  button.addEventListener('click', () => {
+    const field = $(button.dataset.stepTarget);
+    if (button.dataset.stepDirection === 'up') field.stepUp();
+    else field.stepDown();
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    field.focus();
+  });
 });
 $('exag').addEventListener('input', () => { $('o-exag').textContent = exFromSlider(+$('exag').value) + '×'; schedule(); });
 $('sun').addEventListener('input', () => { $('o-sun').textContent = $('sun').value + '°'; bench.setSun(+$('sun').value); });
@@ -755,7 +769,7 @@ function initTerrainDataManager() {
 // ---------------- boot ----------------
 (async () => {
   $('width-num').value = $('width').value;
-  $('o-width').textContent = $('width').value + ' mm'; $('o-sun').textContent = $('sun').value + '°'; $('o-exag').textContent = exFromSlider(+$('exag').value) + '×';
+  $('o-width').textContent = $('width-num').value + ' mm'; $('o-sun').textContent = $('sun').value + '°'; $('o-exag').textContent = exFromSlider(+$('exag').value) + '×';
   busy('Loading…');
   try {
     meta = await fetch('data/meta.json?v=' + BUILD).then(r => r.json());

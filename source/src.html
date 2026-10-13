@@ -84,6 +84,17 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 .tp-hint { font-size: 12px; color: var(--tp-ink-3); margin: 0; }
 .tp-out { font: 12px var(--tp-mono); color: var(--tp-ink); font-variant-numeric: tabular-nums; }
 .tp-num { font-family: var(--tp-mono); font-size: 13px; }
+/* Editable numeric fields with always-visible increment/decrement arrows.
+   Keep the real type=number input (including keyboard ArrowUp/ArrowDown)
+   and use explicit arrows so they remain visible across Windows themes. */
+.tp-step-field { position: relative; min-width: 0; }
+.tp-step-input { padding-right: 25px !important; appearance: textfield; -moz-appearance: textfield; }
+.tp-step-input::-webkit-inner-spin-button, .tp-step-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.tp-step-buttons { position: absolute; inset: 1px 1px 1px auto; display: flex; flex-direction: column; width: 23px; border-left: 1px solid var(--tp-line); border-radius: 0 4px 4px 0; overflow: hidden; }
+.tp-step-button { flex: 1; padding: 0; line-height: 1; font-size: 13px; color: var(--tp-ink-2); background: var(--tp-panel-2); border: 0; cursor: pointer; }
+.tp-step-button + .tp-step-button { border-top: 1px solid var(--tp-line); }
+.tp-step-button:hover, .tp-step-button:focus-visible { background: var(--tp-line); color: var(--tp-ink); }
+
 .btn-group.tp-seg { width: 100%; }
 .btn-group.tp-seg > .btn { flex: 1 1 0; font-size: 13px; padding: .32rem .4rem; }
 
@@ -163,9 +174,9 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
       <input type="search" class="form-control form-control-sm" id="mark-filter" placeholder="Search landmarks" aria-label="Search landmarks">
       <div class="tp-marks" id="marks"></div>
       <div class="row g-2">
-        <div class="col-4"><label class="tp-label" for="lat">Latitude °</label><input class="form-control form-control-sm tp-num" id="lat" type="number" step="0.01" min="-90" max="90"></div>
-        <div class="col-4"><label class="tp-label" for="lon">Longitude °E</label><input class="form-control form-control-sm tp-num" id="lon" type="number" step="0.01" min="-180" max="180"></div>
-        <div class="col-4"><label class="tp-label" for="size">Width km</label><input class="form-control form-control-sm tp-num" id="size" type="number" step="1" min="10" max="9000"></div>
+        <div class="col-4"><label class="tp-label" for="lat">Latitude °</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="lat" type="number" step="0.01" min="-90" max="90" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="lat" data-step-direction="up" aria-label="Increase Latitude" title="Increase Latitude">▴</button><button type="button" class="tp-step-button" data-step-target="lat" data-step-direction="down" aria-label="Decrease Latitude" title="Decrease Latitude">▾</button></div></div></div>
+        <div class="col-4"><label class="tp-label" for="lon">Longitude °E</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="lon" type="number" step="0.01" min="-180" max="180" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="lon" data-step-direction="up" aria-label="Increase Longitude" title="Increase Longitude">▴</button><button type="button" class="tp-step-button" data-step-target="lon" data-step-direction="down" aria-label="Decrease Longitude" title="Decrease Longitude">▾</button></div></div></div>
+        <div class="col-4"><label class="tp-label" for="size">Width km</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="size" type="number" step="1" min="10" max="9000" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="size" data-step-direction="up" aria-label="Increase Region width" title="Increase Region width">▴</button><button type="button" class="tp-step-button" data-step-target="size" data-step-direction="down" aria-label="Decrease Region width" title="Decrease Region width">▾</button></div></div></div>
       </div>
       <p class="tp-hint" id="where-hint">Open the <b>Globe</b> tab to pick any spot; the dots are landing sites.</p>
     </section>
@@ -186,7 +197,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div>
         <input type="range" class="form-range" id="width" min="60" max="1000" step="5" value="100">
         <div class="row g-2 align-items-end">
-          <div class="col-5"><label class="tp-label" for="width-num">Exact width · mm</label><input class="form-control form-control-sm tp-num" type="number" id="width-num" min="60" max="1000" step="5" value="100"></div>
+          <div class="col-5"><label class="tp-label" for="width-num">Exact width · mm</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" type="number" id="width-num" min="60" max="1000" step="1" value="100" inputmode="numeric" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="width-num" data-step-direction="up" aria-label="Increase Model width" title="Increase Model width">▴</button><button type="button" class="tp-step-button" data-step-target="width-num" data-step-direction="down" aria-label="Decrease Model width" title="Decrease Model width">▾</button></div></div></div>
           <div class="col-7"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="unlock-size"><label class="form-check-label" for="unlock-size">Unlock over 1,000 mm</label></div></div>
         </div>
         <p id="size-warning" class="tp-hint" role="status" hidden>Unlocked: maximum 5,000 mm. Large exports and spread layouts can exhaust RAM or exceed printer build volumes. Verify the mesh size before printing.</p>
