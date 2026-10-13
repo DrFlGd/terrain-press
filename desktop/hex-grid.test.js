@@ -93,8 +93,15 @@ test('sampled hex pieces extrude watertight and support flat/terrain border vari
       const flat=C.buildModel({...basic,hexLayout:layout,hexEdge:'flat'},hf,null);
       assert.ok(flat.parts.some(p=>p.flat && p.partial));
       const one=flat.parts.find(p=>p.flat);
-      for(let i=2;i<one.tris.length;i+=3)
-        assert.ok(Math.abs(one.tris[i]-2)<1e-5,'flat border uses base or bottom Z');
+      const heights=new Set();
+      for(let i=2;i<one.tris.length;i+=3) {
+        const z=one.tris[i];
+        assert.ok(Math.abs(z)<1e-5 || Math.abs(z-2)<1e-5,
+          'flat border vertex must be on its bottom (0 mm) or flat top (2 mm)');
+        heights.add(Math.round(z));
+      }
+      assert.deepEqual([...heights].sort((a,b)=>a-b),[0,2],
+        'flat border needs both a bottom and a top surface');
     }
   }
 });
