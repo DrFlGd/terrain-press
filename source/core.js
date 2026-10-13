@@ -597,7 +597,7 @@
   // 'edge' and 'alternating' are regular hex-shaped boards with cropped edge
   // hexes; 'round' and 'square' use ONLY complete regular hexagons.
   // Requested piece count is approximate where complete rings/rows are needed.
-  function hexGridCells(W, wanted, layout = 'edge') {
+  function hexGridCells(W, wanted, layout = 'edge', gapMm = 0.3) {
     if (!Number.isFinite(W) || W <= 0) throw new Error('Invalid hex grid width');
     if (!['edge', 'alternating', 'round', 'square'].includes(layout))
       throw new Error('Unknown hex grid layout');
@@ -690,6 +690,19 @@
         const a = Math.PI/6+k*Math.PI/3;
         return [Math.cos(a)*W/2,Math.sin(a)*W/2];
       })) : exPolysFrom(cells.map(c=>c.pts)).sort((a,b)=>exArea(b)-exArea(a))[0].outer;
+    if (clipped && gapMm > 0) {
+      // A clipped tile may touch only the last fraction of a millimetre at
+      // a board corner. Such a sliver vanishes when printable clearance
+      // shrinks the piece, so remove it BEFORE counting the pieces.
+      // Mirror the exact two-stage inset used in buildModel below.
+      const safeBoard = offset([outline],-gapMm/2,'miter');
+      cells = cells.filter(c => {
+        if (!c.partial) return true;
+        return boolOp(CL.ClipType.ctIntersection,[c.pts],safeBoard).some(ex =>
+          offset([ex.outer,...ex.holes],-gapMm/2,'miter').some(r =>
+            Math.abs(area(r)) > 0.0001));
+      });
+    }
     const bb = bounds(cells.map(c=>c.pts));
     return {cells,outline,clip:clipped,side,cellW:2*side,cellH:root3*side,
       width:bb.width,depth:bb.depth,target,actual:cells.length,layout};
@@ -749,7 +762,7 @@
   function buildModel(p, hf, font) {
     const W = p.widthMm, N = hf.N, sizeKm = hf.sizeKm;
     const hex = p.shape === 'hexgrid' && p.product === 'puzzle'
-      ? hexGridCells(W, p.pieces, p.hexLayout || 'edge') : null;
+      ? hexGridCells(W, p.pieces, p.hexLayout || 'edge', p.gapMm) : null;
     const outline = hex ? hex.outline : shapeOutline(p.shape, W);
     const H = hex ? hex.depth : p.shape === 'hexagon' ? W * Math.sqrt(3) / 2 : W;
     const mmPerM = W / (sizeKm * 1000);
