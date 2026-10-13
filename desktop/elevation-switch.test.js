@@ -65,7 +65,7 @@ test('mesh planner follows source spacing but never exceeds the 721 x 721 cap', 
   assert.ok(auto.limited);
   const low = C.meshPlan(100, 100, 1.33, 'source');
   assert.equal(low.N, 201);
-  const short = C.meshPlan(100, 10, 0.083, 'source');
+  const short = C.meshPlan(100, 20, 0.083, 'source');
   assert.ok(short.N > low.N);
   assert.ok(short.N <= 721);
   assert.ok(Math.abs(auto.stepMm - 100/720) < 0.0001);
