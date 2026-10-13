@@ -593,119 +593,96 @@
   }
 
 
-  // ---------- Hex Grid: true edge-to-edge regular hex tessellation ----------
-  // 'edge' and 'alternating' are regular hex-shaped boards with cropped edge
-  // hexes; 'round' and 'square' use ONLY complete regular hexagons.
-  // Requested piece count is approximate where complete rings/rows are needed.
-  function hexGridCells(W, wanted, layout = 'edge', gapMm = 0.3) {
-    if (!Number.isFinite(W) || W <= 0) throw new Error('Invalid hex grid width');
-    if (!['edge', 'alternating', 'round', 'square'].includes(layout))
-      throw new Error('Unknown hex grid layout');
-    const target = Math.max(7, Math.min(150, Math.round(Number(wanted) || 19)));
-    const root3 = Math.sqrt(3);
-    const ring = (x, y, side) => {
-      const out = [];
-      for (let k = 0; k < 6; k++) {
-        const a = Math.PI / 6 + k * Math.PI / 3;
-        out.push([x + side * Math.cos(a), y + side * Math.sin(a)]);
+  // ---------- Hex Grid: lattice-locked printable hex arrangements ----------
+  // Never fit arbitrary clipped polygons to a piece-count target. The previous
+  // search moved boundaries across the lattice, creating hairline slivers.
+  // The circular/hexagonal formats use exact axial ring tiers; the rectangular
+  // format always uses an N x N matrix of whole hexagons.
+  function hexGridCells(W, wanted, layout = 'edge', gapMm = 0.3, squareAcross = null) {
+    if (!(Number.isFinite(W) && W > 0)) throw new Error('Invalid Hex Grid model size');
+    if (!['edge','alternating','round','square'].includes(layout))
+      throw new Error('Unknown Hex Grid layout: ' + layout);
+    const sqrt3 = Math.sqrt(3);
+    const ringPoints = (x,y,s) => Array.from({length:6},(_,k)=>{
+      const a=k*Math.PI/3; // flat-top tile, matching the reference diagrams
+      return [x+s*Math.cos(a),y+s*Math.sin(a)];
+    });
+    const bounds = polygons => {
+      let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+      for (const poly of polygons) for(const [x,y] of poly){
+        minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+        minY=Math.min(minY,y);maxY=Math.max(maxY,y);
       }
-      return out;
+      return {minX,maxX,minY,maxY,width:maxX-minX,depth:maxY-minY};
     };
-    const bounds = paths => {
-      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-      for (const poly of paths) for (const [x,y] of poly) {
-        x0 = Math.min(x0,x); x1 = Math.max(x1,x);
-        y0 = Math.min(y0,y); y1 = Math.max(y1,y);
-      }
-      return { minX:x0,maxX:x1,minY:y0,maxY:y1,width:x1-x0,depth:y1-y0 };
-    };
-    const total = k => 1 + 3 * k * (k + 1);
-    let paths, cells, side;
-    if (layout === 'round') {
-      let rings = 1;
-      for (let r=2; r<=6; r++) if (Math.abs(total(r)-target) < Math.abs(total(rings)-target)) rings=r;
-      side = W / Math.max(root3 * (2 * rings + 1), 3 * rings + 2);
-      cells = [];
-      for (let q=-rings;q<=rings;q++) for (let r=-rings;r<=rings;r++) {
-        if (Math.abs(q+r)>rings) continue;
-        const x = root3 * side * (q + r/2), y = 1.5 * side * r;
-        cells.push({i:q,j:r,pts:ring(x,y,side),partial:false});
-      }
-    } else if (layout === 'square') {
-      const cols = Math.max(2,Math.round(Math.sqrt(target)));
-      const rows = Math.max(2,Math.round(target / cols));
-      const spanX = root3 * (cols + 0.5), spanY = 1.5 * (rows - 1) + 2;
-      side = W / Math.max(spanX,spanY);
-      cells = [];
-      for (let col=0; col<cols;col++) for (let row=0;row<rows;row++) {
-        const x = root3 * side * (col - (cols - 1)/2 + (row%2 ? 0.25 : -0.25));
-        const y = 1.5 * side * (row - (rows - 1)/2);
-        cells.push({i:col,j:row,pts:ring(x,y,side),partial:false});
-      }
-    } else {
-      // The user's reference outlines stand on a top and bottom vertex.
-      // W bounds the maximal dimension; the pointy hex is W high and
-      // sqrt(3)*W/2 wide, staying inside the sampled W x W source square.
-      const outer = ccw(Array.from({length:6},(_,k)=>{
-        const a = Math.PI / 6 + k * Math.PI / 3;
-        return [Math.cos(a)*W/2,Math.sin(a)*W/2];
+    const count = r => 1+3*r*(r+1);
+    const target = Math.max(7,Math.min(150,Math.round(Number(wanted)||19)));
+    let rings=1;
+    for(let r=2;r<=6;r++) if(Math.abs(count(r)-target)<Math.abs(count(rings)-target)) rings=r;
+    const partialBoard = layout==='edge'||layout==='alternating';
+    let cells=[],side;
+    let outline=null;
+    if(partialBoard) {
+      // Radius R = sqrt(3)*side*rings. All six sides pass through regular
+      // lattice rows; the centred phase cuts half-hexes and six clean corner
+      // thirds. The alternate phase shifts 1/4 side, avoiding near-zero cuts.
+      side=W/(2*sqrt3*rings);
+      outline=ccw(Array.from({length:6},(_,k)=>{
+        const a=Math.PI/6+k*Math.PI/3;
+        return [W/2*Math.cos(a),W/2*Math.sin(a)];
       }));
-      const board = [outer], fullArea = s => 1.5 * root3 * s * s;
-      const build = s => {
-        const result = [];
-        const qMax = Math.ceil(W/(root3*s)) + 3;
-        const rMax = Math.ceil(W/(1.5*s)) + 3;
-        const shiftX = layout==='alternating' ? root3*s*0.48 : 0;
-        const shiftY = layout==='alternating' ? s*0.75 : 0;
-        for (let q=-qMax;q<=qMax;q++) for (let r=-rMax;r<=rMax;r++) {
-          const x = root3*s*(q+r/2)+shiftX, y = 1.5*s*r+shiftY;
-          if (Math.abs(x)>W/2+s || Math.abs(y)>W*root3/4+s) continue;
-          const intersections = boolOp(CL.ClipType.ctIntersection,[ring(x,y,s)],board);
-          for (const shape of intersections) {
-            const ar = exArea(shape);
-            if (ar <= 1e-5) continue;
-            result.push({i:q,j:r,pts:shape.outer,partial:ar < 0.985*fullArea(s)});
-          }
+      const shiftX=layout==='alternating'?side*.25:0;
+      const fullArea=1.5*sqrt3*side*side;
+      for(let q=-rings-3;q<=rings+3;q++) for(let r=-rings*2-4;r<=rings*2+4;r++){
+        const x=1.5*side*q+shiftX;
+        const y=sqrt3*side*(r+q/2);
+        const pts=ringPoints(x,y,side);
+        const clipped=boolOp(CL.ClipType.ctIntersection,[pts],[outline]);
+        for(const ex of clipped){
+          const a=exArea(ex);
+          // These are geometric guardrails, not a piecemeal auto-delete.
+          // A valid fixed-tier edge never creates a near-zero sliver.
+          if(a<fullArea*.18) throw new Error(
+            'Hex Grid board produced a fragment too small for printing; choose fewer rings');
+          if(a<=0) continue;
+          cells.push({i:q,j:r,pts:ex.outer,partial:a<fullArea*.995});
         }
-        return result;
-      };
-      side = W/(2*Math.sqrt(target));
-      let best = null, score = Infinity;
-      for (let k=0;k<7;k++) {
-        const candidate = build(side);
-        const cost = Math.abs(candidate.length-target);
-        if (candidate.length && cost < score) {
-          best = {side,cells:candidate};score=cost;
-        }
-        if (cost===0) break;
-        side *= Math.max(0.78,Math.min(1.22,Math.sqrt(Math.max(1,candidate.length)/target)));
       }
-      side = best.side; cells = best.cells;
+    } else if(layout==='round'){
+      // A true axial cluster: all 6 neighbours per ring, all whole hexagons.
+      const unscaled=[];
+      for(let q=-rings;q<=rings;q++)for(let r=-rings;r<=rings;r++){
+        if(Math.abs(q+r)>rings)continue;
+        unscaled.push({i:q,j:r,x:1.5*q,y:sqrt3*(r+q/2)});
+      }
+      const b=bounds(unscaled.map(v=>ringPoints(v.x,v.y,1)));
+      side=W/Math.max(b.width,b.depth);
+      cells=unscaled.map(v=>({i:v.i,j:v.j,pts:ringPoints(v.x*side,v.y*side,side),partial:false}));
+    } else {
+      // User chooses N on each axis, yielding precisely N*N whole pieces.
+      const n=Math.max(2,Math.min(12,Math.round(Number(squareAcross)||
+        Math.sqrt(target))));
+      const unscaled=[];
+      for(let col=0;col<n;col++) for(let row=0;row<n;row++){
+        unscaled.push({i:col,j:row,x:1.5*(col-(n-1)/2),
+          y:sqrt3*(row-(n-1)/2+((col&1)?0.25:-0.25))});
+      }
+      const b=bounds(unscaled.map(v=>ringPoints(v.x,v.y,1)));
+      side=W/Math.max(b.width,b.depth);
+      cells=unscaled.map(v=>({i:v.i,j:v.j,pts:ringPoints(v.x*side,v.y*side,side),partial:false}));
     }
-    if (!cells.length) throw new Error('Hex grid produced no printable cells');
-    // Whole-hex clusters have a stepped external silhouette. Union the actual
-    // tiles rather than clipping them to a hex/square and creating half-pieces.
-    const clipped = layout==='edge' || layout==='alternating';
-    const outline = clipped ? ccw(Array.from({length:6},(_,k)=>{
-        const a = Math.PI/6+k*Math.PI/3;
-        return [Math.cos(a)*W/2,Math.sin(a)*W/2];
-      })) : exPolysFrom(cells.map(c=>c.pts)).sort((a,b)=>exArea(b)-exArea(a))[0].outer;
-    if (clipped && gapMm > 0) {
-      // A clipped tile may touch only the last fraction of a millimetre at
-      // a board corner. Such a sliver vanishes when printable clearance
-      // shrinks the piece, so remove it BEFORE counting the pieces.
-      // Mirror the exact two-stage inset used in buildModel below.
-      const safeBoard = offset([outline],-gapMm/2,'miter');
-      cells = cells.filter(c => {
-        if (!c.partial) return true;
-        return boolOp(CL.ClipType.ctIntersection,[c.pts],safeBoard).some(ex =>
-          offset([ex.outer,...ex.holes],-gapMm/2,'miter').some(r =>
-            Math.abs(area(r)) > 0.0001));
-      });
+    if(!cells.length) throw new Error('No Hex Grid cells were generated');
+    if(!outline){
+      const joined=exPolysFrom(cells.map(c=>c.pts));
+      if(joined.length!==1)throw new Error('Hex Grid has disconnected whole-hex tiles');
+      outline=joined[0].outer;
     }
-    const bb = bounds(cells.map(c=>c.pts));
-    return {cells,outline,clip:clipped,side,cellW:2*side,cellH:root3*side,
-      width:bb.width,depth:bb.depth,target,actual:cells.length,layout};
+    const bb=bounds(cells.map(c=>c.pts));
+    return {cells,outline,clip:partialBoard,side,cellW:2*side,
+      cellH:sqrt3*side,width:bb.width,depth:bb.depth,
+      target:layout==='square'?cells.length:count(rings),
+      actual:cells.length,rings,across:layout==='square'?Math.round(Math.sqrt(cells.length)):null,
+      layout};
   }
 
   // ---------- text ----------
@@ -762,7 +739,7 @@
   function buildModel(p, hf, font) {
     const W = p.widthMm, N = hf.N, sizeKm = hf.sizeKm;
     const hex = p.shape === 'hexgrid' && p.product === 'puzzle'
-      ? hexGridCells(W, p.pieces, p.hexLayout || 'edge', p.gapMm) : null;
+      ? hexGridCells(W, p.pieces, p.hexLayout || 'edge', p.gapMm, p.hexAcross) : null;
     const outline = hex ? hex.outline : shapeOutline(p.shape, W);
     const H = hex ? hex.depth : p.shape === 'hexagon' ? W * Math.sqrt(3) / 2 : W;
     const mmPerM = W / (sizeKm * 1000);
@@ -810,13 +787,14 @@
         // Keep complete-hex clusters complete; shrink each tile independently.
         // Clipped layouts use the same -gap/2 outer inset as existing jigsaws.
         pieces = [];
-        const edgeInset = hex.clip ? offset([outline],-p.gapMm/2,'miter') : null;
         for (const c of cells) {
-          const shapes = hex.clip
-            ? boolOp(CL.ClipType.ctIntersection,[c.pts],edgeInset)
-            : [{outer:c.pts,holes:[]}];
+          // c.pts is already aligned to the board, including any deliberate
+          // full/half/corner tile. Inset ONCE by half the requested clearance.
+          const shapes = [{outer:c.pts,holes:[]}];
           for (const ex of shapes) {
             const shr = exPolysFrom(offset([ex.outer,...ex.holes],-p.gapMm/2,'miter'));
+            if (!shr.length) throw new Error(
+              'Hex tile is too small for the selected gap. Choose fewer rings or reduce clearance.');
             for (const s of shr) {
               const ring = densify(s.outer,Math.max(0.6,step*1.5));
               const tris=[];
