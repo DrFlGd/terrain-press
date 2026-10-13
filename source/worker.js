@@ -197,7 +197,7 @@ self.onmessage = async e => {
           : hf.plan.detailOptimized
             ? 'Auto removed redundant detail beyond the DEM / selected printable feature.'
             : 'Requested mesh detail is within the sampling limit.')
-        .replace('{{CAP}}', String(hf.plan.cap))
+        .replaceAll('{{CAP}}', String(hf.plan.cap))
         .replace('{{FEATURE}}', hf.plan.featureMm.toFixed(2))
         .replace('{{SOURCESTEP}}', hf.plan.sourceStepMm.toFixed(3))
         .replace('{{SAMPLEMODE}}', String(hf.plan.samplingLimit));
