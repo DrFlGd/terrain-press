@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'desktop/**'
+      - 'source/**'
+      - 'site/**'
+      - 'docs/TERRAIN-DATA-ROADMAP.md'
       - 'package.json'
       - '.github/workflows/windows-desktop.yml'
   workflow_dispatch:
@@ -22,10 +25,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Set up Python for source build
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Test desktop asset routing
+      - name: Test dataset manager and desktop routing
         run: npm run test:desktop
+      - name: Build checked-in source into distributable website
+        run: python source/build.py
       - name: Build standalone Windows app
         run: npm run dist:win
         env:
@@ -33,8 +42,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.0.0
-          name: Terrain Press Desktop v1.0.0
+          tag_name: desktop-v1.1.0
+          name: Terrain Press Desktop v1.1.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -42,9 +51,11 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.0.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.1.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
+            - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
+            - Lunar 128/256/512 px-per-degree tiers are PLANNED, not downloadable in this release; datasets must be converted and hosted first.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             Source is provided in this repository under AGPL-3.0-or-later.

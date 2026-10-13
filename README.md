@@ -72,3 +72,7 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 ## Windows desktop app
 
 A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.0.0) (the **Terrain-Press-1.0.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+
+## Hybrid dataset roadmap (Windows)
+
+The [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md) tracks future whole-planet resolution downloads and coordinate-based regional packs. Desktop v1.1.0 includes the **Terrain Data Manager** and secure downloaded-tile infrastructure. It continues working offline with the included terrain. Optional higher-resolution global lunar tiers are listed as **planned, not yet downloadable**: conversion, coverage validation, and immutable tile hosting are still needed. The website continues using the bundled dataset.
