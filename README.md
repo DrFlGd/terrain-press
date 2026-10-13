@@ -71,7 +71,7 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.7.0) (the **Terrain-Press-1.7.0-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.7.1) (the **Terrain-Press-1.7.1-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
 
 ## Hybrid dataset roadmap (Windows)
 
@@ -118,3 +118,7 @@ These are **beta test downloads**, not production-verified transfers. Each GeoTI
 **Why not add Venus and Pluto now?** The available [Venus Magellan GTDR global topography](https://astrogeology.usgs.gov/search/map/venus_magellan_global_topography_4641m) has ~4.64 km pixels, comparable to the bundled Venus 8,192 × 4,096 grid. High-resolution [Pluto/Charon New Horizons DEM coverage](https://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=NH-P%2FPSA-LORRI%2FMVIC-5-GEOPHYS-V1.0) is partial; treating that as a global observed DEM would be misleading. Both need distinct handling, particularly for coverage and data provenance.
 
 Test the new worlds separately: download a beta pack, choose that world, compare a named landmark before/after installation, export an STL/3MF, restart offline, and remove the pack to confirm the included DEM returns. A full transfer has **not** been run in CI; please report any URL, TIFF metadata, or out-of-memory errors you encounter.
+
+### Clear dataset-to-world labels (v1.7.1)
+
+Every **Terrain Data Manager** row now identifies its supported celestial body directly with **Applies to: Moon (Earth's moon)**, **Mars (planet)**, **Mercury (planet)**, **Venus (planet)**, **Ceres (dwarf planet)**, **Vesta (asteroid)**, or **Pluto (dwarf planet)**. This applies to both the bundled/offline datasets and optional Moon LOLA, Mars MOLA, Mercury MESSENGER, Ceres Dawn, and Vesta Dawn downloads. Download confirmations now name the destination world and dataset rather than assuming every download has the same NASA IMG format. No data files are changed.

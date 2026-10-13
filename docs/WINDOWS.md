@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.7.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.7.1-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.7.0-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.7.1-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,7 +57,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.7.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.7.1 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -98,3 +98,9 @@ To preserve signed source elevations outside the older 16-bit encoding range, Ge
 **Beta warning:** The USGS source URLs and source metadata are documented, but complete real-world downloads and actual raster metadata/height samples are **not yet validated in CI or on the intended Windows hardware**. Download sizes are approximate, and the app can reject an unexpected TIFF representation safely. These packs are opt-in for individual testing. Keep your existing Moon/Mars downloads and allow several GB of free disk space for upgrades, caches and exports.
 
 Venus Magellan's available global elevation product is nominally about the same spatial resolution as Terrain Press's bundled Venus grid. Pluto's fine-resolution New Horizons topography covers only part of the planet, so a region-aware upgrade with coverage masks must be developed before enabling it.
+
+## Dataset destination labels (v1.7.1)
+
+All entries in **Terrain Data Manager**, including bundled datasets, explicitly display **Applies to: [world] ([body type])**. The Moon is labelled **Earth's moon**, Mars/Mercury/Venus **planet**, Ceres/Pluto **dwarf planet**, and Vesta **asteroid**. Thus similarly named mission datasets are unmistakably tied to the correct printable world: LOLA → Moon, MOLA → Mars, MESSENGER → Mercury, Dawn HAMO → Ceres or Vesta. Optional downloads preserve their existing experimental/beta status. Download confirmation also states the world and full dataset name.
+
+Adding a *new download tier to a supported world* usually reuses the existing world/landmarks/globe and the downloader framework. A *new celestial body* additionally needs verified global terrain data with a consistent height reference, projection, coordinate frame, bundled offline tiles and globe imagery, dataset metadata, UI world selection, credits and suitable named landmarks. Sparse or partial DEM coverage cannot be treated as globally observed terrain.

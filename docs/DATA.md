@@ -58,3 +58,9 @@ Notes on the format:
 5. Add the world to `WORLDS` in `source/app.js`: name, colours, credit and landmarks. Then run `python3 source/build.py`.
 
 Pull requests are welcome; please include the dataset's source and licence.
+
+## World labelling and additional celestial bodies (v1.7.1)
+
+The desktop **Terrain Data Manager** uses each entry's stable `body` identifier from `desktop/packs/catalog.json` and the same `WORLDS` names as the print configurator. Every bundled elevation raster and optional download displays **Applies to: [world] ([body classification])**. When adding a new body, add its stable ID and classification to the download-manager world-label mapping in `source/app.js`; a regression test in `desktop/data-manager-labels.test.js` ensures all catalog bodies are labelled correctly.
+
+A downloadable dataset for a **previously supported** world is simpler than a whole new world: integrate and validate the source-native raster format and pixel grid, datum, NoData/coverage, provenance, file URLs, checksums, coordinate conventions and cache tiles. An **entirely new celestial body** additionally requires the global fallback grid, correctly projected tiles and overview, a shaded globe image, new `site/data/meta.json` record, a world definition in `source/app.js`, citation and credits, and any landmarks. Some moons lack complete global topographic coverage; do not present blank or interpolated areas as measured terrain.
