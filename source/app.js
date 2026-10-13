@@ -501,7 +501,23 @@ document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener
   if (el.name !== 'detail' || $('preview-high').checked) schedule();
   else void refreshPlan();
 }));
-$('preview-high').addEventListener('change', () => schedule(true));
+$('preview-high').addEventListener('change', async () => {
+  if ($('preview-high').checked && ready) {
+    try {
+      const result = await call({ type: 'plan', q: query(state.detail) });
+      if (result.plan.N > 1441 && !confirm(
+        'High-detail preview will build a ' + result.plan.N.toLocaleString('en-US') +
+        ' × ' + result.plan.N.toLocaleString('en-US') +
+        ' height grid and can require substantial memory. Continue?')) {
+        $('preview-high').checked = false;
+      }
+    } catch (e) {
+      $('preview-high').checked = false;
+      toast('Could not estimate preview detail: ' + e.message, 'warning');
+    }
+  }
+  schedule(true);
+});
 for (const id of ['sampling-limit', 'min-feature']) {
   $(id).addEventListener('change', () => {
     if ($('preview-high').checked) schedule();
