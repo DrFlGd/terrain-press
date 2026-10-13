@@ -48,6 +48,11 @@ function encodeHeight(value, p) {
   return h + 8388608;
 }
 function decodeHeight(rgb) { return rgb - 8388608; }
+function isMissingSample(value, noData, p) {
+  return !Number.isFinite(value) || (noData !== null && value === Number(noData)) ||
+    value === -32768 || Math.abs(value) > 1e7 ||
+    (p.kind === 'radius' && value < 100000);
+}
 function fileSignature(f) {
   const fd=fs.openSync(f,'r');
   try {
@@ -175,7 +180,7 @@ async function generateTile(dir,id,tileName) {
       const nodata=typeof image.getGDALNoData==='function' ? image.getGDALNoData() : null;
       for(let iy=0;iy<height;iy++)for(let ix=0;ix<run;ix++){
         const raw=Number(values[iy*run+ix]),at=4*(iy*width+k+ix);
-        if(!Number.isFinite(raw)||(nodata!==null && raw===Number(nodata))) {
+        if(isMissingSample(raw,nodata,p)) {
           // Transparent samples allow the consumer to fall back to bundled DEM
           // for unmapped areas; alpha is retained through OffscreenCanvas.
           png.data[at]=png.data[at+1]=png.data[at+2]=0;png.data[at+3]=0;
@@ -191,4 +196,4 @@ async function generateTile(dir,id,tileName) {
   } finally {await tif.close();}
 }
 module.exports={PRODUCTS,product,urlFor,trustedResponse,encodeHeight,decodeHeight,
-  complete,install,tileInfo,generateTile,openImage};
+  complete,install,tileInfo,generateTile,openImage,isMissingSample};

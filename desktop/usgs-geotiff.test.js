@@ -101,3 +101,13 @@ test('source worker decodes int24 PNGs and treats zero-alpha samples as missing'
   assert.match(s,/p\.heightEncoding === 'int24'/);
   assert.match(s,/px\[k \+ 3\] === 0 \? NaN/);
 });
+
+test('invalid pixels do not become invented planetary terrain',()=>{
+  const v=Geo.product('vesta-dawn-48'),m=Geo.product('mercury-messenger-64');
+  assert.equal(Geo.isMissingSample(-32768,null,m),true);
+  assert.equal(Geo.isMissingSample(-3.4028235e38,null,v),true);
+  assert.equal(Geo.isMissingSample(0,null,v),true);
+  assert.equal(Geo.isMissingSample(260000,null,v),false);
+  assert.equal(Geo.isMissingSample(-8000,null,m),false);
+  assert.equal(Geo.isMissingSample(-9999,'-9999',m),true);
+});
