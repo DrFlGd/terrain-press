@@ -614,6 +614,17 @@ function initTerrainDataManager() {
   };
   const format = b => b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + ' GiB'
     : (b / 1024 ** 2).toFixed(1) + ' MiB';
+  // Every included or optional dataset is tied to exactly one planetary body.
+  // Use the same world IDs as the renderer rather than inferring it from
+  // acronyms such as LOLA, MOLA, MESSENGER or Dawn.
+  const worldKind = {
+    moon: "Earth's moon", mars: 'planet', mercury: 'planet',
+    venus: 'planet', ceres: 'dwarf planet', vesta: 'asteroid',
+    pluto: 'dwarf planet'
+  };
+  const worldName = id => WORLDS[id]?.name || id;
+  const worldLabel = id => 'Applies to: ' + worldName(id) +
+    (worldKind[id] ? ' (' + worldKind[id] + ')' : '');
   const error = e => { progress.textContent = e && e.message ? e.message : String(e); };
   function updateProgress(p) {
     if (!p) return;
@@ -629,8 +640,14 @@ function initTerrainDataManager() {
     folder.textContent = 'Storage: ' + s.root;
     list.appendChild(make('h3', 'Included offline', 'h6 mt-3'));
     for (const built of s.bundled) {
-      list.appendChild(make('div', built.name + ' · ' + built.w + ' × ' + built.h +
-        ' · ' + format(built.bytes) + ' compressed · Included', 'tp-data-row'));
+      const row = make('div', '', 'tp-data-row');
+      const details = make('div', '', 'tp-data-entry');
+      details.appendChild(make('strong', built.name + ' · Included'));
+      details.appendChild(make('div', worldLabel(built.body), 'tp-data-world'));
+      details.appendChild(make('div', built.w + ' × ' + built.h +
+        ' · ' + format(built.bytes) + ' compressed', 'tp-data-muted'));
+      row.appendChild(details);
+      list.appendChild(row);
     }
     list.appendChild(make('h3', 'Optional planetary downloads', 'h6 mt-3'));
     list.appendChild(make('p', 'Moon LOLA and Mars MOLA use native NASA IMG files. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS elevation GeoTIFFs. Downloads are stored separately and needed terrain tiles are converted on demand. Venus has no better validated global grid yet; Pluto high detail is limited to the mapped hemisphere.', 'tp-data-muted'));
@@ -639,6 +656,7 @@ function initTerrainDataManager() {
       const row = make('div', '', 'tp-data-row');
       const details = make('div', '', 'tp-data-entry');
       details.appendChild(make('strong', pack.name));
+      details.appendChild(make('div', worldLabel(pack.body), 'tp-data-world'));
       details.appendChild(make('div', pack.note || pack.body, 'tp-data-muted'));
       if (pack.downloadBytes) details.appendChild(make('div',
         (pack.format === 'usgs-geotiff' ? 'USGS GeoTIFF' : 'NASA IMG') + ' download: ~' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
@@ -649,8 +667,9 @@ function initTerrainDataManager() {
       button.disabled = pack.status !== 'published' && !installed.has(pack.id);
       button.onclick = async () => {
         if (!installed.has(pack.id) && pack.downloadBytes &&
-            !confirm('Download ' + format(pack.downloadBytes) +
-              ' of original NASA elevation data to ' + s.root + '? Leave space for local tile cache.')) return;
+            !confirm('Download ' + pack.name + ' for ' + worldName(pack.body) +
+              ' (' + format(pack.downloadBytes) + ') to ' + s.root +
+              '? Leave space for the local terrain tile cache.')) return;
         button.disabled = true;
         progress.textContent = installed.has(pack.id) ? 'Removing dataset…' : 'Downloading dataset…';
         try {
