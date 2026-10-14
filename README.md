@@ -71,7 +71,7 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.9.0 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.0) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.9.1 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.1) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
 
 ## Current progress and data validation
 
@@ -179,3 +179,5 @@ This change affects Hex Grid outline tessellation only, not the sample heights, 
 **Crucially, this is not a global observed DEM.** Magellan stereo measures roughly 20% of Venus, and the researcher's effective horizontal detail estimate is **~1–2 km**, despite 600 m raster pixels. The desktop computes a 0.5° global **measured-elevation coverage atlas from native valid float pixels** after download; **unmapped samples remain transparent** and fall back to the bundled elevation. The **Globe tab → Show elevation coverage** legend shows installed measured stereo areas, bundled fallback, nominal installed global products and bundled higher-fidelity landmark patches. The map is approximate at 0.5° resolution; export always tests each actual elevation sample. The selected region's real stereo-vs-bundled percentage appears in preview and the ZIP README. No color imagery is used as if it were height data.
 
 Official source: [NASA PDS4 Magellan stereo archive](https://pds-geosciences.wustl.edu/missions/magellan/stereo_topography.htm). Details and effective-resolution caveat: [Robert Herrick's research page](https://sites.google.com/alaska.edu/robertherrick/resources/stereo-derived-topography-for-venus). **Still beta:** Native source labels and limited samples verified, but the complete ~2.97 GB transfer, postdownload coverage atlas, landmark height comparisons, and offline Windows STL/3MF rendering have not yet been physically tested. Existing planet packages remain unchanged.
+
+**v1.9.1 planner refinement:** The Venus 600 m file is an output raster, not a 600 m effective-detail measurement. Auto terrain resolution uses a conservative ~1.5 km effective-detail estimate for the Venus optional pack while still loading actual higher-resolution pixels for all sampled heights. This avoids redundant triangulation in large prints; manual Advanced ceilings remain available.

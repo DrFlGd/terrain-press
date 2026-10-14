@@ -1,6 +1,6 @@
 # Terrain Press — Project status and next milestones
 
-**Updated:** 2026-10-14  ·  **Current Windows release:** [v1.9.0](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.0)  ·  **Supported bodies:** 7
+**Updated:** 2026-10-14  ·  **Current Windows release:** [v1.9.1](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.1)  ·  **Supported bodies:** 7
 
 This is the **current** status summary. The [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) contains implementation history, detailed requirements and research notes; [Windows instructions](WINDOWS.md) explain the downloadable desktop app. A **working download or render is not the same as a scientific validation of absolute elevations, datum, missing-data coverage or complete offline export behavior**.
 
@@ -20,7 +20,7 @@ All seven bodies have offline, built-in elevation grids and selected locally sha
 
 **Validation notation:** “User confirmed” reflects successful functioning in the user's installation, **not** a recorded independent metrology audit, source-pixel comparison, test of every exported file, or a repeatable remote integration test. Mercury, Ceres and Vesta remain marked *beta* in the current catalog until those additional acceptance checks are recorded. The current downloader's published/catalog status means *available to install*, not that every product passed scientific acceptance.
 
-## Features shipped through v1.9.0
+## Features shipped through v1.9.1
 
 - **Seven offline worlds**, global elevation and landmark selection by latitude, longitude and region width; finer sources used when installed and valid. Download manager identifies the applicable body for every pack.
 - **Print formats:** terrain ornaments, square/circular/hexagon puzzles, and four **Hex Grid** arrangements with flat or terrain-relief cut-edge pieces; spread-print preview, independent puzzle-part STL files, assembled 3MF and ZIP outputs.
