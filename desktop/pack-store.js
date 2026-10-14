@@ -13,10 +13,12 @@ const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 const CATALOG = require('./packs/catalog.json');
 const NASA = require('./nasa-lola');
 const MOLA = require('./nasa-mola');
+const VENUS = require('./nasa-venus');
 const TIFF = require('./usgs-geotiff');
 // Driver is selected only by a catalog-controlled format.
 const rasterDriver = pack => pack.format === 'nasa-pds-img' ? NASA :
-  pack.format === 'nasa-mola-img' ? MOLA : null;
+  pack.format === 'nasa-mola-img' ? MOLA :
+  pack.format === 'nasa-venus-float' ? VENUS : null;
 
 function httpsUrl(url) {
   try {
@@ -90,7 +92,9 @@ class PackStore {
     return {
       root: this.root, bundled: CATALOG.builtIn, catalog: CATALOG.packs,
       installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || p.format === 'usgs-geotiff' ? 'png' : 'webp',
-        heightEncoding: p.format === 'usgs-geotiff' ? 'int24' : 'int16' })),
+        heightEncoding: p.format === 'usgs-geotiff' || p.format === 'nasa-venus-float' ? 'int24' : 'int16',
+        ...(p.format === 'nasa-venus-float'
+          ? { coverageMaskUrl: '/packs/' + p.id + '/coverage.png', coverageKind:'measured' } : {}) })),
       active: this.active ? this.active.progress : null
     };
   }
@@ -110,6 +114,13 @@ class PackStore {
   async assetForUrl(requestUrl) {
     let parsed;
     try { parsed = new URL(requestUrl); } catch { return null; }
+    const mask = /^\/packs\/([a-z][a-z0-9-]{1,63})\/coverage\.png$/.exec(parsed.pathname);
+    if (mask && this.installed.has(mask[1])) {
+      const p = this.catalogPack(mask[1]);
+      if (!p || p.format !== 'nasa-venus-float') return null;
+      const dir = path.join(this.root, p.id);
+      return VENUS.complete(dir) ? path.join(dir, 'coverage.png') : null;
+    }
     const match = /^\/packs\/([a-z][a-z0-9-]{1,63})\/(t\d+_\d+\.(?:webp|png))$/.exec(parsed.pathname);
     if (!match || !this.installed.has(match[1])) return null;
     const pack = this.catalogPack(match[1]);
@@ -127,7 +138,7 @@ class PackStore {
     } else {
       if (!driver.complete(dir, pack.ppd)) return null;
       try {
-        if (pack.format === 'nasa-mola-img') driver.tileInfo(match[2]);
+        if (pack.format === 'nasa-mola-img' || pack.format === 'nasa-venus-float') driver.tileInfo(match[2]);
         else driver.tileInfo(pack.ppd, match[2]);
       } catch { return null; }
     }
@@ -139,7 +150,7 @@ class PackStore {
         // Convert the needed native IMG cells only; never build a second whole-planet copy.
         const png = pack.format === 'usgs-geotiff'
           ? await TIFF.generateTile(dir, pack.id, match[2])
-          : pack.format === 'nasa-mola-img'
+          : pack.format === 'nasa-mola-img' || pack.format === 'nasa-venus-float'
           ? driver.generateTile(dir, match[2])
           : driver.generateTile(dir, pack.ppd, match[2]);
         const partial = tile + '.' + process.pid + '.partial';

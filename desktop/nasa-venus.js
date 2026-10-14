@@ -119,6 +119,7 @@ function readRow(fd,y){
 function coverageAtlas(dir){
   const fd=fs.openSync(path.join(dir,'mosaic_allstereo.img'),'r');
   const png=new PNG({width:720,height:360,colorType:6,inputColorType:6,bitDepth:8});
+  const counts=new Uint8Array(720*360);
   try {
     for(let gy=0;gy<360;gy++)for(let sy=0;sy<4;sy++){
       const lat=90-(gy+(sy+.5)/4)*.5;
@@ -132,14 +133,16 @@ function coverageAtlas(dir){
           const sc=Math.floor((lon*Math.PI/180*RADIUS-X0)/RES);
           if(sc>=0&&sc<COLS&&isObserved(row.readFloatLE(sc*4)))hits++;
         }
-        png.data[(gy*720+gx)*4]+=hits*16; // 16 observations -> 0..256, Uint8 clamps wrap at 256! handled below
+        counts[gy*720+gx]+=hits; // 4 rows of 4 probes = 16 total per bin
       }
     }
   }finally{fs.closeSync(fd);}
   let any=0;
-  for(let i=0;i<png.data.length;i+=4){
-    if(png.data[i]>0)any++;
-    png.data[i+3]=255;
+  for(let i=0;i<counts.length;i++){
+    if(counts[i]>0)any++;
+    const at=i*4;
+    png.data[at]=Math.round(counts[i]/16*255);
+    png.data[at+3]=255;
   }
   fs.writeFileSync(path.join(dir,'coverage.png'),PNG.sync.write(png,{colorType:6}));
   return {width:720,height:360,sourceCoverageBins:any,

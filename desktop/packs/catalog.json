@@ -140,6 +140,18 @@
       "format": "usgs-geotiff",
       "downloadBytes": 570000000,
       "note": "93 m/pixel · ~95% stereo coverage, Claudia Double Prime longitude · USGS GeoTIFF (~570 MB) · beta"
+    },
+    {
+      "id": "venus-magellan-stereo-600m",
+      "body": "venus",
+      "name": "Magellan Venus Stereo Topography · 600 m raster · regional beta",
+      "w": 64800,
+      "h": 32400,
+      "tile": 1024,
+      "status": "published",
+      "note": "NASA PDS4 Herrick stereo DEM · ~20% observed coverage · ~1–2 km effective detail · 600 m pixels · 2.97 GB native IMG; actual coverage mask generated on install",
+      "format": "nasa-venus-float",
+      "downloadBytes": 2974192980
     }
   ]
 }
