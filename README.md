@@ -71,7 +71,7 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.9.1 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.1) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.9.2 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.2) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
 
 ## Current progress and data validation
 
@@ -181,3 +181,10 @@ This change affects Hex Grid outline tessellation only, not the sample heights, 
 Official source: [NASA PDS4 Magellan stereo archive](https://pds-geosciences.wustl.edu/missions/magellan/stereo_topography.htm). Details and effective-resolution caveat: [Robert Herrick's research page](https://sites.google.com/alaska.edu/robertherrick/resources/stereo-derived-topography-for-venus). **Still beta:** Native source labels and limited samples verified, but the complete ~2.97 GB transfer, postdownload coverage atlas, landmark height comparisons, and offline Windows STL/3MF rendering have not yet been physically tested. Existing planet packages remain unchanged.
 
 **v1.9.1 planner refinement:** The Venus 600 m file is an output raster, not a 600 m effective-detail measurement. Auto terrain resolution uses a conservative ~1.5 km effective-detail estimate for the Venus optional pack while still loading actual higher-resolution pixels for all sampled heights. This avoids redundant triangulation in large prints; manual Advanced ceilings remain available.
+
+### Moon 256/512 and Venus stereo download fixes (v1.9.2)
+
+- **Moon LOLA 256/512 pixels/degree:** NASA names southern tiles `ldem_256_90s_00s_000_180.img` (**00s**, not 00n at the southern equator). Terrain Press v1.9.1 incorrectly requested `ldem_256_90s_00n_000_180.img`, which fails around 50% through the 256 ppd download. The southern-hemisphere filenames are fixed for 256 and 512 ppd, including the corresponding `.lbl` files. Previously downloaded original IMG files in the `moon-lola-256.incomplete` folder **are preserved**; retry with the same data directory. SHA checks of completed files may take time, but the 4.25 GB already saved in the northern tiles need not be downloaded again.
+- **Venus Magellan stereo:** NASA uses namespaced PDS4 tags such as `<cart:latitude_type>`; the old validator only recognized unprefixed cartographic tags and rejected a valid label before the ~2.97 GB image transfer. The parser now accepts XML namespace prefixes **while still validating** the coordinate system, 600 m native grid, source height offset of 6,040,000 m, and 6,051,800 m radius. The official XML tag spelling was confirmed in a live NASA archive check. Full data transfer and exported Venus mesh remain beta validation tasks.
+
+To recover, use **v1.9.2**, keep the existing configured Terrain Data Manager directory, and click Download for the failed pack again; do **not** delete `.incomplete` directories.

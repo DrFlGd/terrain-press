@@ -270,3 +270,10 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Clearly separate nominal 600 m raster spacing from documented **~1–2 km effective terrain detail**, and preserve the earlier seven-world downloader functionality.
 - [ ] Full Windows beta acceptance: complete 2.97 GB NASA download, inspect computed mask over known mapped/unmapped regions, compare exact native heights and sign/datum at several Venus landmarks, test STL/3MF export/slicer, offline restart and interrupted download resume/removal.
 - [ ] Next coverage milestone: regional/range downloads rather than the full 2.97 GB file, richer confidence/uncertainty masks and coverage overlays for additional worlds (Pluto, Io); evaluate whether a user-directed crop can be preserved offline with index ranges and checksums.
+
+## v1.9.2 — Original NASA archive interoperability and user-reported download repairs
+
+- [x] Fix southern LOLA hemisphere tile naming for 256/512 ppd, including the equatorial `00s` PDS filename convention that caused 256 ppd failure halfway through. Retain partial IMG transfers, completed original files and locally cached valid labels on subsequent attempts.
+- [x] Use namespace-aware Venus PDS4 XML field validation; accept actual `cart:` cartography tags without weakening checks of dimensions, east-positive planetocentric reference, 600 m sample size or source-radius offset.
+- [x] Add regression cases for both failures and a Windows recovery guide.
+- [ ] Real Windows confirmation: Moon 256 ppd resumes from 50% and completes; Venus starts and completes the 2.97 GB image transfer; validate measured-pixel coverage atlas, original heights and STL/3MF exports.

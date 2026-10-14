@@ -1,12 +1,12 @@
 # Windows desktop edition
 
-**Current status:** [v1.8.3 release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.1) · [2026-10-13 field-validation and next-milestone matrix](PROJECT-STATUS.md). The user confirms functional Mercury, Ceres and Vesta integrations and previously confirmed Mars download/render. Beta markers remain until independent elevation and offline lifecycle checks are recorded.
+**Current status:** [v1.8.3 release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.2) · [2026-10-13 field-validation and next-milestone matrix](PROJECT-STATUS.md). The user confirms functional Mercury, Ceres and Vesta integrations and previously confirmed Mars download/render. Beta markers remain until independent elevation and offline lifecycle checks are recorded.
 
 Terrain Press can run as a **single portable Windows executable**. It bundles the web configurator, all seven elevation datasets, fonts and JavaScript libraries. It does not host a public web server or require an Internet connection.
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.9.1-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.9.2-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -51,7 +51,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.9.1-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.9.2-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -59,7 +59,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.9.1 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.9.2 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -152,3 +152,11 @@ The effective horizontal terrain resolution is ~**1–2 km**, not 600 m; NASA's 
 **Acceptance not yet complete:** The original PDS4 XML/ENVI header and limited real IMG byte-range samples have been confirmed via GitHub Actions, but a complete 2.97 GB installation, measurement-vs-source test at documented Venus coordinates, offline restart/cancel/resume/removal and real STL/3MF slices remain to be performed on Windows. Keep this pack beta until those tests pass. The Moon/Mars/Mercury/Ceres/Vesta sources remain available independently.
 
 **v1.9.1 source-matched mesh planning:** Venus nominal raster pixels are 600 m, but the effective stereo topographic detail is ~1–2 km. Automatic export resolution uses ~1.5 km as the DEM detail limit while still reading valid source pixels; Advanced remains available for deliberate oversampling. No new source transfer is required.
+
+## v1.9.2 — Retrying the Moon 256 ppd or Venus stereo download
+
+**Moon:** If a download failed at ~50% with `NASA PDS label download failed: ldem_256_90s_00n_000_180.img`, earlier code generated a non-existent southern-hemisphere PDS filename. NASA calls the southern equator `00s`, so the real file is `ldem_256_90s_00s_000_180.img`. Both 256 and 512 ppd hemisphere naming are corrected. **Leave the Terrain Data Manager's selected data directory untouched**; restart the download using v1.9.2. Previously downloaded northern raster files and sidecars remain under `moon-lola-256.incomplete` and are reused, though files may be rehashed before progress resumes.
+
+**Venus:** If `NASA Venus PDS4 label disagrees with expected reference/height metadata` appears, the v1.9.1 importer was checking for unprefixed XML cartography fields, but NASA actually writes `<cart:latitude_type>`, `<cart:longitude_direction>`, etc. v1.9.2 accepts legal PDS4 prefixes, retaining verification of signed elevation reference, pixel dimensions, and coordinate conventions. This error occurred *before* the large Venus IMG transfer; the source download should now start when retried.
+
+**Verification status:** Exact archived Moon filenames and original Venus tag structures have been checked against NASA's public files and have regression tests. A full multi-GB Windows transfer and source-elevation validation still require user retesting.

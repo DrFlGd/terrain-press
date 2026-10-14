@@ -1,6 +1,6 @@
 # Terrain Press — Project status and next milestones
 
-**Updated:** 2026-10-14  ·  **Current Windows release:** [v1.9.1](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.1)  ·  **Supported bodies:** 7
+**Updated:** 2026-10-14  ·  **Current Windows release:** [v1.9.1](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.2)  ·  **Supported bodies:** 7
 
 This is the **current** status summary. The [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) contains implementation history, detailed requirements and research notes; [Windows instructions](WINDOWS.md) explain the downloadable desktop app. A **working download or render is not the same as a scientific validation of absolute elevations, datum, missing-data coverage or complete offline export behavior**.
 
@@ -57,3 +57,7 @@ All seven bodies have offline, built-in elevation grids and selected locally sha
 - [ ] Record any mismatches, RAM/CPU/disk footprint and slicer behavior; update dataset status or quality warnings only when the evidence supports the change.
 
 **Latest field feedback recorded:** On 2026-10-13, the user confirmed **Mercury, Ceres and Vesta function correctly**. Earlier feedback confirmed **Mars downloaded and rendered** and that the spread-puzzle view worked. No additional scientific or offline acceptance steps were expressly reported with that feedback.
+
+## v1.9.2 — Two source-download error corrections (pending user retest)
+
+Moon LOLA 256 ppd failed near 50% because Terrain Press requested the non-existent `ldem_256_90s_00n_000_180.img`; the NASA southern filename ends in `90s_00s`. This also affects the analogous 512 ppd filenames. The fix preserves downloaded source files in the incomplete staging directory. The first Venus stereo attempt failed because actual NASA PDS4 coordinate tags carry a `cart:` XML namespace prefix; parsing was corrected against the real archive label. Both have regression tests; full post-fix Windows transfer, source-value comparison and offline geometry export remain to be recorded.
