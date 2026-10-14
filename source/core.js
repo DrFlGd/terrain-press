@@ -150,6 +150,11 @@
           out[k] = (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
         }
       }
+      // Coverage percentage must be counted BEFORE masked cells are replaced
+      // by the built-in DEM; otherwise partial Venus would look 100% observed.
+      const sourceValidFraction = src.kind === 'pack'
+        ? out.reduce((count,v) => count + (Number.isFinite(v) ? 1 : 0),0)/out.length
+        : null;
       // Some published DTMs have shadows/NoData. Preserve measured heights,
       // substituting built-in terrain only at genuinely missing pixels.
       if (!ignoreInstalled && src.kind === 'pack' && out.some(v => !Number.isFinite(v))) {
@@ -157,7 +162,8 @@
         for (let k = 0; k < out.length; k++)
           if (!Number.isFinite(out[k])) out[k] = fallback.heights[k];
       }
-      return { heights: out, N, source: src };
+      return { heights: out, N, source: src.kind === 'pack'
+        ? { ...src, validFraction: sourceValidFraction } : src };
     }
     async function globeSampler(body) {
       const m = meta[body], A = await get(`data/${body}/overview.webp`);

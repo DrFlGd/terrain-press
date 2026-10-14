@@ -180,7 +180,8 @@ self.onmessage = async e => {
       const { parts, transfer } = pack(model, true);
       self.postMessage({ type: 'built', id: m.id, parts, stats: { hMin: model.hMin, hMax: model.hMax, reliefMm: model.reliefMm, frameTop: model.frameTop, floorZ: model.floorZ, widthMm: model.widthMm, depthMm: model.depthMm,
         actualPieces: model.actualPieces, grid: model.grid ? { cellW: model.grid.cellW, cellH: model.grid.cellH } : null }, mesh: { N: hf.N, stepMm: hf.stepMm, limited: hf.limited, cap: hf.plan.cap,
-        detailOptimized: hf.plan.detailOptimized }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label } }, transfer);
+        detailOptimized: hf.plan.detailOptimized }, source: { kind: hf.source.kind, pxKm: hf.source.pxKm, label: hf.source.label,
+        validFraction: hf.source.validFraction } }, transfer);
       return;
     }
     if (m.type === 'export') {
@@ -194,6 +195,10 @@ self.onmessage = async e => {
         .replace('{{FRAMETOP}}', (mdl.frameTop || 0).toFixed(2))
         .replace('{{PX}}', (hf.source.pxKm * 1000).toFixed(0))
         .replace('{{SOURCE}}', hf.source.label).replace('{{STEP}}', hf.stepMm.toFixed(3))
+        .replace('{{COVERAGE}}', hf.source.validFraction === null ||
+          hf.source.validFraction === undefined ? 'Not measured at export resolution'
+          : (hf.source.validFraction*100).toFixed(1) + '% valid higher-resolution DEM samples' +
+            ' (remaining samples use included elevation)')
         .replaceAll('{{GRID}}', String(hf.N))
         .replace('{{LIMIT}}', hf.limited
           ? 'Sampling ceiling ' + hf.plan.cap + ' x ' + hf.plan.cap + ' was reached; some requested detail may be lost.'
