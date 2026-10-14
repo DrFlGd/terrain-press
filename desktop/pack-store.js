@@ -94,7 +94,8 @@ class PackStore {
       installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || p.format === 'usgs-geotiff' ? 'png' : 'webp',
         heightEncoding: p.format === 'usgs-geotiff' || p.format === 'nasa-venus-float' ? 'int24' : 'int16',
         ...(p.format === 'nasa-venus-float'
-          ? { coverageMaskUrl: '/packs/' + p.id + '/coverage.png', coverageKind:'measured' } : {}) })),
+          ? { coverageMaskUrl: '/packs/' + p.id + '/coverage.png',
+              coverageKind:'measured', effectivePxKm: p.effectivePxKm } : {}) })),
       active: this.active ? this.active.progress : null
     };
   }

@@ -151,7 +151,8 @@
       "status": "published",
       "note": "NASA PDS4 Herrick stereo DEM · ~20% observed coverage · ~1–2 km effective detail · 600 m pixels · 2.97 GB native IMG; actual coverage mask generated on install",
       "format": "nasa-venus-float",
-      "downloadBytes": 2974192980
+      "downloadBytes": 2974192980,
+      "effectivePxKm": 1.5
     }
   ]
 }

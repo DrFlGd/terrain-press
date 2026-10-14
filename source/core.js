@@ -67,7 +67,10 @@
         p.w > m.w && p.h > 0 && p.tile > 0 && /^[a-z][a-z0-9-]{1,63}$/.test(p.id)
       ).sort((a, b) => b.w - a.w);
       if (packs.length) {
-        const p = packs[0], pxKm = 2 * Math.PI * R / p.w;
+        // Native pixel size is NOT the same as effective measured detail.
+        // Venus stereo is gridded at ~600 m, but resolves about 1-2 km.
+        const p = packs[0], pxKm = Math.max(2 * Math.PI * R / p.w,
+          Number.isFinite(p.effectivePxKm) ? p.effectivePxKm : 0);
         if (!candidatePatch || pxKm < candidatePatch.pxKm) {
           const set = new Set();
           for (let k = 0; k < g.lats.length; k++) {
