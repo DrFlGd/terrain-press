@@ -41,7 +41,9 @@ function parseMetadata(hdr,xml){
   return {cols:COLS,rows:ROWS,bytes:BYTES,scale:1,valueOffset:VALUE_OFFSET,
     sampleType:'IEEE754LSBSingle',radius:RADIUS,spacingMeters:RES,origin:[X0,Y0]};
 }
-function isObserved(dn){return Number.isFinite(dn)&&dn>-10000&&dn<100000;}
+// Zero (a raw radius of only 6,040 km) is not plausible Venus topography.
+ // A sparse/zero-filled input must not accidentally mark blank cells observed.
+function isObserved(dn){return Number.isFinite(dn)&&dn>1000&&dn<35000;}
 function toHeight(dn){return isObserved(dn)?Math.round(dn+VALUE_OFFSET-TARGET_RADIUS):NaN;}
 function sourcePixel(lat,lon) {
   if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
