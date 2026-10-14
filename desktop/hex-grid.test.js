@@ -74,7 +74,9 @@ test('clipped hex board uses lattice-locked rings with no slivers or gaps',()=>{
     const g=C.hexGridCells(W,nominal,layout,0.3);
     assert.equal(g.clip,true);
     assert.equal(g.rings,rings);
-    assert.equal(g.cells.length,nominal,layout+' ring count');
+    const expected = layout==='alternating'
+      ? [7,19,43,55,91,133][rings-1] : nominal;
+    assert.equal(g.cells.length,expected,layout+' symmetric ring count');
     assert.ok(g.cells.some(c=>c.partial));
     assert.ok(g.cells.some(c=>!c.partial));
     assert.equal(g.outline.length,6);
@@ -84,7 +86,7 @@ test('clipped hex board uses lattice-locked rings with no slivers or gaps',()=>{
     assert.ok(Math.abs(occupied/board-1)<.0005,
       layout+' full board coverage '+occupied+'/'+board);
     const minimum=Math.min(...g.cells.map(c=>geomArea(c.pts)/fullArea(g.side)));
-    assert.ok(minimum>.18,layout+' must avoid slivers (minimum '+minimum+')');
+    assert.ok(minimum>.22,layout+' must avoid slivers (minimum '+minimum+')');
   }
 });
 
@@ -144,4 +146,66 @@ test('a square layout exports exactly N by N printable cells at 460 mm',()=>{
     assert.equal(model.parts.length,n*n);
     assert.ok(model.parts.every(p=>!p.partial&&p.tris.every(Number.isFinite)));
   }
+});
+
+function polygonCentre(pts) {
+  let sum=0,cx=0,cy=0;
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i],b=pts[(i+1)%pts.length],cross=a[0]*b[1]-b[0]*a[1];
+    sum+=cross;cx+=(a[0]+b[0])*cross;cy+=(a[1]+b[1])*cross;
+  }
+  return [cx/(3*sum),cy/(3*sum)];
+}
+test('both clipped hex boards have D6 rotational and bilateral mirror symmetry',()=>{
+  const almost=(v,w,limit)=>Math.abs(v-w)<limit;
+  for(const layout of ['edge','alternating']){
+    for(const rings of [1,2,3,4,5,6]){
+      const board=C.hexGridCells(460,1+3*rings*(rings+1),layout,.3);
+      const pieces=board.cells.map(c=>({
+        ...c, centre:polygonCentre(c.pts),area:geomArea(c.pts)
+      }));
+      // Every clipped or whole polygon must have a counterpart matching its
+      // location and area after 60-degree rotation and each board reflection.
+      // An off-centre grid can still fill the entire board without gaps; this
+      // test specifically detects unequal left/right and top/bottom pieces.
+      const transforms=[
+        ([x,y])=>[x*Math.cos(Math.PI/3)-y*Math.sin(Math.PI/3),
+          x*Math.sin(Math.PI/3)+y*Math.cos(Math.PI/3)],
+        ([x,y])=>[-x,y],
+        ([x,y])=>[x,-y]
+      ];
+      for(const transform of transforms)for(const cell of pieces){
+        const c=transform(cell.centre);
+        const peer=pieces.find(p=>
+          almost(p.centre[0],c[0],.014) && almost(p.centre[1],c[1],.014) &&
+          almost(p.area,cell.area,.15));
+        assert.ok(peer,
+          layout+' ring '+rings+': unmatched piece under board symmetry at '+
+          JSON.stringify({centre:cell.centre,area:cell.area,transformed:c}));
+        // A full hex must map to another full hex. A perimeter fraction must
+        // always be paired with an equally sized fraction on the other side.
+        assert.equal(peer.partial,cell.partial);
+      }
+      const centre=pieces.find(p=>Math.hypot(...p.centre)<.014);
+      assert.ok(centre,'every pattern is centred on a real middle hexagon');
+      assert.equal(centre.partial,false,'central hexagon is never clipped');
+    }
+  }
+});
+test('flat-top border and point-top alternating modes are distinct centred lattices',()=>{
+  const flat=C.hexGridCells(460,37,'edge',.3);
+  const point=C.hexGridCells(460,37,'alternating',.3);
+  assert.equal(flat.rings,3);
+  assert.equal(point.rings,3);
+  const centroid=pts=>polygonCentre(pts);
+  const a=flat.cells.find(c=>Math.hypot(...centroid(c.pts))<.014);
+  const b=point.cells.find(c=>Math.hypot(...centroid(c.pts))<.014);
+  assert.ok(a&&b,'central hex for both orientations');
+  assert.equal(a.partial,false);assert.equal(b.partial,false);
+  assert.ok(Math.abs(a.pts[0][0]-b.pts[0][0])>1,
+    'alternating mode rotates cells rather than translating the grid');
+  const strip=(cells,sign)=>cells.filter(c=>Math.sign(centroid(c.pts)[0])===sign
+    && c.partial).reduce((total,c)=>total+geomArea(c.pts),0);
+  assert.ok(Math.abs(strip(flat.cells,-1)-strip(flat.cells,1))<.1);
+  assert.ok(Math.abs(strip(point.cells,-1)-strip(point.cells,1))<.1);
 });
