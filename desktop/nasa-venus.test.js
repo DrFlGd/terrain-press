@@ -16,11 +16,15 @@ const header=[
   'map info = {Equirectangular, 1, 1, -1690078.35735304, 8143885.38509742, 600, 600}',
   'coordinate system string = {PROJCS["equicyl_venus",GEOGCS["Venus_2000",SPHEROID["Venus_2000_IAU_IAG",6051800,0]]}'
 ].join('\n');
+// This reproduces actual official NASA XML, including the cart: prefix that
+// caused the v1.9.0 download to fail before fetching any height data.
 const xml='<Array_2D_Map><data_type>IEEE754LSBSingle</data_type>'+
-  '<value_offset>6040000.0</value_offset>'+
-  '<latitude_type>planetocentric</latitude_type>'+
-  '<longitude_direction>Positive East</longitude_direction>'+
-  '<pixel_resolution_x unit="m/pixel">600</pixel_resolution_x></Array_2D_Map>';
+  '<scaling_factor>1.0</scaling_factor><value_offset>6040000.0</value_offset>'+
+  '<cart:latitude_type>planetocentric</cart:latitude_type>'+
+  '<cart:longitude_direction>Positive East</cart:longitude_direction>'+
+  '<cart:semi_major_radius unit="m">6051800.0</cart:semi_major_radius>'+
+  '<cart:pixel_resolution_x unit="m/pixel">600</cart:pixel_resolution_x>'+
+  '<cart:pixel_resolution_y unit="m/pixel">600</cart:pixel_resolution_y></Array_2D_Map>';
 
 test('Venus PDS header from NASA defines real native dimensions, sample type, radius and absolute-height offset',()=>{
   const m=Venus.parseMetadata(header,xml);
@@ -45,6 +49,10 @@ test('unexpected projection, bytes, type and PDS4 vertical datum are hard errors
   assert.throws(()=>Venus.parseMetadata(header,xml.replace('6040000.0','6051800.0')));
   assert.throws(()=>Venus.parseMetadata(header,xml.replace('Positive East','Positive West')));
   assert.throws(()=>Venus.parseMetadata(header,xml.replace('planetocentric','planetographic')));
+  assert.throws(()=>Venus.parseMetadata(header,xml.replace('6051800.0','6051000.0')));
+  assert.throws(()=>Venus.parseMetadata(header,xml.replace('IEEE754LSBSingle','IEEE754MSBSingle')));
+  assert.doesNotThrow(()=>Venus.parseMetadata(header,xml.replace(/cart:/g,'pds:')),
+    'legal PDS4 XML namespace prefixes must not affect coordinate validation');
 });
 test('Venus source map projection transforms known coordinates and rejects rectangular-file-only coverage',()=>{
   const origin=Venus.sourcePixel(0,0);

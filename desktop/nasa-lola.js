@@ -13,7 +13,10 @@ const SOURCE = 'https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol
 const FILE_BYTES = 2123366400;
 const TIERS = [128, 256, 512];
 const NASA_HOST = 'pds-geosciences.wustl.edu';
-const nameLat = n => String(Math.abs(n)).padStart(2, '0') + (n < 0 ? 's' : 'n');
+// NASA labels the EQUATOR using the hemisphere of its file's latitude band:
+ // northern tiles use 00n, southern tiles use 00s (even though both are 0°).
+const nameLat = (n, southHemisphere = false) =>
+  String(Math.abs(n)).padStart(2, '0') + (n < 0 || (n === 0 && southHemisphere) ? 's' : 'n');
 const bounds = ppd => {
   if (!TIERS.includes(ppd)) throw new Error('Unknown LOLA resolution');
   const bands = ppd === 128 ? [[90, -90]] :
@@ -24,7 +27,8 @@ const bounds = ppd => {
       [[0, 90], [90, 180], [180, 270], [270, 360]];
   return bands.flatMap(([north, south]) => zones.map(([west, east]) => {
     const stem = ppd === 128 ? 'ldem_128' :
-      'ldem_' + ppd + '_' + nameLat(south) + '_' + nameLat(north) + '_' +
+      'ldem_' + ppd + '_' + nameLat(south, north <= 0) + '_' +
+      nameLat(north, north <= 0) + '_' +
       String(west).padStart(3, '0') + '_' + String(east).padStart(3, '0');
     return { north, south, west, east, stem, name: stem + '.img',
       rows: (north - south) * ppd, cols: (east - west) * ppd, bytes: FILE_BYTES };
@@ -70,10 +74,24 @@ function complete(dir, ppd) {
     });
   } catch { return false; }
 }
-async function getLabel(c, signal) {
+async function getLabel(c, signal, staging = null) {
+  // Reuse native NASA labels already validated in the .incomplete directory.
+  // This avoids re-fetching metadata for finished multi-GB files after an
+  // interrupted transfer and preserves both the source and its sidecar.
+  const saved = staging && path.join(staging, c.stem + '.lbl');
+  if (saved && fs.existsSync(saved)) {
+    try {
+      const label = fs.readFileSync(saved, 'utf8');
+      const metadata = parseLabel(label, c);
+      return { label, metadata };
+    } catch {
+      // Corrupt/stale sidecar: fetch a fresh one and verify it instead.
+    }
+  }
   const url = SOURCE + c.stem + '.lbl';
   const res = await fetch(url, { signal });
-  if (!res.ok || !nasaResponse(res)) throw new Error('NASA PDS label download failed: ' + c.name);
+  if (!res.ok || !nasaResponse(res)) throw new Error(
+    'NASA PDS label download failed: ' + c.name + ' (HTTP ' + res.status + ' at ' + url + ')');
   const header = res.headers.get('content-length');
   if (header && Number(header) > 200000) throw new Error('Unexpected NASA label size');
   const label = await res.text();
@@ -135,7 +153,7 @@ async function install({ ppd, staging, signal, progress, report }) {
   const finished = [];
   for (const c of entries) {
     if (signal.aborted) throw new Error('Download cancelled');
-    const { label, metadata } = await getLabel(c, signal);
+    const { label, metadata } = await getLabel(c, signal, staging);
     fs.writeFileSync(path.join(staging, c.stem + '.lbl'), label, 'utf8');
     let lastReport = 0;
     await fetchImage(c, staging, signal, received => {

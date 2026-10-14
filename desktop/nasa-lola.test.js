@@ -7,7 +7,18 @@ test('direct NASA files: naming, partitioning, expected bytes', () => {
   assert.deepEqual([128,256,512].map(x=>bounds(x).length), [1,4,16]);
   assert.equal(bounds(128)[0].name, 'ldem_128.img');
   assert.ok(bounds(256).some(c=>c.name==='ldem_256_00n_90n_000_180.img'));
+  assert.ok(bounds(256).some(c=>c.name==='ldem_256_90s_00s_000_180.img'),
+    'NASA southern half uses 00s at equator, not 00n');
+  assert.ok(bounds(256).some(c=>c.name==='ldem_256_90s_00s_180_360.img'));
   assert.ok(bounds(512).some(c=>c.name==='ldem_512_90s_45s_270_360.img'));
+  assert.ok(bounds(512).some(c=>c.name==='ldem_512_45s_00s_270_360.img'),
+    '512 southern bands must use 00s');
+  assert.ok(bounds(512).some(c=>c.name==='ldem_512_00n_45n_000_090.img'));
+  for(const ppd of [256,512]){
+    for(const c of bounds(ppd))assert.ok(
+      !c.name.includes('_90s_00n_') && !c.name.includes('_45s_00n_'),
+      'invalid southern equator in '+c.name);
+  }
   assert.ok(SOURCE.startsWith('https://pds-geosciences.wustl.edu/'));
   for(const ppd of [128,256,512]) for (const c of bounds(ppd)) {
     assert.equal(c.rows*c.cols*2, FILE_BYTES);

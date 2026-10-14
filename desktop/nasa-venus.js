@@ -20,6 +20,15 @@ function field(hdr,key) {
   if(!line)throw Error('Missing Venus ENVI header field: '+key);
   return line.slice(line.indexOf('=')+1).trim();
 }
+// PDS4 cartography keys are namespaced (e.g. <cart:latitude_type>),
+ // while File_Area_Observational values are unprefixed. Parse both safely.
+function pdsField(xml,name){
+  const re=new RegExp('<(?:[A-Za-z][\\w.-]*:)?'+name+
+    '(?:\\s[^>]*)?>\\s*([^<]*?)\\s*<\\/(?:[A-Za-z][\\w.-]*:)?'+name+'\\s*>','i');
+  const match=re.exec(xml);
+  if(!match)throw Error('NASA Venus PDS4 missing '+name);
+  return match[1].trim();
+}
 function parseMetadata(hdr,xml){
   for(const [k,v] of [['samples',COLS],['lines',ROWS],['bands',1],['header offset',0],
     ['data type',4],['byte order',0]])
@@ -31,12 +40,15 @@ function parseMetadata(hdr,xml){
      Math.abs(Number(info[3])-X0)>0.01||Math.abs(Number(info[4])-Y0)>0.01||
      Number(info[5])!==RES||Number(info[6])!==RES)
     throw Error('Venus raster does not match published equirectangular map');
-  if(!/Venus_2000/i.test(hdr)||!/6051800/.test(hdr)||
-     !/<data_type>IEEE754LSBSingle<\/data_type>/.test(xml)||
-     !/<value_offset>\s*6040000(?:\.0+)?\s*<\/value_offset>/.test(xml)||
-     !/<latitude_type>planetocentric<\/latitude_type>/.test(xml)||
-     !/<longitude_direction>Positive East<\/longitude_direction>/.test(xml)||
-     !/<pixel_resolution_x[^>]*>\s*600\s*<\/pixel_resolution_x>/.test(xml))
+  if(!/Venus_2000/i.test(hdr)||
+     pdsField(xml,'data_type')!=='IEEE754LSBSingle'||
+     Number(pdsField(xml,'scaling_factor'))!==1||
+     Number(pdsField(xml,'value_offset'))!==VALUE_OFFSET||
+     pdsField(xml,'latitude_type').toLowerCase()!=='planetocentric'||
+     pdsField(xml,'longitude_direction').toLowerCase()!=='positive east'||
+     Number(pdsField(xml,'semi_major_radius'))!==RADIUS||
+     Number(pdsField(xml,'pixel_resolution_x'))!==RES||
+     Number(pdsField(xml,'pixel_resolution_y'))!==RES)
     throw Error('NASA Venus PDS4 label disagrees with expected reference/height metadata');
   return {cols:COLS,rows:ROWS,bytes:BYTES,scale:1,valueOffset:VALUE_OFFSET,
     sampleType:'IEEE754LSBSingle',radius:RADIUS,spacingMeters:RES,origin:[X0,Y0]};
