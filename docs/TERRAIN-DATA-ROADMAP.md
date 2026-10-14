@@ -238,3 +238,11 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Preserve exact 1 mm typed model widths independent of the approximate 5 mm model-width slider, including source-based planning and exported 3MF/STL.
 - [x] Add regression checks for terrain wall height vs original DEM, matched wall/top boundary vertices and numeric input/stepper controls.
 - [ ] User validation: inspect the same crater/ridge edge close-up in v1.8.2 and slice exported per-piece STLs to confirm no residual triangulation artifacts.
+
+## v1.8.3 — Clipped Hex Grid symmetry after user screenshots
+
+- [x] Identify one-sided X lattice translation as the cause of off-centre and mismatched border pieces.
+- [x] Center the central tile on the board and implement two genuinely different orientations: flat-top half-hex border grid and 30°-rotated point-top alternating edge grid.
+- [x] Use prechecked ring spacings for the point-top grid to keep edge portions printable; label actual mode-specific ring counts rather than implying every variant contains the whole-hex total.
+- [x] Add 60° rotational and left/right plus top/bottom mirror symmetry regression tests of individual clipped-piece centroids, areas and partial/full classification for every tier, in addition to whole-board coverage tests.
+- [ ] Confirm in the user's slicer/preview that opposite edge panels have matching outlines and size at the same print-width and ring tier; continue Io investigation afterward.

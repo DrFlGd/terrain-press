@@ -4,7 +4,7 @@ Terrain Press can run as a **single portable Windows executable**. It bundles th
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.8.2-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.8.3-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -49,7 +49,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.8.2-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.8.3-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -57,7 +57,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.8.2 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.8.3 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -132,3 +132,11 @@ Automated geometry tests compare summed clipped-cell area against the exact hexa
 **Terrain piece edges:** A collinear XY simplification was discarding sampled perimeter points along hex and puzzle edges, even though the DEM elevations at those intermediate XY positions differed. The resulting top/bottom mesh could have a straight-looking thin vertical sheet across a terrain hollow between two high points. Sidewalls now preserve and reuse the very same boundary samples as the top mesh. The terrain edge sample interval is reduced to match the print model's sampling step (minimum 0.2 mm) when the print mesh is generated. Constant-height pieces and text remain simplified.
 
 **Coordinate entry:** Type directly into latitude, longitude, region width (km), or model width (mm) fields, or use their visibly persistent up/down step controls. The inputs also retain their keyboard controls. The model-width slider still moves in 5 mm increments but the typed width keeps individual millimetres accurately through both preview and STL/3MF output. The regular 1,000 mm cap and explicit 5,000 mm unlock remain in force.
+
+## Symmetric Hex Grid boards (v1.8.3)
+
+The original clipped **Hex outline · alternating edge pieces** layout shifted the regular hex lattice to the right relative to the board. The result was an off-centre large central tile and unequally cut edge pieces on opposite sides, even though all cells nominally covered the board. The correction fixes the grid's centre and rotates the alternating tile family by 30°, matching the point-top orientation of the supplied alternating reference.
+
+The **half-hex border** variant retains flat-top tiles with equally matched mirrored parts; the **alternating** variant now uses point-top tiles with the same centre. Six predetermined point-top ring sizes avoid too-small fragments. Their actual totals (7, 19, 43, 55, 91, 133) are displayed on the ring-size menu when that layout is selected; other ring and whole-hex totals remain unchanged. Complete lattice rotations and reflections are tested geometrically for every clipped cell and every preset.
+
+**Acceptance:** The user should visually compare a one-ring and three-ring preview from both clipped board modes, then inspect a high-relief assembled/exported model in the slicer. Symmetric geometry is independent of the non-symmetric terrain relief and lighting, which may make surfaces appear visually unequal.

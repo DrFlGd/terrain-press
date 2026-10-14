@@ -43,8 +43,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.8.2
-          name: Terrain Press Desktop v1.8.2
+          tag_name: desktop-v1.8.3
+          name: Terrain Press Desktop v1.8.3
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -52,7 +52,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.8.2-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.8.3-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -94,6 +94,10 @@ jobs:
             - FIX v1.8.2: Latitude, longitude, regional width and model width remain directly editable and now show persistent increment/decrement arrows.
             - FIX v1.8.2: Typed exact model widths retain 1 mm precision, independent of 5 mm slider steps.
             - New regression tests verify DEM-accurate shared top/wall vertices and user-editable coordinate step controls.
+            - FIX v1.8.3: Recenter the hex-outline grids. The prior alternating style shifted every tile in X, creating unequal left/right and top/bottom border panels.
+            - Match reference designs using flat-top hexagons for the half-hex border and centred point-top hexagons for the alternating border.
+            - Fixed point-top ring tiers prevent hairline corner pieces; ring preset labels report actual counts where the alternate orientation differs.
+            - New sixfold rotation and bilateral mirror tests verify equal-area counterpart pieces for all six ring presets.
             - Existing seven-world raster engine and installed downloaded data remain unchanged.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
