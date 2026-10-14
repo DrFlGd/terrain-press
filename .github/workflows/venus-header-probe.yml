@@ -33,3 +33,21 @@ jobs:
                   text=(e.text or '').strip()
                   if text: print(tag,':',text[:160])
           PY
+          echo '--- PDS XML SOURCE METADATA (unit, special, fill, radius, value) ---'
+          grep -iEn -C 2 'special_constants|missing|invalid|unknown|satur|error_constant|<unit>|<description>|offset|data_type|valid_minimum|valid_maximum' lbl.xml | tail -130 || true
+          echo '--- NASA BYTE-RANGE PROBE (8 bytes, abort on full 2.97 GB response) ---'
+          python3 - <<'PY'
+          import urllib.request,struct
+          root='https://pds-geosciences.wustl.edu/mgn/urn-nasa-pds-magellan_stereo_topography/data/mosaic_allstereo.img'
+          cols=34505;rows=21549
+          for x,y in [(0,0),(cols//2,rows//2),(cols//4,rows//4),(cols*3//4,rows//2),(cols//2,rows//4),(cols//3,rows*2//3)]:
+            start=(y*cols+x)*4
+            req=urllib.request.Request(root, headers={'Range':f'bytes={start}-{start+3}'})
+            try:
+              with urllib.request.urlopen(req,timeout=22) as r:
+                print('sample',x,y,'HTTP',r.status,'range',r.headers.get('Content-Range'))
+                if r.status!=206:print('Range unsupported - no bulk download');break
+                raw=r.read(4)
+                print(' value',struct.unpack('<f',raw)[0],raw.hex())
+            except Exception as exc:print('Probe failure:',exc);break
+          PY
