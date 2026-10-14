@@ -1,6 +1,6 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Current status (2026-10-13, v1.8.3):** The desktop app supports **seven offline worlds** and optional elevation upgrades for **five** (Moon, Mars, Mercury, Ceres and Vesta). The user has confirmed that the **Mars download renders**, and has now confirmed that **Mercury, Ceres and Vesta function correctly** in their installation. This establishes a successful *functional field test*, **not** independent certification of archive height/datum values, every STL/3MF, offline restart/removal, or multi-GB Moon transfers. The USGS products remain beta in the release catalog while that evidence is collected. **Venus and Pluto still have no optional higher-resolution elevation download.**
+**Current status (2026-10-13, v1.8.3):** The desktop app supports **seven offline worlds** and optional elevation upgrades for **five** (Moon, Mars, Mercury, Ceres and Vesta). The user has confirmed that the **Mars download renders**, and has now confirmed that **Mercury, Ceres and Vesta function correctly** in their installation. This establishes a successful *functional field test*, **not** independent certification of archive height/datum values, every STL/3MF, offline restart/removal, or multi-GB Moon transfers. The USGS products remain beta in the release catalog while that evidence is collected. **Venus now has an experimental geographically masked Magellan stereo beta**, not a higher-resolution complete global map. Pluto still lacks an optional higher-resolution source.
 
 For an up-to-date seven-world matrix, delivered feature list and **prioritized next steps**, see **[Project status and next milestones](PROJECT-STATUS.md)**. The phase sections below preserve implementation history and outstanding acceptance gates.
 
@@ -260,3 +260,13 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Document Hex Grid improvements through v1.8.3 and Io source-research readiness without implying Io is selectable.
 - [ ] Collect reproducible dataset validation records (specific test steps, original DEM metadata/values, ZIP output and offline lifecycle) for the beta planetary packs; update labels when warranted.
 - [ ] Prioritize regional/partial-coverage support, then Io source preflight, Venus-specific source evaluation and adaptive/large-geometry improvements as detailed in [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
+## v1.9.0 — Observed coverage legend and Magellan stereo regional Venus beta
+
+- [x] Verify NASA PDS4 Magellan stereo product metadata by fetching the original ENVI and PDS4 headers in CI, and cross-check native IMG float32 sample bytes using HTTPS Range (including the missing-data sentinel). Original file: 34,505 × 21,549 (2,974,192,980 bytes), ~600 m pixels in planetocentric east-positive equirectangular projection, radius-offset **6,040,000 m**.
+- [x] Add native Venus PDS4 float importer with source-size and metadata checks, resume, checksum receipt, source-specific signed height decoding and on-demand terrain tiles; **leave unmeasured pixels masked** and use bundled Venus elevation as the fallback.
+- [x] Build a 0.5° / 4×4-subsample world coverage atlas **from observed elevation values** on installation, instead of showing a wholly filled rectangular source footprint. Estimated observed area is ~20% as documented by Robert Herrick.
+- [x] Add **Globe → Show elevation coverage** and legend, noting observed/nominal/fallback coverage and local sharper built-in patches; selected Venus region shows the real fraction of valid stereo height samples, and ZIP README includes the same fraction.
+- [x] Clearly separate nominal 600 m raster spacing from documented **~1–2 km effective terrain detail**, and preserve the earlier seven-world downloader functionality.
+- [ ] Full Windows beta acceptance: complete 2.97 GB NASA download, inspect computed mask over known mapped/unmapped regions, compare exact native heights and sign/datum at several Venus landmarks, test STL/3MF export/slicer, offline restart and interrupted download resume/removal.
+- [ ] Next coverage milestone: regional/range downloads rather than the full 2.97 GB file, richer confidence/uncertainty masks and coverage overlays for additional worlds (Pluto, Io); evaluate whether a user-directed crop can be preserved offline with index ranges and checksums.

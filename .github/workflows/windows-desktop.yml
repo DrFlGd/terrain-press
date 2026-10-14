@@ -43,8 +43,8 @@ jobs:
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.8.3
-          name: Terrain Press Desktop v1.8.3
+          tag_name: desktop-v1.9.0
+          name: Terrain Press Desktop v1.9.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -52,7 +52,7 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.8.3-Portable.exe and run it; no installation, server, Node.js, or Python required.
+            - Download Terrain-Press-1.9.0-Portable.exe and run it; no installation, server, Node.js, or Python required.
             - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
             - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
             - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
@@ -98,6 +98,12 @@ jobs:
             - Match reference designs using flat-top hexagons for the half-hex border and centred point-top hexagons for the alternating border.
             - Fixed point-top ring tiers prevent hairline corner pieces; ring preset labels report actual counts where the alternate orientation differs.
             - New sixfold rotation and bilateral mirror tests verify equal-area counterpart pieces for all six ring presets.
+            - NEW v1.9.0: NASA Venus Magellan stereo topography regional beta, original 2.974 GB IEEE754 little-endian PDS4 source, native 600 m samples and ~1–2 km effective detail.
+            - PDS4 metadata and live byte-range samples checked against NASA before integration; the stereo source covers only ~20% of Venus.
+            - Native validity-based mask generation, signed height conversion (source radius offset 6,040,000 m), on-demand PNG tile decoding and transparent bundled fallback for unobserved pixels.
+            - NEW: Globe elevation coverage legend and optional geographic overlay for all worlds, showing observed stereo where a real mask is installed, nominal upgraded grids, bundled detailed patches, and unmapped areas.
+            - Preview chip and exported README report actual native stereo sample fraction vs fallback for selected Venus regions.
+            - BETA: full 2.97 GB Venus transfer, real mask comparison and offline STL/3MF test still require user validation. No other planetary drivers were modified.
             - Existing seven-world raster engine and installed downloaded data remain unchanged.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 

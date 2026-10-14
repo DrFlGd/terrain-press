@@ -1,12 +1,12 @@
 # Windows desktop edition
 
-**Current status:** [v1.8.3 release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.8.3) · [2026-10-13 field-validation and next-milestone matrix](PROJECT-STATUS.md). The user confirms functional Mercury, Ceres and Vesta integrations and previously confirmed Mars download/render. Beta markers remain until independent elevation and offline lifecycle checks are recorded.
+**Current status:** [v1.8.3 release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.0) · [2026-10-13 field-validation and next-milestone matrix](PROJECT-STATUS.md). The user confirms functional Mercury, Ceres and Vesta integrations and previously confirmed Mars download/render. Beta markers remain until independent elevation and offline lifecycle checks are recorded.
 
 Terrain Press can run as a **single portable Windows executable**. It bundles the web configurator, all seven elevation datasets, fonts and JavaScript libraries. It does not host a public web server or require an Internet connection.
 
 ## Download and run
 
-Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.8.3-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
+Open the [Windows desktop releases](https://github.com/DrFlGd/terrain-press/releases) and download **Terrain-Press-1.9.0-Portable.exe**. On 64-bit Windows 10 or 11, double-click the file. The app may take a moment to unpack on first launch; it does not require installation or administrator access. Configure your terrain, then use **Download print files** to save the ZIP containing STL/3MF output.
 
 The portable executable is **not code-signed**. Windows SmartScreen may warn about an unrecognized publisher; only run binaries downloaded from the repository's release page and verify you trust the project.
 
@@ -22,7 +22,7 @@ Windows users can install entire lunar DEMs directly from the original NASA Plan
 
 Choose a dataset folder on a drive with adequate space, open **Terrain data manager**, and select Download. The app fetches original NASA signed-16-bit IMG files and detached LBL metadata. It validates dimensions, sample type, scale, radius offset, and downloaded byte count, and records a local SHA-256 in a download receipt (not a NASA-published reference checksum). Files are staged until the entire chosen global dataset is present. Cancellation leaves partial files for HTTP-range resume, where supported. The native IMG files are retained; the application creates cached PNG elevation tiles only for terrain you actually use. This avoids a full converted copy of the Moon.
 
-After installation, Terrain Press automatically selects the finest installed global Moon source at arbitrary coordinates unless a bundled landmark patch is finer. All functionality works offline afterward. An unmodified embedded coarse Moon dataset remains available on fresh installs. Mars MOLA 64 pixels/degree is now available as a **beta** direct-NASA download. The data manager now also offers Mercury, Ceres and Vesta as individually testable **USGS GeoTIFF beta** downloads. Venus and partial-coverage Pluto are not yet available as higher-resolution complete global upgrades.
+After installation, Terrain Press automatically selects the finest installed global Moon source at arbitrary coordinates unless a bundled landmark patch is finer. All functionality works offline afterward. An unmodified embedded coarse Moon dataset remains available on fresh installs. Mars MOLA 64 pixels/degree is now available as a **beta** direct-NASA download. The data manager now also offers Mercury, Ceres and Vesta as individually testable **USGS GeoTIFF beta** downloads. Venus now offers the **partial-coverage** stereo DEM beta; Pluto still requires a regional source. Neither claims full global measured coverage.
 
 **Limitations:** The full **Moon** multi-gigabyte downloads and offline export/removal lifecycle have not been reported as independently validated end-to-end on Windows. **Mars** has since been user-confirmed downloaded and rendered, but source height values and offline export/removal are not yet independently recorded. NASA availability, rate limits and transfer/resume behavior may vary. Nominal pixels-per-degree does not guarantee independent measurements at every grid location.
 
@@ -51,7 +51,7 @@ With Node.js 22 and npm installed:
     npm install
     npm run test:desktop
     npm run desktop       # local Electron application using the checked-in site/
-    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.8.3-Portable.exe
+    npm run dist:win      # on Windows, writes dist/Terrain-Press-1.9.0-Portable.exe
 
 The desktop package uses the already-built site/ directory. If you change source/, run npm run build first (requires Python 3) to regenerate site/. Commit the rebuilt files before making a release.
 
@@ -59,7 +59,7 @@ site/ is shipped in full as an external Electron resource, not fetched from a CD
 
 ## Publishing
 
-The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.8.3 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
+The GitHub Actions workflow .github/workflows/windows-desktop.yml runs the desktop tests, builds on a Windows runner, and uploads the portable .exe to release desktop-v1.9.0 on qualifying pushes to main, or on manual workflow dispatch. For future desktop versions, update the version in package.json and the tag/release name in the workflow before building a new release.
 
 ## Automatic terrain sampling and advanced ceilings (v1.5.0)
 
@@ -142,3 +142,11 @@ The original clipped **Hex outline · alternating edge pieces** layout shifted t
 The **half-hex border** variant retains flat-top tiles with equally matched mirrored parts; the **alternating** variant now uses point-top tiles with the same centre. Six predetermined point-top ring sizes avoid too-small fragments. Their actual totals (7, 19, 43, 55, 91, 133) are displayed on the ring-size menu when that layout is selected; other ring and whole-hex totals remain unchanged. Complete lattice rotations and reflections are tested geometrically for every clipped cell and every preset.
 
 **Acceptance:** The user should visually compare a one-ring and three-ring preview from both clipped board modes, then inspect a high-relief assembled/exported model in the slicer. Symmetric geometry is independent of the non-symmetric terrain relief and lighting, which may make surfaces appear visually unequal.
+
+## Venus Magellan stereo coverage and data legend (v1.9.0)
+
+**Venus beta:** Terrain Data Manager → **Magellan Venus Stereo Topography · 600 m raster · regional beta**. Downloads one original **2,974,192,980-byte** PDS4 IMG (~2.77 GiB), ENVI `.hdr` and PDS4 `.xml` metadata directly from NASA. HTTP Range resume is supported if the server honors it. The downloader verifies the native grid (34,505 × 21,549), floating-point little-endian band, 600 m projected pixel size, planetocentric east-positive coordinate convention, and the crucial **6,040,000 m source-radius offset**. It retains the original source and lazily converts requested terrain into signed 24-bit lossless PNG tiles. Unknown/bad source values—including the published ~-3.402823e38 sentinel—are masked. Those samples **fall back to the existing bundled Venus height map**.
+
+The effective horizontal terrain resolution is ~**1–2 km**, not 600 m; NASA's ~600 m pixels represent the output sampling grid. The source only contains observed stereo topography in about **20% of Venus's surface**. After installation, the application reads the actual source pixels to build an **approximate 0.5° coverage overlay**. In **Globe**, use **Show elevation coverage** and its color legend; observed stereo is distinguished from bundled fallback, available coarse/upgraded grids and other sharper local patches. If the mask fails to load, the globe intentionally does **not** fill in an assumed rectangular “measured” region. This is a geographical quality aid, not a guarantee that every small crater is resolved. Region preview/export reports the observed fraction before mask-based fallback.
+
+**Acceptance not yet complete:** The original PDS4 XML/ENVI header and limited real IMG byte-range samples have been confirmed via GitHub Actions, but a complete 2.97 GB installation, measurement-vs-source test at documented Venus coordinates, offline restart/cancel/resume/removal and real STL/3MF slices remain to be performed on Windows. Keep this pack beta until those tests pass. The Moon/Mars/Mercury/Ceres/Vesta sources remain available independently.
