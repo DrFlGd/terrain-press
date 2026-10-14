@@ -1,5 +1,7 @@
 # Windows desktop edition
 
+**Current status:** [v1.8.3 release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.8.3) · [2026-10-13 field-validation and next-milestone matrix](PROJECT-STATUS.md). The user confirms functional Mercury, Ceres and Vesta integrations and previously confirmed Mars download/render. Beta markers remain until independent elevation and offline lifecycle checks are recorded.
+
 Terrain Press can run as a **single portable Windows executable**. It bundles the web configurator, all seven elevation datasets, fonts and JavaScript libraries. It does not host a public web server or require an Internet connection.
 
 ## Download and run
@@ -22,7 +24,7 @@ Choose a dataset folder on a drive with adequate space, open **Terrain data mana
 
 After installation, Terrain Press automatically selects the finest installed global Moon source at arbitrary coordinates unless a bundled landmark patch is finer. All functionality works offline afterward. An unmodified embedded coarse Moon dataset remains available on fresh installs. Mars MOLA 64 pixels/degree is now available as a **beta** direct-NASA download. The data manager now also offers Mercury, Ceres and Vesta as individually testable **USGS GeoTIFF beta** downloads. Venus and partial-coverage Pluto are not yet available as higher-resolution complete global upgrades.
 
-**Limitations:** Source filenames and metadata have been checked against the public PDS archive. The full multi-gigabyte transfer, offline reuse and resulting STL have not yet been validated end-to-end on a physical Windows system. NASA's availability, rate limits, and transfer/resume behavior may vary. Nominal pixels-per-degree does not guarantee independent measurements at every grid location.
+**Limitations:** The full **Moon** multi-gigabyte downloads and offline export/removal lifecycle have not been reported as independently validated end-to-end on Windows. **Mars** has since been user-confirmed downloaded and rendered, but source height values and offline export/removal are not yet independently recorded. NASA availability, rate limits and transfer/resume behavior may vary. Nominal pixels-per-degree does not guarantee independent measurements at every grid location.
 
 ### Export detail: Auto (source matched)
 
@@ -75,7 +77,7 @@ Choose **Advanced** when you need explicit manual control. This reveals **mesh s
 
 **High-detail preview (match export)** uses whichever mode is currently selected. Fast preview remains fixed and inexpensive. The planned grid count is always visible before export; grids larger than 1,441 per side prompt a memory/performance warning.
 
-The next project milestone is extending the Terrain Data Manager to the other supported worlds (Mars, Mercury, Venus, Ceres, Vesta, and coverage-limited Pluto). The actual external data products and reliability of conversion must be verified before enabling downloads; the existing offline assets remain fallback.
+This section describes the original v1.5.1 plan. **As of v1.8.3**, downloads for Mars, Mercury, Ceres and Vesta are already implemented and have positive user field feedback; see the [live project status](PROJECT-STATUS.md). Venus still lacks a meaningful global higher-resolution tier and Pluto requires partial-coverage support.
 
 ## Mars MOLA direct NASA trial and puzzle spread fix (v1.6.0)
 
@@ -95,7 +97,7 @@ Three additional worlds are now selectable individually in **Terrain Data Manage
 
 To preserve signed source elevations outside the older 16-bit encoding range, GeoTIFF-derived tiles use an internal 24-bit encoding. PNG NoData/missing elevations are transparently marked and, for sampling, replaced with bundled fallback heights rather than inventing measured detail. The current fast preview still uses a low-cost sample grid; High-detail preview matches export.
 
-**Beta warning:** The USGS source URLs and source metadata are documented, but complete real-world downloads and actual raster metadata/height samples are **not yet validated in CI or on the intended Windows hardware**. Download sizes are approximate, and the app can reject an unexpected TIFF representation safely. These packs are opt-in for individual testing. Keep your existing Moon/Mars downloads and allow several GB of free disk space for upgrades, caches and exports.
+**Beta status update (2026-10-13):** The user has confirmed that **Mercury, Ceres and Vesta function correctly on their Windows installation**. Thus the original v1.7.0 statement that no hardware test had occurred is outdated. Exact test steps, independent source-value and datum comparisons, and the complete offline/export/remove lifecycle are **not yet documented**; CI still uses synthetic/local tests rather than routine complete remote source downloads. Download sizes are approximate, and the app can reject an unexpected TIFF representation safely. These packs are opt-in for individual testing. Keep your existing Moon/Mars downloads and allow several GB of free disk space for upgrades, caches and exports.
 
 Venus Magellan's available global elevation product is nominally about the same spatial resolution as Terrain Press's bundled Venus grid. Pluto's fine-resolution New Horizons topography covers only part of the planet, so a region-aware upgrade with coverage masks must be developed before enabling it.
 

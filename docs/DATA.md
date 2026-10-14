@@ -1,5 +1,7 @@
 # Elevation data
 
+**Current dataset inventory:** See the [seven-world project status, functional validation notes and acceptance checklist](PROJECT-STATUS.md). This document describes source formats and reference frames; **user-reported successful operation is distinct from independent verification of native height values**.
+
 How the files in `site/data/` were made, and how to add a world.
 
 ## Tile format

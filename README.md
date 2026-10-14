@@ -71,7 +71,15 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download it from the [Windows desktop release](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.7.1) (the **Terrain-Press-1.7.1-Portable.exe** asset). No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.8.3 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.8.3) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
+
+## Current progress and data validation
+
+**As of 2026-10-13 (v1.8.3):** Seven celestial bodies are printable offline. Moon LOLA 128/256/512, Mars MOLA 64, Mercury MESSENGER 64, Ceres Dawn 60 and Vesta Dawn 48 are available as optional higher-resolution **elevation** datasets. The user has **confirmed Mars successfully downloads/renders** and **confirmed Mercury, Ceres and Vesta function** in their installation. These are positive real-world results; independent source-height/datum checks and the full offline/export/removal matrix remain open, so the relevant beta product labels have **not** been changed. Venus and Pluto do **not** yet have optional higher-resolution global elevation downloads.
+
+Delivered printing features now include **four Hex Grid layouts**, centered clipped-edge symmetry, sampled terrain-matched sidewalls, whole-hex round rings and exact square N × N grids, as well as source-aware meshing and an optional **5,000 mm** width unlock. **Io** has a research source catalog and GDAL preflight tooling but is **not selectable or installable**.
+
+See **[Project status and next milestones](docs/PROJECT-STATUS.md)** for the world-by-world table, known limitations, acceptance criteria and next priorities. The detailed [terrain-data roadmap](docs/TERRAIN-DATA-ROADMAP.md) preserves each implementation stage.
 
 ## Hybrid dataset roadmap (Windows)
 
@@ -93,7 +101,7 @@ The Print panel now provides **Terrain sampling limit: Auto / 721² / 1,441² / 
 
 **Print → Terrain resolution** now starts in **Automatic** mode. Set just the **Smallest printable feature** (default 0.4 mm); the existing DEM-/print-aware planner chooses the useful grid size with no competing resolution controls. Select **Advanced** to expose **mesh spacing** (Standard 0.50 mm, Fine 0.35 mm, Ultra 0.25 mm) and **maximum sample grid** (721, 1,441 or 2,881 per side). Advanced intentionally bypasses the printer-feature optimization. The fast preview remains independent; enabling **High-detail preview (match export)** renders the current export settings. This is a UI organization change, not a new terrain algorithm.
 
-**Next milestone: downloadable data for the other supported worlds**, beginning with a validated Mars MOLA tier and then Mercury MESSENGER, Venus Magellan, Ceres/Vesta Dawn, and properly coverage-labelled Pluto New Horizons options. The existing bundled data remains the offline fallback; additional moons require verified DEM availability and metadata before being advertised. See the [terrain data roadmap](docs/TERRAIN-DATA-ROADMAP.md).
+**Current priority (see the [project status](docs/PROJECT-STATUS.md)):** finish repeatable source-height and offline/export validation of existing Mars/Mercury/Ceres/Vesta beta datasets, then add regional and coverage-aware terrain downloading. Venus needs a demonstrably better elevation source; Pluto needs honest partial-coverage handling. Io remains a separate research milestone.
 
 ### Mars download trial and large-puzzle spread preview (v1.6.0)
 
@@ -101,7 +109,7 @@ The Print panel now provides **Terrain sampling limit: Auto / 721² / 1,441² / 
 
 **Mars beta:** Open **Terrain Data Manager → MOLA MEGDR 64 px/degree · Mars beta**. Terrain Press downloads four original 16-bit, big-endian topography files directly from NASA's [maintained MOLA PDS4 bundle](https://pds-geosciences.wustl.edu/missions/mgs/megdr.html), about **530.84 MB (506 MiB)**, plus on-demand PNG cache tiles. The MOLA 64 product covers the full planet and is ~925 metres/sample at Mars's equator, finer than the built-in Mars 8192 × 4096 base grid. No user data leaves your machine during mesh creation; the files remain accessible offline after download.
 
-**Beta limitation:** Source product filenames, coverage and tile geometry follow NASA PDS documentation and synthetic coordinate/value tests. The complete ~506 MiB NASA transfer, PDS label parsing against actual downloaded labels, and offline 3MF export have **not** yet been tested end-to-end on physical Windows hardware. Please treat this as a validation test, not yet a verified production dataset. Failed downloads should retain partial IMG files for resumption; the bundled Mars data remains available if the beta pack is not installed.
+**Beta limitation:** Source product filenames, coverage and tile geometry follow NASA PDS documentation and synthetic coordinate/value tests. The release initially lacked a complete real-world download test; **subsequent user feedback confirms that Mars downloaded and rendered on Windows**. Independent source-height comparisons, PDS label audit, and the full offline 3MF/export lifecycle have not been documented. Please treat this as a validation test, not yet a verified production dataset. Failed downloads should retain partial IMG files for resumption; the bundled Mars data remains available if the beta pack is not installed.
 
 ### Other-world GeoTIFF beta downloads (v1.7.0)
 
@@ -113,7 +121,7 @@ The **Terrain Data Manager** adds three independent DEM upgrades via USGS Astrog
 | Ceres | [Dawn FC2 HAMO Global DTM](https://astrogeology.usgs.gov/search/map/ceres_dawn_fc2_hamo_global_dtm_137m) | 21,600 × 10,800 (60 px/degree) | ~446 MB | Elevation above 470 km reference sphere; ~98% observed, some shadows interpolated |
 | Vesta | [Dawn FC HAMO DTM](https://astrogeology.usgs.gov/search/map/vesta_dawn_fc_hamo_global_dtm_93m) | 17,280 × 8,640 (48 px/degree) | ~570 MB | Radius from center; converted to elevation from 255 km; ~95% stereo coverage; Claudia Double Prime orientation |
 
-These are **beta test downloads**, not production-verified transfers. Each GeoTIFF remains on the user's external dataset drive, is checked for raster dimensions and number of bands, locally hashed, and decoded into only the needed PNG elevation tiles on demand. The decoder uses signed 24-bit RGB for larger elevations and falls back to bundled lower-resolution data at masked/NoData pixels. Existing Moon and Mars native NASA IMG data use their original importer and are unchanged.
+These are **beta test downloads**; they are available and **Mercury, Ceres and Vesta were user-confirmed functional on 2026-10-13**, but scientific data-value validation and full lifecycle acceptance are not yet recorded. Each GeoTIFF remains on the user's external dataset drive, is checked for raster dimensions and number of bands, locally hashed, and decoded into only the needed PNG elevation tiles on demand. The decoder uses signed 24-bit RGB for larger elevations and falls back to bundled lower-resolution data at masked/NoData pixels. Existing Moon and Mars native NASA IMG data use their original importer and are unchanged.
 
 **Why not add Venus and Pluto now?** The available [Venus Magellan GTDR global topography](https://astrogeology.usgs.gov/search/map/venus_magellan_global_topography_4641m) has ~4.64 km pixels, comparable to the bundled Venus 8,192 × 4,096 grid. High-resolution [Pluto/Charon New Horizons DEM coverage](https://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=NH-P%2FPSA-LORRI%2FMVIC-5-GEOPHYS-V1.0) is partial; treating that as a global observed DEM would be misleading. Both need distinct handling, particularly for coverage and data provenance.
 

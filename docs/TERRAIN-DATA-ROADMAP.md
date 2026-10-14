@@ -1,6 +1,10 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Status:** Io source-validation tooling and prerequisites are now tracked as a new-world research milestone (not installed or selectable). v1.7.0 adds **beta** USGS GeoTIFF elevation downloads for Mercury (MESSENGER 64 ppd), Ceres (Dawn 60 ppd) and Vesta (Dawn 48 ppd) alongside the Mars beta and lunar LOLA upgrades. Source-specific height datums, 24-bit signed elevation tiles, and NoData fallback are implemented. **Complete transfer and real-value offline export testing of the new GeoTIFFs remains outstanding.** Venus offers no clearly better global Magellan topography at present; Pluto's fine DEM coverage is partial.
+**Current status (2026-10-13, v1.8.3):** The desktop app supports **seven offline worlds** and optional elevation upgrades for **five** (Moon, Mars, Mercury, Ceres and Vesta). The user has confirmed that the **Mars download renders**, and has now confirmed that **Mercury, Ceres and Vesta function correctly** in their installation. This establishes a successful *functional field test*, **not** independent certification of archive height/datum values, every STL/3MF, offline restart/removal, or multi-GB Moon transfers. The USGS products remain beta in the release catalog while that evidence is collected. **Venus and Pluto still have no optional higher-resolution elevation download.**
+
+For an up-to-date seven-world matrix, delivered feature list and **prioritized next steps**, see **[Project status and next milestones](PROJECT-STATUS.md)**. The phase sections below preserve implementation history and outstanding acceptance gates.
+
+
 
 ## Next new-world candidate — Io, Jupiter's volcanic moon (research milestone)
 
@@ -46,14 +50,14 @@ Sources: White et al., 2014, doi:[10.1002/2013JE004591](https://doi.org/10.1002/
 
 Offer a small Windows executable that works immediately without the internet using its bundled elevation data, while letting users install **whole-planet resolution upgrades**, and later **coordinate-based regional packs**. The complete package remains available offline after download. Users can type arbitrary latitude/longitude and choose a region width. The app automatically uses the finest **installed, geographically valid, real** elevation data for an export, with a coarse built-in fallback.
 
-## Current baseline (confirmed from repository)
+## Current baseline (confirmed from repository; see current status for field-test results)
 
 - The seven built-in worlds are Moon, Mars, Mercury, Venus, Ceres, Vesta and Pluto.
 - Global lunar grid: 8192 × 4096 samples (~1,331 m/pixel at equator), compressed WebP elevation tiles ~31.7 MB. Mercury: 10240 × 5120. Others: 8192 × 4096.
 - All assets are bundled with the Windows executable, including the global grids and selected locally sharper landmark patches. The original offline workflow remains supported.
 - The terrain mesh is sampled independently of the elevation source. Automatic (default) chooses useful spacing using the DEM and printer settings; Advanced offers nominally 0.50/0.35/0.25 mm target spacing and manual grids of 721/1,441/2,881 samples per side. The universal cap is 2,881 × 2,881. Finer spacing cannot recover missing DEM detail.
 - The source code currently stores encoded elevation heights in integer metres in lossless WebP; metadata supplies the reference radius, grid size, and per-patch coverage.
-- Users can already enter custom coordinates; the 0.01° input step should be reduced to 0.001° or finer.
+- Users can type coordinates directly with permanent 0.01° up/down steppers and exact model widths in mm (v1.8.2). Finer coordinate step precision (0.001° where useful) remains an optional UX enhancement.
 
 ## Lunar source availability: direct NASA downloads
 
@@ -100,7 +104,8 @@ Sources:
 
 ### Phase 3 — Higher resolutions and partial geography
 
-- [ ] Add Moon 256/512 ppd full-global tiers where source data and coverage have been validated. Use multi-file tiled transfer, not a single huge release asset.
+- [x] Implement Moon 256/512 ppd **downloadable** global tiers via original multi-file NASA PDS IMG source files rather than single hosted assets.
+- [ ] Independently verify complete 256/512 ppd downloads, measured coverage, source heights and offline exports on Windows (availability alone does not satisfy acceptance).
 - [ ] Add regional download by lat/lon + width/extent with margin, including dateline wrap and poles; use tile-level ownership/reference counts so global and regional packs can share data.
 - [ ] Tile previews: estimated storage cost, download progress, pause/resume and retry, ETA when measurable, cancellation.
 - [ ] Add dataset quality/coverage overlay and provenance warnings instead of marking interpolated pixels as observed.
@@ -115,20 +120,20 @@ Sources:
 - [x] Fix PNG-vs-WebP source lookup when switching 83 m landmark → downloaded NASA global raster → landmark, with automated regression coverage.
 - [ ] Implement true **spatially adaptive triangle meshing** to spend triangles on rough terrain rather than uniform grids.
 
-### Next milestone — Other worlds in Terrain Data Manager (Phase 4)
+### Phase 4 — Other-world downloads (implemented for three new worlds; acceptance in progress)
 
-The next development milestone is **additional real, verifiable elevation datasets**, not adaptive geometry. Prioritize the bodies already selectable in Terrain Press; do not advertise or enable a new pack until its file format, spatial coverage, and vertical measurements have been validated.
+**As of 2026-10-13:** Mars, Mercury, Ceres and Vesta source downloads are integrated. Mars was confirmed downloaded/rendering, and the user has confirmed that Mercury, Ceres and Vesta function. This moves the milestone from *implementation* to **source-value, offline-export and lifecycle verification**. These functional confirmations are recorded in [PROJECT-STATUS.md](PROJECT-STATUS.md). They do not on their own certify scientific elevation accuracy; the beta labels remain in the catalog. Venus and Pluto still need suitable source-specific upgrades.
 
-1. **Mars — MOLA beta implemented in v1.6.0:** select the PDS4-maintained MEGDR 64 ppd topography (four 132,710,400-byte IMG files, global 90°N–90°S), implement local on-demand elevation tile conversion, validate PDS labels/datum, preserve the low-res built-in fallback and existing lunar downloads. **Outstanding:** a complete real-data download, native PDS label inspection and an offline STL/3MF value comparison on physical Windows hardware. Do not mark this as acceptance-complete before those tests.
-2. **Mercury — MESSENGER beta integrated:** USGS MDIS Global DEM v2 GeoTIFF (64 ppd, 665 m/pixel). Validate actual downloaded georeferencing, positive-east longitude, poles, no-data and measured elevations against trusted positions before removing the beta label.
+1. **Mars — MOLA 64 ppd:** implemented in v1.6.0, with a **user-confirmed successful real download and render** on Windows. Original four-file PDS topography and bundled fallback are supported. **Outstanding:** independent archive-value/height-reference checks, complete offline STL/3MF/export, restart, remove and fallback acceptance records. Leave the pack marked beta until documented.
+2. **Mercury — MESSENGER 64 ppd:** integrated since v1.7.0 and **reported functioning by the user on 2026-10-13**. Before removing beta, document the exact field test and independently confirm actual georeferencing, positive-east longitude, poles, NoData and measured heights.
 3. **Venus — Magellan:** validate gridded topography, body radius and datum, known gaps and nominal ground spacing before listing a downloadable tier.
-4. **Ceres and Vesta — Dawn beta integrated:** USGS Ceres 60ppd HAMO relative-height DTM and Vesta 48ppd HAMO radius DTM (subtract 255 km; Claudia Double Prime frame). The former is ~98% observed and the latter ~95%; verify source NoData maps, exact DEM origin and reference datum in a full beta test before marking production quality.
+4. **Ceres and Vesta — Dawn 60/48 ppd:** integrated since v1.7.0, and **both reported functioning by the user on 2026-10-13**. The Ceres relative-height datum and Vesta radius/255 km conversion and Claudia double-prime longitude must still be independently checked against real archive values, coverage and NoData before production approval.
 5. **Pluto — New Horizons:** clearly label partial geographic coverage; prevent unmapped hemisphere filler from being presented as measured high-resolution elevation.
 6. **Additional moons:** first establish that a trustworthy public DEM and coordinate reference model exist, then add a world definition and offline fallback before offering a downloadable pack. Don't make unsupported global-coverage claims.
 
 Implement a reusable **non-lunar raster importer** behind the existing download manager, with source-specific metadata validation and body-specific elevation conversion. Share the current external storage directory, resumable download/reporting UI, tile cache and highest-valid-source selection. Protect existing lunar downloads and the bundled offline fallback. Publish a dataset only with provenance, licensing/attribution, measured bytes, hashes, NoData handling and coordinate/height round-trip checks. Regression-test transitions between bundled global, installed pack, optional landmark patch and missing/corrupt pack.
 
-**Milestone acceptance (pending):** At least one verified non-Moon download (Mars first) completes, survives offline restart, contributes the correct elevation values to preview and 3MF/STL at documented coordinates, and cleanly reverts to bundled terrain when removed. The Mars beta implements the pipeline but does not yet pass the full real-NASA transfer acceptance test. Remaining worlds follow the same acceptance gates.
+**Milestone acceptance — partially demonstrated by field use, full checklist pending:** Successful Mars download/render and user-confirmed Mercury/Ceres/Vesta functionality demonstrate real use beyond synthetic tests. Outstanding for each product: documented source sample/height validation at known coordinates, preview-to-STL/3MF parity, offline restart, remove/fallback, interrupted-transfer behavior and measured performance. See the [current acceptance checklist](PROJECT-STATUS.md#acceptance-checklist-for-any-optional-elevation-pack).
 
 ### Follow-on — Dataset maintenance and verification
 
@@ -246,3 +251,12 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Use prechecked ring spacings for the point-top grid to keep edge portions printable; label actual mode-specific ring counts rather than implying every variant contains the whole-hex total.
 - [x] Add 60° rotational and left/right plus top/bottom mirror symmetry regression tests of individual clipped-piece centroids, areas and partial/full classification for every tier, in addition to whole-board coverage tests.
 - [ ] Confirm in the user's slicer/preview that opposite edge panels have matching outlines and size at the same print-width and ring tier; continue Io investigation afterward.
+
+## Documentation checkpoint — 2026-10-13
+
+- [x] Record user feedback that Mars downloaded and rendered and that Mercury, Ceres and Vesta function.
+- [x] Publish a current matrix distinguishing built-in grids, downloadable upgrades, documented functional field feedback and remaining scientific acceptance in [PROJECT-STATUS.md](PROJECT-STATUS.md).
+- [x] Reconcile phase milestones: Moon 256/512 and Mars/Mercury/Ceres/Vesta downloads are **implemented**; independent end-to-end or archive-value validation remains distinct and open.
+- [x] Document Hex Grid improvements through v1.8.3 and Io source-research readiness without implying Io is selectable.
+- [ ] Collect reproducible dataset validation records (specific test steps, original DEM metadata/values, ZIP output and offline lifecycle) for the beta planetary packs; update labels when warranted.
+- [ ] Prioritize regional/partial-coverage support, then Io source preflight, Venus-specific source evaluation and adaptive/large-geometry improvements as detailed in [PROJECT-STATUS.md](PROJECT-STATUS.md).
