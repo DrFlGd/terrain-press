@@ -1,0 +1,35 @@
+name: Venus PDS header probe
+on:
+  push:
+    paths: ['.github/workflows/venus-header-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read official NASA PDS4 metadata (no large IMG download)
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='https://pds-geosciences.wustl.edu/mgn/urn-nasa-pds-magellan_stereo_topography/data'
+          curl -fSL --retry 2 --max-time 40 "$root/mosaic_allstereo.hdr" -o hdr.txt
+          curl -fSL --retry 2 --max-time 40 "$root/mosaic_allstereo.xml" -o lbl.xml
+          echo '--- OFFICIAL ENVI HEADER ---'
+          cat hdr.txt
+          echo '--- PDS4 AXES AND TYPE / CONSTANTS / UNITS / PROJECTION ---'
+          python3 - <<'PY'
+          from xml.etree import ElementTree as ET
+          tree=ET.parse('lbl.xml')
+          for e in tree.iter():
+              tag=e.tag.rsplit('}',1)[-1]
+              if tag in ('name','axis_name','elements','data_type','value','unit','offset','scaling_factor','missing_constant',
+                         'invalid_constant','error_constant','not_applicable_constant','unknown_constant','null_constant',
+                         'semi_major_radius','semi_minor_radius','longitude_direction','longitude_domain',
+                         'latitude_type','map_projection_name','longitude_of_central_meridian',
+                         'latitude_of_projection_origin','pixel_resolution_x','pixel_resolution_y',
+                         'spatial_resolution_x','spatial_resolution_y','array_axis_order','axis_index_order'):
+                  text=(e.text or '').strip()
+                  if text: print(tag,':',text[:160])
+          PY
