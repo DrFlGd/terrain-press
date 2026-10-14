@@ -33,6 +33,8 @@ jobs:
                   text=(e.text or '').strip()
                   if text: print(tag,':',text[:160])
           PY
+          echo '--- PDS XML RAW TAG SPELLING ---'
+          grep -inE -C 1 '(value_offset|latitude_type|longitude_direction|pixel_resolution_x|data_type)' lbl.xml || true
           echo '--- PDS XML SOURCE METADATA (unit, special, fill, radius, value) ---'
           grep -iEn -C 2 'special_constants|missing|invalid|unknown|satur|error_constant|<unit>|<description>|offset|data_type|valid_minimum|valid_maximum' lbl.xml | tail -130 || true
           echo '--- NASA BYTE-RANGE PROBE (8 bytes, abort on full 2.97 GB response) ---'
