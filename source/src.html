@@ -359,6 +359,13 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
     <div class="tp-view" id="view-globe" role="tabpanel" hidden>
       <canvas id="globe" aria-label="Globe. Drag to rotate, tap to choose the centre of your region."></canvas>
       <span class="tp-chip tp-pick" id="pickhint">Drag to spin · tap a dot for a landing site, or anywhere to centre a region</span>
+      <div class="tp-coverage-panel" id="coverage-panel" role="group" aria-label="Elevation coverage legend">
+        <label class="tp-coverage-toggle"><input type="checkbox" id="show-coverage" checked> Show elevation coverage</label>
+        <div class="tp-coverage-title">Elevation fidelity · map legend</div>
+        <div id="coverage-legend-key"></div>
+        <p class="tp-coverage-at" id="coverage-at-point" aria-live="polite">Select a world to view coverage.</p>
+        <p class="tp-coverage-note">Overlay indicates elevation measurements, not radar/color imagery. Outlined print area may cross several fidelity zones.</p>
+      </div>
       <div class="tp-busy" id="gbusy" hidden><span>Loading globe…</span></div>
     </div>
     <dl class="tp-stats">
@@ -393,6 +400,19 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 .tp-data-muted { opacity:.7; font-size:.78rem; }
 #data-folder { overflow-wrap:anywhere; font-size:.8rem; }
 .tp-data-world { font-size:.83rem; font-weight:600; margin-top:.15rem; }
+.tp-coverage-panel { position:absolute; right:12px; bottom:12px; width:min(265px,55vw);
+  padding:10px 12px; border-radius:9px; border:1px solid #66717e99;
+  background:rgba(14,20,29,.89); color:#f4f5f7; font-size:11px; line-height:1.4;
+  z-index:5; pointer-events:auto; box-shadow:0 4px 12px #0006; }
+.tp-coverage-toggle { display:flex; align-items:center; gap:7px; cursor:pointer; font-weight:600; }
+.tp-coverage-toggle input { cursor:pointer; accent-color:#46cca2; }
+.tp-coverage-title { font-weight:700; margin:7px 0 4px; }
+.tp-coverage-key { display:flex; align-items:flex-start; gap:7px; margin:3px 0; }
+.tp-coverage-key i { margin-top:3px; width:11px; height:11px; border-radius:2px;
+  border:1px solid #fff6; flex:none; }
+.tp-coverage-at { font-weight:600; margin:7px 0 3px; }
+.tp-coverage-note { opacity:.78; margin:0; font-size:10px; }
+
 #data-progress { min-height:1.5em; font-size:.8rem; overflow-wrap:anywhere; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

@@ -211,7 +211,9 @@ async function build() {
 }
 function showStats(p, r) {
   const W = WORLDS[state.world], src = r.source, s = r.stats, pxM = src.pxKm * 1000;
-  $('chip-src').innerHTML = `<b>${src.kind === 'pack' ? src.label : (src.kind === 'patch' ? (W.patchName || W.grid) : W.grid)}</b> · ${pxM < 1000 ? Math.round(pxM) + ' m' : (pxM / 1000).toFixed(2) + ' km'} per sample`;
+  $('chip-src').innerHTML = `<b>${src.kind === 'pack' ? src.label : (src.kind === 'patch' ? (W.patchName || W.grid) : W.grid)}</b> · ${pxM < 1000 ? Math.round(pxM) + ' m' : (pxM / 1000).toFixed(2) + ' km'} per sample` +
+    (state.world==='venus' && src.kind==='pack' && Number.isFinite(src.validFraction)
+      ? ' · '+Math.round(src.validFraction*100)+'% observed stereo heights in selected region' : '');
   const high = $('preview-high').checked, mesh = r.mesh;
   $('chip-mesh').textContent = (high ? 'Export-matched' : 'Fast') + ' · ' +
     mesh.N + ' × ' + mesh.N + ' · ' + mesh.stepMm.toFixed(2) + ' mm' +
@@ -237,6 +239,12 @@ function showStats(p, r) {
   // Pluto: warn when the region strays into the unmapped half
   const warn = $('chip-warn'); warn.hidden = true;
   if (W.partial && coverage) { const c = coverageAt(state.lat, state.lon); if (c < 0.9) { warn.hidden = false; warn.textContent = c < 0.2 ? 'Not mapped by New Horizons: this is a smooth fill' : 'Partly outside the mapped area'; } }
+  if(state.world==='venus' && src.kind==='pack' && Number.isFinite(src.validFraction) && src.validFraction<0.999){
+    warn.hidden=false;
+    warn.textContent=src.validFraction===0
+      ? 'No Magellan stereo elevation here: using bundled Venus terrain'
+      : 'Mixed terrain: '+Math.round(src.validFraction*100)+'% stereo, remainder bundled elevation';
+  }
 }
 
 // ---------------- 3D bench ----------------
@@ -333,6 +341,10 @@ function makeGlobe() {
       a[i] = x * k; a[i + 1] = y * k; a[i + 2] = z * k;
     }
     pos.needsUpdate = true; sphere.geometry.computeBoundingSphere();
+    // Keep overlay shaped to the same non-spherical world surface.
+    const covPos=covShape.geometry.attributes.position;
+    for(let i=0;i<a.length;i++)covPos.array[i]=a[i]*1.008;
+    covPos.needsUpdate=true; covShape.geometry.computeBoundingSphere();
   }
   const sg = new THREE.BufferGeometry(), sp = []; let s = 12345; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
   for (let i = 0; i < 1400; i++) { const u = rnd() * 2 - 1, t = rnd() * Math.PI * 2, d = 30 + rnd() * 20; sp.push(Math.sqrt(1 - u * u) * Math.cos(t) * d, u * d, Math.sqrt(1 - u * u) * Math.sin(t) * d); }
@@ -369,6 +381,135 @@ function makeGlobe() {
   const dotMat = new THREE.PointsMaterial({ size: 13, sizeAttenuation: false, map: dotTex, alphaTest: 0.4, transparent: true });
   const toVec = (lat, lon, r = 1) => { const a = lat * Math.PI / 180, b = lon * Math.PI / 180; return new THREE.Vector3(Math.cos(a) * Math.cos(b) * r, Math.sin(a) * r, -Math.cos(a) * Math.sin(b) * r); };
   const tex = {}, loader = new THREE.TextureLoader();
+
+  // Semi-transparent texture shares the globe's equirectangular UVs. Pixels
+  // are painted from installed DEM *validity* masks, never the raw rectangle
+  // of the Magellan file. Nominal global-pack extent is labelled separately.
+  const covCanvas = document.createElement('canvas');
+  covCanvas.width = 720; covCanvas.height = 360;
+  const covCtx = covCanvas.getContext('2d', { willReadFrequently:true });
+  const covTexture = new THREE.CanvasTexture(covCanvas);
+  const covMaterial = new THREE.MeshBasicMaterial({
+    map:covTexture, transparent:true, depthWrite:false, side:THREE.FrontSide,
+    polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
+  });
+  const covShape = new THREE.Mesh(sphere.geometry.clone(),covMaterial);
+  scene.add(covShape);
+  const coverKey = (color,label) => {
+    const row = document.createElement('div');row.className='tp-coverage-key';
+    const swatch=document.createElement('i');swatch.style.background=color;
+    const text=document.createElement('span');text.textContent=label;
+    row.append(swatch,text);$('coverage-legend-key').appendChild(row);
+  };
+  const latLonIndex = (lat,lon) => {
+    const x=Math.max(0,Math.min(719,Math.floor((((lon+180)%360+360)%360)/360*720)));
+    const y=Math.max(0,Math.min(359,Math.floor((90-lat)/180*360)));
+    return y*720+x;
+  };
+  let coveragePixels=null,coverageFor=null,activeLayer=0,coverageFlavor='none';
+  function coveragePoint() {
+    if(!meta||!meta[state.world])return;
+    const installed=(meta[state.world].installedPacks||[]);
+    if(state.world==='venus') {
+      if(!installed.some(p=>p.coverageMaskUrl)) {
+        $('coverage-at-point').textContent='Venus stereo pack not installed — bundled DEM in use.';
+      } else if(!coveragePixels) {
+        $('coverage-at-point').textContent='Reading actual observed-pixel coverage…';
+      } else {
+        const v=coveragePixels[latLonIndex(state.lat,state.lon)];
+        $('coverage-at-point').textContent=v>0
+          ? 'Here: ~'+Math.round(v/255*100)+'% stereo samples in nearby 0.5° cell; remainder uses bundled Venus DEM.'
+          : 'Here: no measured stereo samples; bundled Venus DEM is used.';
+      }
+    } else if(state.world==='pluto') {
+      $('coverage-at-point').textContent='Pluto: green indicates mapped New Horizons areas; elsewhere is filled terrain.';
+    } else if(installed.length) {
+      $('coverage-at-point').textContent='Optional global DEM installed; its real NoData pixels can still use bundled elevation.';
+    } else {
+      $('coverage-at-point').textContent='Using included world elevation; local sharper patches are highlighted where present.';
+    }
+  }
+  function coveragePaint(image,flavor,sequence){
+    if(sequence!==activeLayer)return;
+    const temp=document.createElement('canvas');temp.width=720;temp.height=360;
+    const context=temp.getContext('2d',{willReadFrequently:true});
+    context.drawImage(image,0,0,720,360);
+    const read=context.getImageData(0,0,720,360).data;
+    const out=covCtx.createImageData(720,360);coveragePixels=new Uint8Array(720*360);
+    for(let k=0;k<coveragePixels.length;k++){
+      const val=read[4*k];
+      coveragePixels[k]=val;
+      if(val===0)continue;
+      const alpha=Math.round(val*(flavor==='venus'?.55:.40));
+      out.data[4*k]=flavor==='venus'?58:84;
+      out.data[4*k+1]=flavor==='venus'?218:192;
+      out.data[4*k+2]=flavor==='venus'?164:207;
+      out.data[4*k+3]=alpha;
+    }
+    covCtx.putImageData(out,0,0);
+    covTexture.needsUpdate=true;
+    coveragePoint();render();
+  }
+  function coverageUpdate() {
+    const world=state.world,m=meta[world],installed=m.installedPacks||[];
+    const seq=++activeLayer;
+    coveragePixels=null;coverageFor=world;
+    covCtx.clearRect(0,0,720,360);
+    $('coverage-legend-key').textContent='';
+    if(world==='venus') {
+      const pack=installed.find(p=>p.coverageMaskUrl);
+      if(pack) {
+        coverKey('rgba(58,218,164,.65)','Actual Magellan stereo measurements · 600 m pixels, ~1–2 km effective detail');
+        coverKey('#7a818a','Bundled Venus DEM / missing stereo elevations');
+        const image=new Image();
+        image.onload=()=>coveragePaint(image,'venus',seq);
+        image.onerror=()=>{
+          if(seq!==activeLayer)return;
+          coveragePixels=null;coveragePoint();render();
+          $('coverage-at-point').textContent='Coverage mask could not be loaded; no higher-fidelity areas are claimed.';
+        };
+        image.src=pack.coverageMaskUrl;
+      } else {
+        coverKey('#7a818a','Bundled Venus DEM (global)');
+        coverKey('transparent','Stereo-derived terrain is available as an optional download; no map mask installed');
+      }
+    } else if(world==='pluto') {
+      coverKey('rgba(84,192,207,.50)','New Horizons mapped surface (bundled mask)');
+      coverKey('#7a818a','Unmapped / filled area');
+      const image=new Image();
+      image.onload=()=>coveragePaint(image,'pluto',seq);
+      image.src='data/pluto/coverage.png';
+    } else {
+      if(installed.length){
+        covCtx.fillStyle='rgba(65,132,225,.20)';
+        covCtx.fillRect(0,0,720,360);
+        coverKey('rgba(65,132,225,.60)','Installed global higher-resolution DEM · nominal extent; pixel gaps not mapped');
+      }
+      const patches=m.patches||{};
+      if(Object.keys(patches).length){
+        covCtx.fillStyle='rgba(241,183,62,.45)';
+        for(const p of Object.values(patches)){
+          const top=Math.max(0,(90-p.north)/180*360);
+          const bot=Math.min(360,(90-p.south)/180*360);
+          if(!Number.isFinite(top)||!Number.isFinite(bot)||top>=bot)continue;
+          let west=p.west,east=p.east;
+          while(west < -180){west+=360;east+=360;}
+          while(west>=180){west-=360;east-=360;}
+          for(const shift of [-360,0,360]){
+            const l=(west+shift+180)/360*720,r=(east+shift+180)/360*720;
+            covCtx.fillRect(l,top,r-l,bot-top);
+          }
+        }
+        coverKey('rgba(241,183,62,.8)','Bundled higher-detail local elevation patch');
+      }
+      coverKey('#7a818a','Bundled global elevation / fallback for missing samples');
+    }
+    covTexture.needsUpdate=true;coveragePoint();render();
+  }
+  $('show-coverage').addEventListener('change',()=>{
+    covShape.visible=$('show-coverage').checked;render();
+  });
+
   let pendingFrame = false;
   const render = () => { if (pendingFrame) return; pendingFrame = true; requestAnimationFrame(() => { pendingFrame = false; if (!canvas.parentElement.hidden) renderer.render(scene, cam); }); };
   ctl.addEventListener('change', () => { const d = cam.position.length(); if (fpPts && Math.abs(d - fpDist) / fpDist > 0.08) drawFootprint(); render(); });
@@ -376,6 +517,7 @@ function makeGlobe() {
   function setWorld(w) {
     if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;
+    coverageUpdate();
     if (WORLDS[w].shape) {
       if (!shapes[w]) shapes[w] = fetch(`data/${w}/shape.json?v=` + BUILD).then(r => r.json()).then(shapeFn).catch(() => null);
       shapes[w].then(fn => { if (state.world === w) { applyShape(fn); refresh(); } });
@@ -395,7 +537,7 @@ function makeGlobe() {
     if (dots) { scene.remove(dots); dots.geometry.dispose(); }
     const sites = WORLDS[state.world].marks.filter(m => m.group === 'landing');
     dots = new THREE.Points(new THREE.BufferGeometry().setFromPoints(sites.map(L => toVec(L.lat, L.lon, 1.004 * rAt(L.lat, L.lon)))), dotMat); dotMat.color.set(css('--tp-accent') || '#fff'); scene.add(dots);
-    render();
+    coveragePoint(); render();
   }
   function lookAt(lat, lon) { const d = cam.position.length(); cam.position.copy(toVec(lat, lon, d)); ctl.update(); render(); }
   function resize() { const r = canvas.parentElement.getBoundingClientRect(); if (!r.width || !r.height) return; renderer.setSize(r.width, r.height, false); cam.aspect = r.width / r.height; cam.updateProjectionMatrix(); render(); }
@@ -646,6 +788,8 @@ function readmeTemplate(p, slug) {
   if (back) L.push(`  The frame has a closed ${p.backMm} mm back.`);
   if (p.border === 'lettered') L.push(p.mergeText ? '  Lettering is part of the frame. For coloured letters, add a filament change at {{FRAMETOP}} mm.' : '  Lettering is a separate part; or add a filament change at {{FRAMETOP}} mm.');
   if (W.partial) L.push('', 'Note: only part of Pluto was mapped by New Horizons; areas outside the mapped side are a smooth fill.');
+  if (state.world === 'venus') L.push('', 'Magellan stereo source validity on this export grid: {{COVERAGE}}.',
+    'The optional stereo source has 600 m raster pixels but approximately 1–2 km effective detail. NoData pixels are replaced by the bundled Venus DEM; green Globe coverage is derived from native observed samples.');
   L.push('', 'Data', '  ' + W.credit, '  Decorative representation, not survey grade. Not endorsed by NASA or the USGS.');
   return L.join('\n');
 }
@@ -731,7 +875,7 @@ function initTerrainDataManager() {
       list.appendChild(row);
     }
     list.appendChild(make('h3', 'Optional planetary downloads', 'h6 mt-3'));
-    list.appendChild(make('p', 'Moon LOLA and Mars MOLA use native NASA IMG files. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS elevation GeoTIFFs. Downloads are stored separately and needed terrain tiles are converted on demand. Venus has no better validated global grid yet; Pluto high detail is limited to the mapped hemisphere.', 'tp-data-muted'));
+    list.appendChild(make('p', 'Moon LOLA, Mars MOLA, and regional Venus Magellan stereo elevations come directly from NASA PDS. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS GeoTIFFs. Native files are kept offline; tiles are converted locally on demand. Venus stereo detail covers only measured patches (~20% of the globe); see the observed-pixel legend on Globe. Pluto finer detail is geographically limited.', 'tp-data-muted'));
     const installed = new Set(s.installed.map(p => p.id));
     for (const pack of s.catalog) {
       const row = make('div', '', 'tp-data-row');
