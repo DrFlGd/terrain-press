@@ -502,6 +502,16 @@ function syncMode() {
   $('hex-opts').hidden = !hex;
   $('hex-edge-wrap').hidden = !clippedHex;
   $('hex-rings-wrap').hidden = !hex || $('hex-layout').value === 'square';
+  // Ring presets show the ACTUAL counts for each orientation. The symmetric
+  // alternating lattice can have a different number of clipped perimeter
+  // panels than the flat-top layout at the same ring tier.
+  const ringCounts = $('hex-layout').value === 'alternating'
+    ? [7,19,43,55,91,133] : [7,19,37,61,91,127];
+  for (const option of $('hex-rings').options) {
+    const n = Number(option.value);
+    option.textContent = n + (n === 1 ? ' ring' : ' rings') +
+      ' · ' + ringCounts[n - 1] + ' pieces';
+  }
   $('hex-square-wrap').hidden = !hex || $('hex-layout').value !== 'square';
   $('frame-options-section').hidden = hex;
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;

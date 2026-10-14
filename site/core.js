@@ -612,8 +612,8 @@
     if (!['edge','alternating','round','square'].includes(layout))
       throw new Error('Unknown Hex Grid layout: ' + layout);
     const sqrt3 = Math.sqrt(3);
-    const ringPoints = (x,y,s) => Array.from({length:6},(_,k)=>{
-      const a=k*Math.PI/3; // flat-top tile, matching the reference diagrams
+    const ringPoints = (x,y,s,angle=0) => Array.from({length:6},(_,k)=>{
+      const a=angle+k*Math.PI/3;
       return [x+s*Math.cos(a),y+s*Math.sin(a)];
     });
     const bounds = polygons => {
@@ -632,27 +632,31 @@
     let cells=[],side;
     let outline=null;
     if(partialBoard) {
-      // Radius R = sqrt(3)*side*rings. All six sides pass through regular
-      // lattice rows; the centred phase cuts half-hexes and six clean corner
-      // thirds. The alternate phase shifts 1/4 side, avoiding near-zero cuts.
-      side=W/(2*sqrt3*rings);
+      // Both layouts are centred at the hex board's rotational centre.
+      // The first reference uses flat-top cells; the alternating reference
+      // uses point-top cells. A one-sided translation destroys bilateral
+      // symmetry, leaving visibly larger border panels on one side.
+      const pointTop=layout==='alternating';
+      // These deterministic tiers avoid narrow point-top corner slivers
+      // while retaining complete 60-degree rotational symmetry.
+      const pointTopScale=[0,1,0.91,0.88,1,0.97,0.97];
+      side=W/(2*sqrt3*rings)*(pointTop?pointTopScale[rings]:1);
       outline=ccw(Array.from({length:6},(_,k)=>{
         const a=Math.PI/6+k*Math.PI/3;
         return [W/2*Math.cos(a),W/2*Math.sin(a)];
       }));
-      const shiftX=layout==='alternating'?side*.25:0;
       const fullArea=1.5*sqrt3*side*side;
-      for(let q=-rings-3;q<=rings+3;q++) for(let r=-rings*2-4;r<=rings*2+4;r++){
-        const x=1.5*side*q+shiftX;
-        const y=sqrt3*side*(r+q/2);
-        const pts=ringPoints(x,y,side);
+      for(let q=-rings*2-5;q<=rings*2+5;q++) for(let r=-rings*2-5;r<=rings*2+5;r++){
+        const x=pointTop?sqrt3*side*(q+r/2):1.5*side*q;
+        const y=pointTop?1.5*side*r:sqrt3*side*(r+q/2);
+        const pts=ringPoints(x,y,side,pointTop?Math.PI/6:0);
         const clipped=boolOp(CL.ClipType.ctIntersection,[pts],[outline]);
         for(const ex of clipped){
           const a=exArea(ex);
           // These are geometric guardrails, not a piecemeal auto-delete.
           // A valid fixed-tier edge never creates a near-zero sliver.
-          if(a<fullArea*.18) throw new Error(
-            'Hex Grid board produced a fragment too small for printing; choose fewer rings');
+          if(a<fullArea*.22) throw new Error(
+            'Hex Grid edge fraction is too small; choose a different ring tier');
           if(a<=0) continue;
           cells.push({i:q,j:r,pts:ex.outer,partial:a<fullArea*.995});
         }
