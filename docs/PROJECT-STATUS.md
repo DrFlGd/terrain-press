@@ -4,9 +4,9 @@
 
 This is the **current** status summary. The [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) contains implementation history, detailed requirements and research notes; [Windows instructions](WINDOWS.md) explain the downloadable desktop app. A **working download or render is not the same as a scientific validation of absolute elevations, datum, missing-data coverage or complete offline export behavior**.
 
-## Earth addition (development branch)
+## Earth resolution upgrades (v1.11.0 testing)
 
-Earth is implemented with a 4096 × 2048 offline ETOPO base and optional NOAA 60s global GeoTIFF (21600 × 10800). The full source was downloaded and decoder values checked; Windows lifecycle and slicer acceptance remain open. See [EARTH.md](EARTH.md). The seven-body table below preserves prior planetary acceptance history.
+Earth is implemented with a 4096 × 2048 offline ETOPO base and optional NOAA 60s/30s global relief and selected-area Copernicus 30 m/90 m surface downloads. Availability/size checks, resume, offline storage, removal and layered fallback are implemented. The full source was downloaded and decoder values checked; Windows lifecycle and slicer acceptance remain open. See [EARTH.md](EARTH.md). The seven-body table below preserves prior planetary acceptance history.
 
 ## Supported worlds and optional elevation upgrades
 

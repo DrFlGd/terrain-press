@@ -7,7 +7,7 @@ const $ = id => document.getElementById(id);
 const WORLDS = {
   earth: { name: 'Earth', dot: '#4d9fce', terrain: '#8ba775', grid: 'NOAA ETOPO 2022', landingTitle: '', def: 'himalaya',
     datum: 'relative to the EGM2008 geoid (approximately mean sea level)',
-    credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe colors show elevation, not satellite imagery. Regional geometry uses a mean-radius spherical approximation.',
+    credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe colors show elevation, not satellite imagery. Regional geometry uses a mean-radius spherical approximation. Optional surface data produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
     marks: [
       { id: 'himalaya', name: 'Himalayas', note: 'Everest region', lat: 27.9881, lon: 86.925, size: 300, ex: 2 },
       { id: 'alps', name: 'Alps', note: 'Mont Blanc region', lat: 45.8326, lon: 6.8652, size: 200, ex: 2 },
@@ -432,7 +432,7 @@ function makeGlobe() {
           : 'Here: no measured stereo samples; bundled Venus DEM is used.';
       }
     } else if(state.world==='earth') {
-      $('coverage-at-point').textContent='Earth: global ETOPO composite; measured and interpolated terrain, including ocean depths. Grid spacing is not uniform survey accuracy.';
+      $('coverage-at-point').textContent='Earth: NOAA global relief plus saved Copernicus surface regions where available. Boxes show installed cells, not survey confidence. Grid spacing is not uniform survey accuracy.';
     } else if(state.world==='pluto') {
       $('coverage-at-point').textContent='Pluto: green indicates mapped New Horizons areas; elsewhere is filled terrain.';
     } else if(installed.length) {
@@ -492,10 +492,17 @@ function makeGlobe() {
       image.onload=()=>coveragePaint(image,'pluto',seq);
       image.src='data/pluto/coverage.png';
     } else {
-      if(installed.length){
+      if(installed.some(p=>!p.regional)){
         covCtx.fillStyle='rgba(65,132,225,.20)';
         covCtx.fillRect(0,0,720,360);
         coverKey('rgba(65,132,225,.60)','Installed global higher-resolution DEM · nominal extent; pixel gaps not mapped');
+      }
+      const regions=installed.filter(p=>p.regional);
+      if(regions.length){
+        covCtx.fillStyle='rgba(174,121,235,.60)';
+        for(const p of regions)for(const r of p.coverage||[])
+          covCtx.fillRect((r.west+180)*2,(90-r.north)*2,(r.east-r.west)*2,(r.north-r.south)*2);
+        coverKey('rgba(174,121,235,.60)','Saved Copernicus land cells · surface model; not a measured-pixel mask');
       }
       const patches=m.patches||{};
       if(Object.keys(patches).length){
@@ -868,7 +875,7 @@ function initTerrainDataManager() {
     const percent = p.totalBytes ? Math.min(100, Math.floor(100 * (p.downloadedBytes + (p.currentFileBytes || 0)) / p.totalBytes)) : 0;
     progress.textContent = p.phase + ' · ' + p.doneFiles + '/' + p.totalFiles +
       ' tiles' + (p.totalBytes ? ' · ' + percent + '%' : '') + (p.error ? ' · ' + p.error : '');
-    $('data-cancel').hidden = !['manifest', 'connecting to NASA', 'connecting to USGS', 'connecting to NOAA', 'downloading', 'downloading from NASA', 'downloading from USGS', 'downloading from NOAA NCEI', 'verifying downloaded file', 'validating GeoTIFF'].includes(p.phase);
+    $('data-cancel').hidden = !['checking regional availability', 'downloading regional terrain', 'manifest', 'connecting to NASA', 'connecting to USGS', 'connecting to NOAA', 'downloading', 'downloading from NASA', 'downloading from USGS', 'downloading from NOAA NCEI', 'verifying downloaded file', 'validating GeoTIFF'].includes(p.phase);
     $('data-cancel').onclick = () => api.cancel(p.id);
   }
   async function render() {
@@ -886,8 +893,37 @@ function initTerrainDataManager() {
       row.appendChild(details);
       list.appendChild(row);
     }
+    list.appendChild(make('h3','Earth · download a selected area','h6 mt-3'));
+    const region=make('div','','tp-data-row'),entry=make('div','','tp-data-entry');
+    entry.appendChild(make('p',state.world==='earth'
+      ? `Current selection: ${state.lat.toFixed(3)}°, ${state.lon.toFixed(3)}° · ${state.size} km wide`
+      : 'Select Earth and choose coordinates and a region width, then reopen this manager.','tp-data-muted'));
+    entry.appendChild(make('p','Copernicus surface heights include vegetation/buildings. Downloads contain whole land cells; missing cells use lower-resolution terrain. Maximum 500 km width and 64 cells.','tp-data-muted'));
+    const resolution=make('select','','form-select form-select-sm');
+    resolution.setAttribute('aria-label','Earth regional terrain resolution');
+    for(const r of [30,90]){const o=make('option',r+' m surface terrain');o.value=r;resolution.appendChild(o);}
+    const check=make('button','Check availability and size','btn btn-sm btn-tp'),download=make('button','Download region','btn btn-sm btn-tp');
+    check.type=download.type='button';check.disabled=state.world!=='earth'||!!s.active;download.disabled=true;
+    const info=make('p','','tp-data-muted');let plan=null;
+    resolution.onchange=()=>{plan=null;info.textContent='';download.disabled=true;};
+    check.onclick=async()=>{
+      check.disabled=resolution.disabled=true;download.disabled=true;plan=null;
+      try{
+        plan=await api.planRegion({lat:state.lat,lon:state.lon,sizeKm:state.size,resolution:Number(resolution.value)});
+        const already=s.installed.some(p=>p.id===plan.id);
+        info.textContent=`${plan.fileCount} land cells · ${format(plan.downloadBytes)} plus cache · ${plan.missingCells} unavailable cells use fallback.`+(already?' Already installed.':'');
+        download.disabled=already;progress.textContent='Availability checked';
+      }catch(e){error(e);}finally{check.disabled=resolution.disabled=false;$('data-cancel').hidden=true;}
+    };
+    download.onclick=async()=>{
+      if(!plan||!confirm(`Download ${plan.name} (${format(plan.downloadBytes)}) to ${s.root}? Leave space for the terrain cache.`))return;
+      check.disabled=resolution.disabled=download.disabled=true;
+      try{await api.downloadRegion(plan.id);location.reload();}
+      catch(e){error(e);await render();}finally{$('data-cancel').hidden=true;}
+    };
+    entry.append(resolution,check,info,download);region.appendChild(entry);list.appendChild(region);
     list.appendChild(make('h3', 'Optional planetary downloads', 'h6 mt-3'));
-    list.appendChild(make('p', 'Earth uses NOAA ETOPO 2022 ice-surface and ocean-floor relief (60 arc-seconds); source detail varies. Moon LOLA, Mars MOLA, and regional Venus Magellan stereo elevations come directly from NASA PDS. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS GeoTIFFs. Native files are kept offline; tiles are converted locally on demand. Venus stereo detail covers only measured patches (~20% of the globe); see the observed-pixel legend on Globe. Pluto finer detail is geographically limited.', 'tp-data-muted'));
+    list.appendChild(make('p', 'Earth uses NOAA ETOPO 2022 ice-surface and ocean-floor relief (60 or 30 arc-seconds); source detail varies. Selected land regions can use Copernicus 30 m or 90 m surface terrain, available offline after download. Moon LOLA, Mars MOLA, and regional Venus Magellan stereo elevations come directly from NASA PDS. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS GeoTIFFs. Native files are kept offline; tiles are converted locally on demand. Venus stereo detail covers only measured patches (~20% of the globe); see the observed-pixel legend on Globe. Pluto finer detail is geographically limited.', 'tp-data-muted'));
     const installed = new Set(s.installed.map(p => p.id));
     for (const pack of s.catalog) {
       const row = make('div', '', 'tp-data-row');
@@ -896,12 +932,12 @@ function initTerrainDataManager() {
       details.appendChild(make('div', worldLabel(pack.body), 'tp-data-world'));
       details.appendChild(make('div', pack.note || pack.body, 'tp-data-muted'));
       if (pack.downloadBytes) details.appendChild(make('div',
-        (pack.format === 'noaa-geotiff' ? 'NOAA GeoTIFF' : pack.format === 'usgs-geotiff' ? 'USGS GeoTIFF' : 'NASA IMG') + ' download: ~' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
+        (pack.format === 'copernicus-region' ? 'Copernicus GeoTIFF region' : pack.format === 'noaa-geotiff' ? 'NOAA GeoTIFF' : pack.format === 'usgs-geotiff' ? 'USGS GeoTIFF' : 'NASA IMG') + ' download: ~' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
       row.appendChild(details);
       const button = make('button', installed.has(pack.id) ? 'Remove' :
         pack.status === 'published' ? 'Download' : 'Planned', 'btn btn-sm btn-tp');
       button.type = 'button';
-      button.disabled = pack.status !== 'published' && !installed.has(pack.id);
+      button.disabled = !!s.active || (pack.status !== 'published' && !installed.has(pack.id));
       button.onclick = async () => {
         if (!installed.has(pack.id) && pack.downloadBytes &&
             !confirm('Download ' + pack.name + ' for ' + worldName(pack.body) +

@@ -52,7 +52,7 @@
     },
     {
       "body": "earth",
-      "name": "Earth · NOAA ETOPO 2022",
+      "name": "Earth \u00b7 NOAA ETOPO 2022",
       "w": 4096,
       "h": 2048,
       "bytes": 10535494
@@ -67,7 +67,7 @@
       "h": 23040,
       "tile": 1024,
       "status": "published",
-      "note": "237 m/pixel at equator · NASA PDS LOLA IMG (1 original files) · fully offline after download",
+      "note": "237 m/pixel at equator \u00b7 NASA PDS LOLA IMG (1 original files) \u00b7 fully offline after download",
       "format": "nasa-pds-img",
       "ppd": 128,
       "downloadBytes": 2123366400
@@ -80,7 +80,7 @@
       "h": 46080,
       "tile": 1024,
       "status": "published",
-      "note": "118 m/pixel at equator · NASA PDS LOLA IMG (4 original files) · fully offline after download",
+      "note": "118 m/pixel at equator \u00b7 NASA PDS LOLA IMG (4 original files) \u00b7 fully offline after download",
       "format": "nasa-pds-img",
       "ppd": 256,
       "downloadBytes": 8493465600
@@ -93,7 +93,7 @@
       "h": 92160,
       "tile": 1024,
       "status": "published",
-      "note": "59 m/pixel at equator · NASA PDS LOLA IMG (16 original files) · fully offline after download",
+      "note": "59 m/pixel at equator \u00b7 NASA PDS LOLA IMG (16 original files) \u00b7 fully offline after download",
       "format": "nasa-pds-img",
       "ppd": 512,
       "downloadBytes": 33973862400
@@ -101,12 +101,12 @@
     {
       "id": "mars-mola-64",
       "body": "mars",
-      "name": "MOLA MEGDR 64 px/degree · Mars beta",
+      "name": "MOLA MEGDR 64 px/degree \u00b7 Mars beta",
       "w": 23040,
       "h": 11520,
       "tile": 1024,
       "status": "published",
-      "note": "~925 m/pixel at equator · four NASA PDS4 MEGDR topography IMG files · beta: full-transfer validation pending",
+      "note": "~925 m/pixel at equator \u00b7 four NASA PDS4 MEGDR topography IMG files \u00b7 beta: full-transfer validation pending",
       "format": "nasa-mola-img",
       "ppd": 64,
       "downloadBytes": 530841600
@@ -114,64 +114,76 @@
     {
       "id": "mercury-messenger-64",
       "body": "mercury",
-      "name": "MESSENGER USGS Global DEM 64 px/degree · beta",
+      "name": "MESSENGER USGS Global DEM 64 px/degree \u00b7 beta",
       "w": 23040,
       "h": 11520,
       "tile": 1024,
       "status": "published",
       "format": "usgs-geotiff",
       "downloadBytes": 506000000,
-      "notes": "665 m/pixel at equator · NASA MESSENGER/USGS stereo topography GeoTIFF · beta",
-      "note": "665 m/pixel at equator · USGS elevation GeoTIFF (~506 MB) · beta"
+      "notes": "665 m/pixel at equator \u00b7 NASA MESSENGER/USGS stereo topography GeoTIFF \u00b7 beta",
+      "note": "665 m/pixel at equator \u00b7 USGS elevation GeoTIFF (~506 MB) \u00b7 beta"
     },
     {
       "id": "ceres-dawn-60",
       "body": "ceres",
-      "name": "Dawn Ceres HAMO DTM 60 px/degree · beta",
+      "name": "Dawn Ceres HAMO DTM 60 px/degree \u00b7 beta",
       "w": 21600,
       "h": 10800,
       "tile": 1024,
       "status": "published",
       "format": "usgs-geotiff",
       "downloadBytes": 446000000,
-      "note": "137 m/pixel · ~98% observed; shadows interpolated · USGS GeoTIFF (~446 MB) · beta"
+      "note": "137 m/pixel \u00b7 ~98% observed; shadows interpolated \u00b7 USGS GeoTIFF (~446 MB) \u00b7 beta"
     },
     {
       "id": "vesta-dawn-48",
       "body": "vesta",
-      "name": "Dawn Vesta HAMO DTM 48 px/degree · beta",
+      "name": "Dawn Vesta HAMO DTM 48 px/degree \u00b7 beta",
       "w": 17280,
       "h": 8640,
       "tile": 1024,
       "status": "published",
       "format": "usgs-geotiff",
       "downloadBytes": 570000000,
-      "note": "93 m/pixel · ~95% stereo coverage, Claudia Double Prime longitude · USGS GeoTIFF (~570 MB) · beta"
+      "note": "93 m/pixel \u00b7 ~95% stereo coverage, Claudia Double Prime longitude \u00b7 USGS GeoTIFF (~570 MB) \u00b7 beta"
     },
     {
       "id": "venus-magellan-stereo-600m",
       "body": "venus",
-      "name": "Magellan Venus Stereo Topography · 600 m raster · regional beta",
+      "name": "Magellan Venus Stereo Topography \u00b7 600 m raster \u00b7 regional beta",
       "w": 64800,
       "h": 32400,
       "tile": 1024,
       "status": "published",
-      "note": "NASA PDS4 Herrick stereo DEM · ~20% observed coverage · ~1–2 km effective detail · 600 m pixels · 2.97 GB native IMG; actual coverage mask generated on install",
+      "note": "NASA PDS4 Herrick stereo DEM \u00b7 ~20% observed coverage \u00b7 ~1\u20132 km effective detail \u00b7 600 m pixels \u00b7 2.97 GB native IMG; actual coverage mask generated on install",
       "format": "nasa-venus-float",
       "downloadBytes": 2974192980,
       "effectivePxKm": 1.5
     },
     {
+      "id": "earth-etopo-30",
+      "body": "earth",
+      "name": "Earth ETOPO 2022 \u00b7 30 arc-seconds",
+      "w": 43200,
+      "h": 21600,
+      "tile": 1024,
+      "status": "published",
+      "format": "noaa-geotiff",
+      "downloadBytes": 1585813987,
+      "note": "Global land, ice surface and ocean floor \u00b7 ~925 m grid spacing at equator \u00b7 EGM2008 metre heights \u00b7 beta"
+    },
+    {
       "id": "earth-etopo-60",
       "body": "earth",
-      "name": "Earth ETOPO 2022 · 60 arc-seconds · beta",
+      "name": "Earth ETOPO 2022 \u00b7 60 arc-seconds \u00b7 beta",
       "w": 21600,
       "h": 10800,
       "tile": 1024,
       "status": "published",
       "format": "noaa-geotiff",
       "downloadBytes": 465969062,
-      "note": "NOAA NCEI · ~1.85 km grid at equator · 466 MB · ice surface + ocean depths relative to EGM2008; varying source detail; Windows acceptance pending"
+      "note": "NOAA NCEI \u00b7 ~1.85 km grid at equator \u00b7 466 MB \u00b7 ice surface + ocean depths relative to EGM2008; varying source detail; Windows acceptance pending"
     }
   ]
 }

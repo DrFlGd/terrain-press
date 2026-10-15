@@ -6,6 +6,16 @@ For an up-to-date seven-world matrix, delivered feature list and **prioritized n
 
 
 
+## Earth upgrades — v1.11.0 testing
+
+- [x] Bundled Earth base and optional NOAA 60s/30s global relief.
+- [x] Selected-area Copernicus 30 m/90 m downloads, size preview, resume and offline storage.
+- [x] Regional coverage selection and fallback through installed terrain to bundled relief.
+- [ ] Windows UI, download lifecycle and slicer/physical-print acceptance.
+- [ ] Land-only/water-level controls and regional NOAA 15s bathymetry.
+
+See [Earth data and limitations](EARTH.md).
+
 ## Next new-world candidate — Io, Jupiter's volcanic moon (research milestone)
 
 **Status: requirements and source-inspection tooling started; not yet a downloadable pack or selectable world.** Io cannot be treated as another Mars/Moon raster with a new `body` ID. Its published global stereo DEM is only partially observed, and its regional Tvashtar DEM has an arbitrary vertical zero. No Io imagery, elevation or model should be advertised as ready until the steps below pass.

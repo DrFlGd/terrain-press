@@ -198,7 +198,7 @@ self.onmessage = async e => {
         .replace('{{COVERAGE}}', hf.source.validFraction === null ||
           hf.source.validFraction === undefined ? 'Not measured at export resolution'
           : (hf.source.validFraction*100).toFixed(1) + '% valid higher-resolution DEM samples' +
-            ' (remaining samples use included elevation)')
+            ' (remaining samples use next available installed or included elevation)')
         .replaceAll('{{GRID}}', String(hf.N))
         .replace('{{LIMIT}}', hf.limited
           ? 'Sampling ceiling ' + hf.plan.cap + ' x ' + hf.plan.cap + ' was reached; some requested detail may be lost.'

@@ -69,6 +69,8 @@ app.whenReady().then(() => {
       if (!win.isDestroyed()) win.webContents.send('terrain-packs:progress', progress);
     }
   });
+  ipcMain.handle('terrain-packs:plan-region', (_, query) => packStore.planRegion(query));
+  ipcMain.handle('terrain-packs:download-region', (_, id) => packStore.downloadRegion(id));
   ipcMain.handle('terrain-packs:status', () => packStore.status());
   ipcMain.handle('terrain-packs:choose-directory', () => packStore.chooseDirectory(dialog));
   ipcMain.handle('terrain-packs:download', (_, id) => packStore.download(id));
