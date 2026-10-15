@@ -211,7 +211,7 @@ async function build() {
     if (state.border === 'lettered') await ensureFont(state.font);
     const step = $('preview-high').checked ? state.detail : PREVIEW_STEP;
     const p = params(step);
-    const spread = state.product === 'puzzle' && $('spread').checked;
+    const spread = false; // Keep the preview assembled; exports are always spread.
     const msg = { type: 'build', q: query(step, !$('preview-high').checked), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
@@ -678,7 +678,7 @@ function syncMode() {
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
   $('fit-row').hidden = !(state.product === 'puzzle' || sep);
   $('pieces-wrap').hidden = state.product !== 'puzzle' || hex;
-  $('spread-opts').hidden = state.product !== 'puzzle'; $('spread-row').hidden = !$('spread').checked;
+  $('spread-opts').hidden = state.product !== 'puzzle';
   $('back-opts').hidden = !framed; $('back-row').hidden = !$('back').checked;
   $('letter-opts').hidden = state.border !== 'lettered';
   $('frame').disabled = $('rim').disabled = !framed; $('rim-auto-wrap').hidden = !framed;
@@ -686,11 +686,12 @@ function syncMode() {
   $('font-hint').textContent = FONT_INFO[state.font];
   const back = framed && $('back').checked;
   $('model-hint').textContent = state.product === 'puzzle'
-    ? (state.shape === 'hexgrid' ? 'Hexagon tiles tessellate edge to edge with printable clearance. Choose Spread for separate print-plate layout; no frame is generated.' :
-      (back ? 'Pieces drop into the tray. The pieces and the tray come as separate files so the pieces don\'t fuse to its floor.' : ($('spread').checked ? 'Pieces are moved apart until every tab clears its socket; the frame gets its own file.' : 'Pieces print in place inside the frame.')))
+    ? (state.shape === 'hexgrid' ? 'Hexagon tiles tessellate edge to edge with printable clearance. Downloads include spread print plates, single-tile STLs and a numbered map; no frame is generated.' :
+      (back ? 'Pieces drop into the tray. The pieces and the tray come as separate files so the pieces don\'t fuse to its floor.' : 'Downloads include spread print plates, single-piece STLs and a numbered map.'))
     : (sep ? 'Two single-colour prints: the terrain drops into the frame' + (back ? ' tray.' : '.') : (back ? 'The terrain prints fused to the tray floor, so the ornament is one solid piece.' : 'Terrain and frame print together.'));
-  $('export-note').textContent = (state.product === 'puzzle' && back) || sep || (state.product === 'puzzle' && $('spread').checked) ? 'A .zip with one file per print plate (STL and 3MF).' : 'A .zip with STL and multicolour 3MF files.';
-  if (state.product === 'puzzle' && $('per-piece').checked) $('export-note').textContent += ' Plus a single-pieces folder: one STL per piece and a numbered map.';
+  $('export-note').textContent = state.product === 'puzzle'
+    ? 'ZIP with spread plates (STL/3MF), single-piece STLs, numbered map and PDF print guide.'
+    : (sep ? 'ZIP with separate print plates and PDF print guide.' : 'ZIP with STL, multicolour 3MF and PDF print guide.');
 }
 document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => {
   if (el.name === 'shape' && el.value === 'hexgrid') $('p-puzzle').checked = true;
@@ -725,7 +726,7 @@ for (const id of ['sampling-limit', 'min-feature']) {
     else void refreshPlan();
   });
 }
-['separate', 'loop', 'spread', 'back', 'merge', 'rim-auto'].forEach(id => $(id).addEventListener('change', () => { syncMode(); schedule(); }));
+['separate', 'loop', 'back', 'merge', 'rim-auto'].forEach(id => $(id).addEventListener('change', () => { syncMode(); schedule(); }));
 ['base', 'frame', 'rim', 'pieces', 'gap', 'spread-gap', 'back-mm', 't-top', 't-bottom'].forEach(id => $(id).addEventListener('input', () => schedule()));
 $('hex-layout').addEventListener('change', () => { syncMode(); schedule(); });
 $('hex-rings').addEventListener('change', schedule);
@@ -769,7 +770,6 @@ document.querySelectorAll('.tp-step-button').forEach(button => {
 $('exag').addEventListener('input', () => { $('o-exag').textContent = exFromSlider(+$('exag').value) + '×'; schedule(); });
 $('sun').addEventListener('input', () => { $('o-sun').textContent = $('sun').value + '°'; bench.setSun(+$('sun').value); });
 $('mark-filter').addEventListener('input', renderMarks);
-$('per-piece').addEventListener('change', syncMode);
 for (const id of ['lat', 'lon', 'size']) $(id).addEventListener('change', () => {
   state.lat = clamp(+$('lat').value, -90, 90, state.lat); state.lon = clamp(+$('lon').value, -180, 180, state.lon); state.size = clamp(+$('size').value, 10, 9000, state.size);
   state.mark = null; syncInputs(); renderMarks(); updateCoord(); if (globe) globe.refresh(); schedule(true);
@@ -778,7 +778,7 @@ for (const k of ['terrain', 'frame', 'text']) $('c-' + k).addEventListener('inpu
 
 // ---------------- export ----------------
 function readmeTemplate(p, slug) {
-  const W = WORLDS[state.world], spread = state.product === 'puzzle' && $('spread').checked, back = p.border !== 'none' && p.back;
+  const W = WORLDS[state.world], spread = state.product === 'puzzle', back = p.border !== 'none' && p.back;
   const L = [`Terrain Press — ${slug}`, '',
     `World: ${W.name}`, `Centre: ${fmtLat(state.lat)} ${fmtLon(state.lon)}`, `Region width: ${state.size} km (azimuthal equidistant projection)`,
     `Elevation range: {{LOW}} m to {{HIGH}} m (${W.datum})`,
@@ -800,7 +800,7 @@ function readmeTemplate(p, slug) {
   else if (p.separate) L.push('  *-1-terrain — the terrain on its own, flat on the plate.', '  *-2-frame — the frame' + (p.border === 'lettered' && p.mergeText ? ' with its lettering' : '') + ', flat on the plate.', '  *-assembled.3mf — both in place, for reference only.');
   else if (p.product === 'puzzle' && back) L.push('  *-pieces — the pieces in their assembled positions, on their own plate.', '  *-tray — the tray' + (p.border === 'lettered' ? ' and lettering' : '') + ', on a second plate.', '  *-assembled.3mf — everything in place, for reference only.');
   else L.push(`  ${slug}.3mf — one object with separate parts; assign a filament to each part in your slicer.`, '  *-all.stl — everything in one file, single colour.', '  The other STLs are the same parts on their own, positioned to load together.');
-  if (p.product === 'puzzle' && $('per-piece').checked) L.push('  single-pieces/ — every piece as its own STL, centred and flat on the plate. Lost one? Print just that file.', '  single-pieces/*-piece-map.svg — the puzzle seen from above, each piece numbered to match its file.');
+  if (p.product === 'puzzle') L.push('  single-pieces/ — every piece as its own STL, centred and flat on the plate. Lost one? Print just that file.', '  single-pieces/*-piece-map.svg — the puzzle seen from above, each piece numbered to match its file.');
   L.push('', 'Print settings', '  Layer height 0.12–0.16 mm · 15% gyroid infill · no supports · every part prints flat on its base.');
   if (p.product === 'puzzle') L.push(`  Puzzle pieces have ${p.gapMm} mm total clearance` + (spread ? ` and are spread ${clamp(+$('spread-gap').value, 1, 15, 3)} mm beyond their tabs.` : '.'));
   if (p.separate) L.push(`  The terrain has ${p.gapMm} mm clearance to the frame; a drop of glue holds it.`);
@@ -811,6 +811,25 @@ function readmeTemplate(p, slug) {
     'The optional stereo source has 600 m raster pixels but approximately 1–2 km effective detail. NoData pixels are replaced by the bundled Venus DEM; green Globe coverage is derived from native observed samples.');
   L.push('', 'Data', '  ' + W.credit, '  Decorative representation, not survey grade. Not endorsed by NASA or the USGS.');
   return L.join('\n');
+}
+// the print guide loads on demand: jsPDF and the guide script only arrive when someone downloads
+const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const scripts = {};
+function loadScript(src) {
+  return scripts[src] || (scripts[src] = new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => { delete scripts[src]; rej(new Error('Could not load ' + src)); }; document.head.appendChild(el); }));
+}
+async function printGuide(r, p, slug) {
+  await Promise.all([loadScript(JSPDF_URL), loadScript('guide.js?v=' + BUILD)]);
+  const W = WORLDS[state.world], L = W.marks.find(x => x.id === state.mark);
+  const H = p.shape === 'hexagon' ? p.widthMm * Math.sqrt(3) / 2 : (r.stats.depthMm || p.widthMm), fr = p.border === 'none' ? 0 : p.frameMm;
+  const font = await fetch('data/fonts/worm.json').then(x => x.json()).catch(() => null);
+  const shape = { circle: 'Circle', square: 'Square', hexagon: 'Hexagon', hexgrid: 'Hex Grid' }[p.shape];
+  return TPGuide.make({
+    p, slug, colors: state.colors, plates: r.plates, pieces: r.pieces, stats: r.stats, world: { ...W, radiusKm: meta[state.world]?.radiusKm },
+    place: L ? L.name : `${fmtLat(state.lat)} ${fmtLon(state.lon)}`, landmark: L || null, coords: `${fmtLat(state.lat)}  ${fmtLon(state.lon)}`,
+    lat: state.lat, lon: state.lon, size: state.size, kind: `${shape} ${p.product}`,
+    footprint: `${Math.round((r.stats.widthMm || p.widthMm) + 2 * fr)} × ${Math.round(H + 2 * fr + (p.loop ? 11 : 0))} mm`,
+    hasAssembled: r.files.some(f => f[0].endsWith('-assembled.3mf')), font });
 }
 $('export').onclick = async () => {
   const btn = $('export'); if (btn.disabled || !ready) return; btn.disabled = true; const old = 'Download print files';
@@ -828,10 +847,19 @@ $('export').onclick = async () => {
     const slug = ((L ? L.name : WORLDS[state.world].name + ' ' + fmtLat(state.lat) + ' ' + fmtLon(state.lon)) + ' ' + p.product + ' ' + p.shape).toLowerCase().replace(/°/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     btn.textContent = 'Loading elevation…';
     const pr = call({ type: 'export', q: query(state.detail), p, font: state.border === 'lettered' ? state.font : null, readme: readmeTemplate(p, slug),
-      x: { slug, colors: state.colors, spread: state.product === 'puzzle' && $('spread').checked, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3), perPiece: state.product === 'puzzle' && $('per-piece').checked } });
+      x: { slug, colors: state.colors, spread: state.product === 'puzzle', spreadGap: clamp(+$('spread-gap').value, 1, 15, 3), perPiece: state.product === 'puzzle' } });
     exportId = reqId;
-    const r = await pr;
-    const blob = new Blob([r.zip], { type: 'application/zip' });
+    const r = await pr, files = r.files;
+    btn.textContent = 'Writing the print guide…';
+    try { files.push([`${slug}-print-guide.pdf`, await printGuide(r, p, slug)]); }
+    catch (e) {
+      console.warn('Print guide failed; including the full export metadata README', e);
+      files.push(['README.txt', r.readmeFallback]);
+    }
+    btn.textContent = 'Packing files…';
+    const transfer = files.map(f => f[1]).filter(d => d instanceof Uint8Array).map(d => d.buffer);
+    const zr = await call({ type: 'zip', files }, transfer);
+    const blob = new Blob([zr.zip], { type: 'application/zip' });
     const dl = window.claude && window.claude.use ? await window.claude.use('downloads').catch(() => null) : null;
     if (dl) {
       try { await dl.save({ filename: slug + '.zip', data: blob }); toast('Saved ' + slug + '.zip', 'success'); }

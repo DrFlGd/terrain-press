@@ -6,6 +6,8 @@ Pick a place on Earth, the Moon, Mars, Mercury, Ceres, Vesta, Venus or Pluto, ch
 
 **Use it now:** <https://ianbauters.github.io/terrain-press/>
 
+**Upstream printing improvements (v1.0.1–v1.1.0):** stronger corners on traditional hexagon jigsaws, a PDF print guide in each download, and puzzle exports containing spaced print plates plus numbered single-piece STLs.
+
 ## Earth support
 
 Earth includes a bundled offline NOAA ETOPO base map, five landmarks, and optional global upgrades at 60 arc-seconds (~466 MB) and 30 arc-seconds (~1.59 GB), plus selected-area Copernicus downloads at 30 m or 90 m in the desktop manager. Ocean depths and ice-surface heights are preserved. See [Earth data and validation](docs/EARTH.md).
