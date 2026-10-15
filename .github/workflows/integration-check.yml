@@ -1,0 +1,47 @@
+name: Upstream integration checks
+
+on:
+  pull_request:
+    paths:
+      - 'source/**'
+      - 'site/**'
+      - 'desktop/**'
+      - 'package.json'
+      - '.github/workflows/integration-check.yml'
+  push:
+    branches: [sync/upstream-v1.0.1-v1.1.0]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Syntax-check all modified JavaScript entry points
+        run: |
+          node --check source/app.js
+          node --check source/core.js
+          node --check source/worker.js
+          node --check source/guide.js
+          node --check site/core.js
+          node --check site/worker.js
+          node --check site/guide.js
+      - name: Run existing desktop and geometry regression tests
+        run: npm run test:desktop
+      - name: Build distributable website
+        run: npm run build
+      - name: Syntax-check distributable worker and print guide
+        run: |
+          node --check site/worker.js
+          node --check site/guide.js
