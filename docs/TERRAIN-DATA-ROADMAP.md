@@ -1,8 +1,8 @@
 # Terrain Press — Planetary Terrain Data Roadmap
 
-**Current status (2026-10-13, v1.8.3):** The desktop app supports **seven offline worlds** and optional elevation upgrades for **five** (Moon, Mars, Mercury, Ceres and Vesta). The user has confirmed that the **Mars download renders**, and has now confirmed that **Mercury, Ceres and Vesta function correctly** in their installation. This establishes a successful *functional field test*, **not** independent certification of archive height/datum values, every STL/3MF, offline restart/removal, or multi-GB Moon transfers. The USGS products remain beta in the release catalog while that evidence is collected. **Venus now has an experimental geographically masked Magellan stereo beta**, not a higher-resolution complete global map. Pluto still lacks an optional higher-resolution source.
+**Historical status (2026-10-13, v1.8.3):** The desktop app supports **seven offline worlds** and optional elevation upgrades for **five** (Moon, Mars, Mercury, Ceres and Vesta). The user has confirmed that the **Mars download renders**, and has now confirmed that **Mercury, Ceres and Vesta function correctly** in their installation. This establishes a successful *functional field test*, **not** independent certification of archive height/datum values, every STL/3MF, offline restart/removal, or multi-GB Moon transfers. The USGS products remain beta in the release catalog while that evidence is collected. **Venus now has an experimental geographically masked Magellan stereo beta**, not a higher-resolution complete global map. Pluto still lacks an optional higher-resolution source.
 
-For an up-to-date seven-world matrix, delivered feature list and **prioritized next steps**, see **[Project status and next milestones](PROJECT-STATUS.md)**. The phase sections below preserve implementation history and outstanding acceptance gates.
+For the current eight-world status, planetary matrix, delivered feature list and **prioritized next steps**, see **[Project status and next milestones](PROJECT-STATUS.md)**. The phase sections below preserve implementation history and outstanding acceptance gates.
 
 
 
@@ -12,9 +12,24 @@ For an up-to-date seven-world matrix, delivered feature list and **prioritized n
 - [x] Selected-area Copernicus 30 m/90 m downloads, size preview, resume and offline storage.
 - [x] Regional coverage selection and fallback through installed terrain to bundled relief.
 - [ ] Windows UI, download lifecycle and slicer/physical-print acceptance.
-- [ ] Land-only/water-level controls and regional NOAA 15s bathymetry.
+- [ ] Regional NOAA 15s bathymetry; water-level export is deferred to the feature parking lot below.
 
 See [Earth data and limitations](EARTH.md).
+
+## Feature parking lot — deferred, not scheduled
+
+### Water level and separate water/terrain export colors
+
+**Added 2026-10-15 at user request. Status: parked; not implemented or committed to a release.**
+
+- Optional Earth water level in elevation metres, defaulting to 0 m in the dataset's sea-level reference, with independent water and terrain colors.
+- Flat water surface and a separate, closed printable water volume above submerged terrain.
+- Export water and terrain as distinct colored parts in assembled 3MF; offer separate STL parts for manual filament assignment (STL does not carry standard material colors).
+- Preserve matching preview/export behavior, vertical exaggeration, model boundaries and puzzle-piece alignment.
+- Before implementation, decide between a simple elevation-threshold fill and water-mask-aware ocean/lake/river handling. Threshold fill can inundate below-sea-level inland depressions; lakes need their own surface elevations.
+- Acceptance work: clean shorelines, watertight non-overlapping volumes, small islands/slivers, all-land/all-water cases, puzzle seams and slicer material assignment.
+
+The current 3MF exporter already supports colored part roles. Shoreline geometry and reliable printable volumes are the main additional work. This item is documentation only; no implementation is requested now.
 
 ## Next new-world candidate — Io, Jupiter's volcanic moon (research milestone)
 
@@ -295,6 +310,6 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Integrate optional 60s global GeoTIFF with pinned checksum, metadata validation, on-demand tiles and bundled fallback.
 - [x] Download the original source and compare decoded mountain and ocean elevations.
 - [ ] Complete Windows download/resume/offline/removal and print acceptance.
-- [ ] Add regional 15s downloads and optional sea-level/land-only handling.
+- [ ] Add regional NOAA 15s downloads; optional water-level export remains in the [feature parking lot](#feature-parking-lot--deferred-not-scheduled).
 
 See [Earth implementation and provenance](EARTH.md).
