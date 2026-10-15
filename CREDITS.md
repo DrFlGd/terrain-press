@@ -45,3 +45,11 @@ NASA, USGS and DLR are named only to credit their data. Terrain Press is not aff
 ## Earth
 
 NOAA NCEI (2022), ETOPO 2022 Global Relief Model, https://doi.org/10.25921/fd45-gt74. Bundled elevation is area-averaged from the 60-arc-second ice-surface/ocean-floor GeoTIFF; globe colors are derived from elevation. NOAA permits private, academic and commercial use. See `docs/EARTH.md` and `site/data/earth/provenance.json`.
+
+Optional Copernicus surface terrain:
+
+produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved
+
+produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved
+
+Public distribution and license links: https://copernicus-dem-30m.s3.amazonaws.com/readme.html

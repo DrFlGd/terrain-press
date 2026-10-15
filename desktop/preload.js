@@ -3,6 +3,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('terrainPacks', Object.freeze({
+  planRegion: query => ipcRenderer.invoke('terrain-packs:plan-region', query),
+  downloadRegion: id => ipcRenderer.invoke('terrain-packs:download-region', id),
   status: () => ipcRenderer.invoke('terrain-packs:status'),
   chooseDirectory: () => ipcRenderer.invoke('terrain-packs:choose-directory'),
   download: id => ipcRenderer.invoke('terrain-packs:download', id),

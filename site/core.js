@@ -62,9 +62,12 @@
         }
       }
       // Use the sharpest installed global pack, retaining any sharper included landmark patch.
-      const packs = (ignoreInstalled ? [] : m.installedPacks || []).filter(p =>
+      const covers = (p,lat,lon) => !p.regional || (p.coverage || []).some(r => lat > r.south && lat <= r.north && lon >= r.west && lon < r.east);
+      const skipped = Array.isArray(ignoreInstalled) ? ignoreInstalled : [];
+      const packs = (ignoreInstalled === true ? [] : m.installedPacks || []).filter(p =>
         p && Number.isInteger(p.w) && Number.isInteger(p.h) && Number.isInteger(p.tile) &&
-        p.w > m.w && p.h > 0 && p.tile > 0 && /^[a-z][a-z0-9-]{1,63}$/.test(p.id)
+        p.w > m.w && p.h > 0 && p.tile > 0 && /^[a-z][a-z0-9-]{1,63}$/.test(p.id) &&
+        !skipped.includes(p.id) && (!p.regional || g.lats.some((lat,k) => covers(p,lat,g.lons[k])))
       ).sort((a, b) => b.w - a.w);
       if (packs.length) {
         // Native pixel size is NOT the same as effective measured detail.
@@ -74,6 +77,7 @@
         if (!candidatePatch || pxKm < candidatePatch.pxKm) {
           const set = new Set();
           for (let k = 0; k < g.lats.length; k++) {
+            if (!covers(p,g.lats[k],g.lons[k])) continue;
             const fy = (90 - g.lats[k]) / 180 * p.h - 0.5;
             const fx = (g.lons[k] + 180) / 360 * p.w - 0.5;
             for (const yy of [Math.floor(fy), Math.floor(fy) + 1])
@@ -85,7 +89,7 @@
           }
           const prefix = 'packs/' + p.id;
           const extension = p.imageExt === 'png' ? 'png' : 'webp';
-          return { kind: 'pack', id: p.id, grid: g, w: p.w, h: p.h,
+          return { kind: 'pack', id: p.id, regional: !!p.regional, grid: g, w: p.w, h: p.h,
             tile: p.tile, prefix, imageExt: extension, pxKm,
             label: p.label || (p.w / 360).toFixed(0) + ' px/deg',
             paths: [...set].map(name => prefix + '/' + name.replace(/\.webp$/, '.' + extension)) };
@@ -140,6 +144,7 @@
           const col = Math.floor(x / T), row = Math.floor(y / T);
           const key = prefix + '/t' + row + '_' + col + '.' + extension;
           const pixels = byPath.get(key);
+          if (!pixels && src.regional) return NaN;
           if (!pixels) throw new Error('Missing terrain tile ' + key + ' for the selected coordinates');
           const tileWidth = Math.min(T, W - col * T);
           const offset = (y % T) * tileWidth + (x % T);
@@ -160,8 +165,10 @@
         : null;
       // Some published DTMs have shadows/NoData. Preserve measured heights,
       // substituting built-in terrain only at genuinely missing pixels.
-      if (!ignoreInstalled && src.kind === 'pack' && out.some(v => !Number.isFinite(v))) {
-        const fallback = await sample(body, lat0, lon0, sizeKm, N, null, true);
+      if (ignoreInstalled !== true && src.kind === 'pack' && out.some(v => !Number.isFinite(v))) {
+        const skipped = Array.isArray(ignoreInstalled) ? ignoreInstalled : [];
+        const fallback = await sample(body, lat0, lon0, sizeKm, N, null, [...skipped, src.id]);
+        if (body === 'earth') src.label += ' + fallback: ' + fallback.source.label;
         for (let k = 0; k < out.length; k++)
           if (!Number.isFinite(out[k])) out[k] = fallback.heights[k];
       }

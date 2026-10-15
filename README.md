@@ -10,7 +10,7 @@ Pick a place on Earth, the Moon, Mars, Mercury, Ceres, Vesta, Venus or Pluto, ch
 
 ## Earth support
 
-Earth includes a bundled offline NOAA ETOPO base map, five landmarks, and an optional 60-arc-second elevation upgrade (~466 MB) in the desktop manager. Ocean depths and ice-surface heights are preserved. See [Earth data and validation](docs/EARTH.md).
+Earth includes a bundled offline NOAA ETOPO base map, five landmarks, and optional global upgrades at 60 arc-seconds (~466 MB) and 30 arc-seconds (~1.59 GB), plus selected-area Copernicus downloads at 30 m or 90 m in the desktop manager. Ocean depths and ice-surface heights are preserved. See [Earth data and validation](docs/EARTH.md).
 
 ## Why this exists
 
