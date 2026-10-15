@@ -51,13 +51,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: desktop-v1.10.0
-          name: Terrain Press Desktop v1.10.0
+          name: Terrain Press Desktop v1.10.0 — Earth testing
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
-          make_latest: true
+          prerelease: true
+          make_latest: false
           body: |
-            Standalone portable 64-bit Windows edition of Terrain Press.
+            Testing pre-release of the standalone portable 64-bit Windows edition of Terrain Press.
+            Includes the new Earth terrain integration; Windows lifecycle and slicer acceptance are in progress.
 
             Download Terrain-Press-1.10.0-Portable.exe and run it without installing Node.js or Python.
 
