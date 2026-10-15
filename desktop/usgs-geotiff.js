@@ -10,6 +10,15 @@ const { pipeline } = require('node:stream/promises');
 const { PNG } = require('pngjs');
 const HOST = 'planetarymaps.usgs.gov';
 const PRODUCTS = Object.freeze({
+  'earth-etopo-30': Object.freeze({
+    body:'earth', file:'ETOPO_2022_v1_30s_N90W180_surface.tif',
+    url:'https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/30s/30s_surface_elev_gtif/ETOPO_2022_v1_30s_N90W180_surface.tif',
+    sha256:'8630abc401cc6bdd30b507a68d3eb9eda5b65f5636f7199e4b1eefd476b5a9e2',
+    provider:'NOAA NCEI', w:43200, h:21600, longitudeStart:-180,
+    encoding:'int24', kind:'relative', originM:0, expectedBytes:1585813987,
+    dataCoverage:'global composite; measured and interpolated elevations',
+    verticalDatum:'metres relative to EGM2008 geoid; ice surface and ocean floor'
+  }),
   'earth-etopo-60': Object.freeze({
     body: 'earth', file: 'ETOPO_2022_v1_60s_N90W180_surface.tif',
     url: 'https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif',
@@ -86,16 +95,16 @@ async function openImage(file,p) {
     const res = typeof image.getResolution==='function' ? image.getResolution() : null;
     if (res && (!Number.isFinite(res[0]) || !Number.isFinite(res[1]) || res[1]>=0))
       throw new Error('Unexpected GeoTIFF vertical orientation for '+p.body);
-    if (p.body === 'earth') validateEarthImage(image);
+    if (p.body === 'earth') validateEarthImage(image,p);
     return { tif, image };
   } catch (e) { await tif.close(); throw e; }
 }
-function validateEarthImage(image) {
+function validateEarthImage(image,p=PRODUCTS['earth-etopo-60']) {
   const origin = image.getOrigin(), resolution = image.getResolution();
   const keys = image.getGeoKeys();
   const near = (a,b) => Number.isFinite(a) && Math.abs(a-b)<1e-8;
   if (!near(origin[0],-180) || !near(origin[1],90) ||
-      !near(resolution[0],1/60) || !near(resolution[1],-1/60) ||
+      !near(resolution[0],360/p.w) || !near(resolution[1],-180/p.h) ||
       keys.GeographicTypeGeoKey !== 4326 || keys.VerticalCSTypeGeoKey !== 3855 ||
       keys.GTRasterTypeGeoKey !== 1)
     throw new Error('Earth ETOPO must be pixel-registered WGS84/EGM2008, north-up, -180..180');

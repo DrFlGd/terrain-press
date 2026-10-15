@@ -15,6 +15,8 @@ const NASA = require('./nasa-lola');
 const MOLA = require('./nasa-mola');
 const VENUS = require('./nasa-venus');
 const TIFF = require('./usgs-geotiff');
+const COP = require('./copernicus');
+const isRegional = p => p.format === 'copernicus-region';
 const isGeoTiff = p => ['usgs-geotiff', 'noaa-geotiff'].includes(p.format);
 // Driver is selected only by a catalog-controlled format.
 const rasterDriver = pack => pack.format === 'nasa-pds-img' ? NASA :
@@ -72,7 +74,13 @@ class PackStore {
     this.installed = new Set(Array.isArray(saved.installed) ? saved.installed.filter(id => ID.test(id)) : []);
     this.active = null;
     this.tileJobs = new Map();
+    this.regionPlans = new Map();
+    this.regions = new Map();
     fs.mkdirSync(this.root, { recursive: true });
+    for (const id of this.installed) {
+      if (!COP.REGION.test(id)) continue;
+      try { this.regions.set(id,COP.describe(COP.read(path.join(this.root,id)))); } catch {}
+    }
   }
   save() {
     fs.mkdirSync(this.userData, { recursive: true });
@@ -80,20 +88,21 @@ class PackStore {
     fs.writeFileSync(temp, JSON.stringify({ root: this.root, installed: [...this.installed] }, null, 2));
     fs.renameSync(temp, this.settingsPath);
   }
-  catalogPack(id) { return CATALOG.packs.find(p => p.id === id); }
+  catalogPack(id) { return CATALOG.packs.find(p => p.id === id) || this.regions.get(id); }
   status() {
     const installed = [...this.installed].map(id => this.catalogPack(id)).filter(Boolean)
       .filter(p => {
         const driver = rasterDriver(p);
-        return isGeoTiff(p)
+        return isRegional(p) ? COP.complete(path.join(this.root,p.id),p.id) : isGeoTiff(p)
           ? TIFF.complete(path.join(this.root, p.id), p.id)
           : driver ? driver.complete(path.join(this.root, p.id), p.ppd)
           : fs.existsSync(path.join(this.root, p.id));
       });
     return {
-      root: this.root, bundled: CATALOG.builtIn, catalog: CATALOG.packs,
-      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || isGeoTiff(p) ? 'png' : 'webp',
-        heightEncoding: isGeoTiff(p) || p.format === 'nasa-venus-float' ? 'int24' : 'int16',
+      root: this.root, bundled: CATALOG.builtIn, catalog: [...CATALOG.packs,...this.regions.values()],
+      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || isGeoTiff(p) || isRegional(p) ? 'png' : 'webp',
+        heightEncoding: isRegional(p) || isGeoTiff(p) || p.format === 'nasa-venus-float' ? 'int24' : 'int16',
+        ...(isRegional(p) ? {regional:true,coverage:p.coverage} : {}),
         ...(p.format === 'nasa-venus-float'
           ? { coverageMaskUrl: '/packs/' + p.id + '/coverage.png',
               coverageKind:'measured', effectivePxKm: p.effectivePxKm } : {}) })),
@@ -129,12 +138,15 @@ class PackStore {
     if (!pack) return null;
     const dir = path.join(this.root, pack.id);
     const driver = rasterDriver(pack);
-    if (!driver && !isGeoTiff(pack)) {
+    if (!driver && !isGeoTiff(pack) && !isRegional(pack)) {
       if (!match[2].endsWith('.webp') || !fs.existsSync(dir)) return null;
       return path.join(dir, match[2]);
     }
     if (!match[2].endsWith('.png')) return null;
-    if (isGeoTiff(pack)) {
+    if (isRegional(pack)) {
+      if (!COP.complete(dir,pack.id)) return null;
+      try { COP.tileInfo(pack,match[2]); } catch { return null; }
+    } else if (isGeoTiff(pack)) {
       if (!TIFF.complete(dir, pack.id)) return null;
       try { TIFF.tileInfo(pack.id, match[2]); } catch { return null; }
     } else {
@@ -150,7 +162,7 @@ class PackStore {
       const job = (async () => {
         await fs.promises.mkdir(cache, { recursive: true });
         // Convert the needed native IMG cells only; never build a second whole-planet copy.
-        const png = isGeoTiff(pack)
+        const png = isRegional(pack) ? await COP.generateTile(dir,pack,match[2]) : isGeoTiff(pack)
           ? await TIFF.generateTile(dir, pack.id, match[2])
           : pack.format === 'nasa-mola-img' || pack.format === 'nasa-venus-float'
           ? driver.generateTile(dir, match[2])
@@ -169,7 +181,9 @@ class PackStore {
   async remove(id) {
     if (this.active) throw new Error('Cannot remove packs during a download');
     if (!ID.test(id) || !this.installed.has(id)) throw new Error('Pack not installed');
+    if (this.tileJobs.size) throw new Error('Wait for terrain processing to finish before removing a pack');
     fs.rmSync(path.join(this.root, id), { recursive: true, force: true });
+    this.regions.delete(id);
     this.installed.delete(id);
     this.save();
     return this.status();
@@ -178,6 +192,36 @@ class PackStore {
     if (!this.active || this.active.id !== id) return false;
     this.active.controller.abort();
     return true;
+  }
+  async planRegion(query) {
+    if (this.active) throw new Error('Wait for or cancel the active transfer first');
+    const controller=new AbortController();
+    const progress={id:'earth-region-plan',phase:'checking regional availability',doneFiles:0,totalFiles:0,downloadedBytes:0,totalBytes:0};
+    this.active={id:progress.id,controller,progress};this.notify({...progress});
+    try {
+      const plan=await COP.plan(query,{signal:controller.signal});
+      if (this.regionPlans.size>=8) this.regionPlans.delete(this.regionPlans.keys().next().value);
+      this.regionPlans.set(plan.id,plan);
+      return {...COP.describe(plan),missingCells:plan.missingCells,fileCount:plan.files.length};
+    } finally { this.active=null; }
+  }
+  async downloadRegion(id) {
+    if (this.active) throw new Error('Another dataset transfer is active');
+    const plan=this.regionPlans.get(id);
+    if (!plan) throw new Error('Check the area again before downloading');
+    if (this.installed.has(id)) throw new Error('That regional pack is already installed');
+    const controller=new AbortController();
+    const progress={id,phase:'downloading regional terrain',doneFiles:0,totalFiles:plan.files.length,downloadedBytes:0,totalBytes:plan.downloadBytes,currentFileBytes:0};
+    this.active={id,controller,progress};const report=()=>this.notify({...progress});
+    const staging=path.join(this.root,id+'.incomplete'),dest=path.join(this.root,id);
+    try {
+      if (fs.existsSync(dest)) throw new Error('Regional destination already exists');
+      const receipt=await COP.install(plan,staging,{signal:controller.signal,progress,report});
+      if (!COP.complete(staging,id)) throw new Error('Regional terrain validation failed');
+      fs.renameSync(staging,dest);this.regions.set(id,COP.describe(receipt));this.installed.add(id);this.save();
+      this.regionPlans.delete(id);progress.phase='complete';report();return this.status();
+    } catch(e) { progress.phase=controller.signal.aborted?'paused':'error';progress.error=asError(e);report();throw e; }
+    finally { this.active=null; }
   }
   async downloadNasa(pack) {
     if (this.active) throw new Error('Another dataset download is active');

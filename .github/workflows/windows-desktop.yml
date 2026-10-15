@@ -43,15 +43,15 @@ jobs:
       - name: Preserve portable EXE as downloadable workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Terrain-Press-1.10.0-Portable-Windows
+          name: Terrain-Press-1.11.0-Portable-Windows
           path: dist/Terrain-Press-*-Portable.exe
           if-no-files-found: error
           retention-days: 30
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.10.0
-          name: Terrain Press Desktop v1.10.0 — Earth testing
+          tag_name: desktop-v1.11.0
+          name: Terrain Press Desktop v1.11.0 — Earth resolution upgrades — testing
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -61,15 +61,13 @@ jobs:
             Testing pre-release of the standalone portable 64-bit Windows edition of Terrain Press.
             Includes the new Earth terrain integration; Windows lifecycle and slicer acceptance are in progress.
 
-            Download Terrain-Press-1.10.0-Portable.exe and run it without installing Node.js or Python.
+            Download Terrain-Press-1.11.0-Portable.exe and run it without installing Node.js or Python.
 
-            - NEW: Earth joins the seven existing offline worlds, with a bundled NOAA ETOPO 2022 terrain base and an elevation-colored globe.
-            - NEW: Himalayas, Alps, Hawaii, Andes and Mariana Trench landmarks; arbitrary coordinates remain supported.
-            - NEW: Optional Earth 60-arc-second global elevation upgrade (~466 MB / 444 MiB), checksum-pinned and available offline after installation.
-            - Earth retains signed EGM2008 elevations, including ocean depths and ice surfaces. Grid spacing is not uniform survey accuracy.
-            - Existing ornament, puzzle, STL/3MF/ZIP and source-aware mesh controls remain available.
-            - Validation: full NOAA source acquired; cross-decoder mountain/ocean samples and finite STL/3MF geometry checked. Windows download/resume/offline/removal and slicer acceptance remain pending; Earth upgrade is beta.
-            - Original Moon/Venus v1.9.2 download repairs and all existing planetary source integrations are retained.
+            - NEW: Global Earth 30-arc-second upgrade (~925 m at the equator, 1.59 GB), alongside the existing 60-arc-second option.
+            - NEW: Selected-area Earth downloads at 30 m or 90 m using public Copernicus surface data. Check availability and exact size before downloading.
+            - Regional downloads support cancellation, resume, offline restart and removal. Missing cells fall back through installed terrain to the bundled base.
+            - Copernicus is a surface model and may include buildings/vegetation. Public 30 m coverage has gaps; NOAA provides global ocean-floor relief.
+            - Automated lifecycle/fallback tests and real native sample checks pass. Windows UI and slicer acceptance remain pending; this is a testing prerelease.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
             See docs/EARTH.md for provenance, reproduction and limitations.
