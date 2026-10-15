@@ -1,5 +1,5 @@
 'use strict';
-// USGS Astrogeology grayscale planetary elevation GeoTIFFs. Source-specific
+// Source-controlled NOAA Earth and USGS planetary elevation GeoTIFFs. Source-specific
 // vertical datum and longitudinal origin are part of the fixed, audited config.
 // This path is deliberately separate from NASA LOLA/MOLA native IMG decoding.
 const fs = require('node:fs');
@@ -10,6 +10,15 @@ const { pipeline } = require('node:stream/promises');
 const { PNG } = require('pngjs');
 const HOST = 'planetarymaps.usgs.gov';
 const PRODUCTS = Object.freeze({
+  'earth-etopo-60': Object.freeze({
+    body: 'earth', file: 'ETOPO_2022_v1_60s_N90W180_surface.tif',
+    url: 'https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif',
+    sha256: '9d27d4b8ea8e76977e2988bca667d7c8fa68b927355feffcddd6b4875a7fd08e',
+    provider: 'NOAA NCEI', w: 21600, h: 10800, longitudeStart: -180,
+    encoding: 'int24', kind: 'relative', originM: 0, expectedBytes: 465969062,
+    dataCoverage: 'global composite; measured and interpolated elevations',
+    verticalDatum: 'metres relative to EGM2008 geoid; ice surface and ocean floor'
+  }),
   'mercury-messenger-64': Object.freeze({
     body: 'mercury', file: 'Mercury_Messenger_USGS_DEM_Global_665m_v2.tif',
     w: 23040, h: 11520, longitudeStart: 0, encoding: 'int24', kind: 'relative',
@@ -28,15 +37,16 @@ const PRODUCTS = Object.freeze({
 });
 const TIFF_NAME = 'elevation.tif';
 function product(id) {
-  if (!Object.hasOwn(PRODUCTS,id)) throw new Error('Unsupported USGS terrain product');
+  if (!Object.hasOwn(PRODUCTS,id)) throw new Error('Unsupported terrain GeoTIFF product');
   return PRODUCTS[id];
 }
-function urlFor(id) { return 'https://' + HOST + '/mosaic/' + product(id).file; }
-function trustedResponse(res) {
+function urlFor(id) { return product(id).url || 'https://' + HOST + '/mosaic/' + product(id).file; }
+function trustedResponse(res, p) {
   try {
     const u = new URL(res.url);
     return u.protocol === 'https:' &&
-      [HOST, 'asc-pds-services.s3.us-west-2.amazonaws.com'].includes(u.hostname) &&
+      (p?.body === 'earth' ? u.href === p.url :
+        [HOST, 'asc-pds-services.s3.us-west-2.amazonaws.com'].includes(u.hostname)) &&
       !u.username && !u.password && !u.hash;
   } catch { return false; }
 }
@@ -60,7 +70,7 @@ function fileSignature(f) {
     if (fs.readSync(fd,b,0,4,0)!==4 ||
       !(b.equals(Buffer.from([73,73,42,0])) || b.equals(Buffer.from([77,77,0,42])) ||
         b.equals(Buffer.from([73,73,43,0])) || b.equals(Buffer.from([77,77,0,43]))))
-      throw new Error('USGS download is not a TIFF elevation raster');
+      throw new Error('Terrain download is not a TIFF elevation raster');
   } finally { fs.closeSync(fd); }
 }
 async function openImage(file,p) {
@@ -76,8 +86,19 @@ async function openImage(file,p) {
     const res = typeof image.getResolution==='function' ? image.getResolution() : null;
     if (res && (!Number.isFinite(res[0]) || !Number.isFinite(res[1]) || res[1]>=0))
       throw new Error('Unexpected GeoTIFF vertical orientation for '+p.body);
+    if (p.body === 'earth') validateEarthImage(image);
     return { tif, image };
   } catch (e) { await tif.close(); throw e; }
+}
+function validateEarthImage(image) {
+  const origin = image.getOrigin(), resolution = image.getResolution();
+  const keys = image.getGeoKeys();
+  const near = (a,b) => Number.isFinite(a) && Math.abs(a-b)<1e-8;
+  if (!near(origin[0],-180) || !near(origin[1],90) ||
+      !near(resolution[0],1/60) || !near(resolution[1],-1/60) ||
+      keys.GeographicTypeGeoKey !== 4326 || keys.VerticalCSTypeGeoKey !== 3855 ||
+      keys.GTRasterTypeGeoKey !== 1)
+    throw new Error('Earth ETOPO must be pixel-registered WGS84/EGM2008, north-up, -180..180');
 }
 function complete(dir,id) {
   try {
@@ -85,6 +106,7 @@ function complete(dir,id) {
     return receipt.id===id && receipt.body===p.body &&
       /^[a-f0-9]{64}$/.test(receipt.sha256) &&
       Number.isSafeInteger(receipt.bytes) && receipt.bytes>0 &&
+      (!p.sha256 || (receipt.sha256===p.sha256 && receipt.bytes===p.expectedBytes)) &&
       fs.statSync(path.join(dir,TIFF_NAME)).size===receipt.bytes;
   } catch { return false; }
 }
@@ -97,21 +119,23 @@ async function fetchRaster(p,id,staging,signal,onBytes) {
   let offset=fs.existsSync(partial)?fs.statSync(partial).size:0;
   if (offset>p.expectedBytes*3) {fs.rmSync(partial,{force:true}); offset=0;}
   const response=await fetch(urlFor(id),{signal,headers:offset?{Range:'bytes='+offset+'-'}:{}});
-  if(!trustedResponse(response)||!response.body||![200,206].includes(response.status))
-    throw new Error('USGS GeoTIFF download failed (HTTP '+response.status+')');
+  if(!trustedResponse(response,p)||!response.body||![200,206].includes(response.status))
+    throw new Error('Terrain GeoTIFF download failed (HTTP '+response.status+')');
   if (offset && response.status===206) {
     const range=response.headers.get('content-range')||'';
-    if(!range.startsWith('bytes '+offset+'-')) throw new Error('Unexpected USGS resume response');
+    if(!range.startsWith('bytes '+offset+'-')) throw new Error('Unexpected terrain resume response');
   } else if (offset && response.status===200) offset=0;
-  else if (!offset && response.status===206) throw new Error('Unexpected partial USGS response');
+  else if (!offset && response.status===206) throw new Error('Unexpected partial terrain response');
   let total=offset;
   const inspect=new Transform({transform(chunk,enc,callback){
     total+=chunk.length;
-    if(total>p.expectedBytes*3) return callback(new Error('USGS TIFF exceeds safety size'));
+    if(total>p.expectedBytes*3) return callback(new Error('Terrain TIFF exceeds safety size'));
     onBytes(total);callback(null,chunk);
   }});
   await pipeline(Readable.fromWeb(response.body),inspect,
     fs.createWriteStream(partial,{flags:offset?'a':'w'}),{signal});
+  if (p.body === 'earth' && total !== p.expectedBytes)
+    throw new Error('Incomplete NOAA ETOPO download; retry to resume');
   fs.renameSync(partial,target);
   fileSignature(target);
   return target;
@@ -120,7 +144,7 @@ async function install({id,staging,signal,progress,report}) {
   const p=product(id);
   fs.mkdirSync(staging,{recursive:true});
   progress.totalFiles=1; progress.totalBytes=p.expectedBytes;
-  progress.phase='downloading from USGS';report();
+  progress.phase='downloading from '+(p.provider || 'USGS');report();
   let last=0;
   const raster=await fetchRaster(p,id,staging,signal,n=>{
     progress.currentFileBytes=n;
@@ -143,11 +167,15 @@ async function install({id,staging,signal,progress,report}) {
     s.on('data',v=>hash.update(v));s.on('error',reject);s.on('end',resolve);
   });
   const receipt={schemaVersion:1,id,body:p.body,source:urlFor(id),
-    provider:'USGS Astrogeology Science Center',bytes:fs.statSync(raster).size,
-    sha256:hash.digest('hex'),verticalDatum:p.kind==='radius'
+    provider:p.provider || 'USGS Astrogeology Science Center',bytes:fs.statSync(raster).size,
+    sha256:hash.digest('hex'),verticalDatum:p.verticalDatum || (p.kind==='radius'
       ? 'radii in metres above body center; app subtracts '+p.originM+' m'
-      : 'elevation relative to product reference surface, in metres',
+      : 'elevation relative to product reference surface, in metres'),
     longitudeStart:p.longitudeStart,downloadedAt:new Date().toISOString()};
+  if (p.sha256 && receipt.sha256 !== p.sha256) {
+    fs.rmSync(raster, {force:true});
+    throw new Error('NOAA ETOPO checksum mismatch; retry to download the pinned source');
+  }
   fs.writeFileSync(path.join(staging,'receipt.json'),JSON.stringify(receipt,null,2));
   progress.downloadedBytes=receipt.bytes;progress.currentFileBytes=0;progress.doneFiles=1;
   report();
@@ -196,4 +224,4 @@ async function generateTile(dir,id,tileName) {
   } finally {await tif.close();}
 }
 module.exports={PRODUCTS,product,urlFor,trustedResponse,encodeHeight,decodeHeight,
-  complete,install,tileInfo,generateTile,openImage,isMissingSample};
+  complete,install,tileInfo,generateTile,openImage,isMissingSample,validateEarthImage};

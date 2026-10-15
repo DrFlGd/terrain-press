@@ -1,5 +1,5 @@
 // Terrain Press worker: decodes elevation tiles, builds meshes and print files off the main thread.
-importScripts('https://cdn.jsdelivr.net/npm/poly2tri@1.5.0/dist/poly2tri.min.js', 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'core.js' + self.location.search);
+importScripts('lib/poly2tri.min.js', 'lib/clipper.js', 'core.js' + self.location.search);
 const C = self.TPCore;
 let meta = null, store = null;
 const fonts = {};

@@ -11,11 +11,11 @@ const app = fs.readFileSync(path.join(root, 'source', 'app.js'), 'utf8');
 const bundled = fs.readFileSync(path.join(root, 'site', 'index.html'), 'utf8');
 
 const names = Object.freeze({
-  moon: 'Moon', mars: 'Mars', mercury: 'Mercury', venus: 'Venus',
+  earth: 'Earth', moon: 'Moon', mars: 'Mars', mercury: 'Mercury', venus: 'Venus',
   ceres: 'Ceres', vesta: 'Vesta', pluto: 'Pluto'
 });
 const kinds = Object.freeze({
-  moon: "Earth's moon", mars: 'planet', mercury: 'planet',
+  earth: 'planet', moon: "Earth's moon", mars: 'planet', mercury: 'planet',
   venus: 'planet', ceres: 'dwarf planet', vesta: 'asteroid',
   pluto: 'dwarf planet'
 });

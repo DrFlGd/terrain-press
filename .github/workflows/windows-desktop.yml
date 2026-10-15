@@ -43,15 +43,15 @@ jobs:
       - name: Preserve portable EXE as downloadable workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Terrain-Press-1.9.1-Portable-Windows
+          name: Terrain-Press-1.10.0-Portable-Windows
           path: dist/Terrain-Press-*-Portable.exe
           if-no-files-found: error
           retention-days: 30
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.9.2
-          name: Terrain Press Desktop v1.9.2
+          tag_name: desktop-v1.10.0
+          name: Terrain Press Desktop v1.10.0
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -59,63 +59,16 @@ jobs:
           body: |
             Standalone portable 64-bit Windows edition of Terrain Press.
 
-            - Download Terrain-Press-1.9.2-Portable.exe and run it; no installation, server, Node.js, or Python required.
-            - All elevation datasets, fonts, and JavaScript libraries are included for offline use.
-            - Export print-ready STL/3MF/ZIP files using the same configurator as the web edition.
-            - NEW: Terrain Data Manager displays bundled data, lets you choose an optional dataset folder, and supports checksum-verified future global tile packs.
-            - NEW: Moon LOLA 128/256/512 px-per-degree native IMG files download directly from NASA PDS and remain available offline.
-            - Source download sizes: 2.12 / 8.49 / 33.97 GB. Large-download end-to-end validation remains outstanding.
-            - FIX: NASA PNG raster tiles now load correctly when switching away from 83 m landmark patches.
-            - NEW: Optional Auto (source-matched) 3MF/STL detail scales the export sampling to installed terrain resolution, capped at 721 x 721; full spatial adaptive triangulation remains on the roadmap.
-            - NEW: High-detail preview toggle renders the same mesh sampling as the selected export setting (including Auto), with a fast-preview default.
-            - NEW: Terrain model width supports 60 to 1000 mm; the virtual preview plate and camera scale for oversized puzzles.
-            - NEW: Configurable 721 / 1441 / 2881 point sampling ceilings and an automatic DEM/print-feature-aware density planner.
-            - NEW: Configurable smallest printable feature size (default 0.4 mm), live export grid estimate, and large-mesh warnings.
-            - Auto avoids redundant geometry; manual ceilings allow advanced users to explicitly request more detail.
-            - UI: Automatic mode (default) shows only smallest printable feature; Advanced exposes manual spacing and 721/1441/2881 sample ceilings.
-            - NEXT: Verify and integrate downloads for Mars MOLA, Mercury MESSENGER, Venus Magellan, Ceres/Vesta Dawn, and coverage-limited Pluto.
-            - FIX: Frame-less spread puzzle preview no longer produces non-finite positions; large 460-mm piece layouts are re-centered safely.
-            - BETA: Mars MOLA MEGDR 64 pixels/degree topography direct from NASA PDS4; 4 native IMG files, 506 MiB total.
-            - Beta MOLA import validates signed elevation labels, world orientation and native raster tile generation; real NASA transfer still requires full Windows acceptance testing.
-            - Default Auto sampling and manual Advanced resolution controls remain available.
-            - BETA: Mercury MESSENGER 64 ppd, Ceres Dawn HAMO 60 ppd and Vesta Dawn HAMO 48 ppd USGS GeoTIFF downloads in the Terrain Data Manager.
-            - New planetary GeoTIFF decoder with measured source dimensions, body-specific elevation datums, 24-bit signed height cache, and bundled fallback for missing pixels.
-            - Venus Magellan remains at bundled global topography resolution; Pluto high-resolution coverage is partial, so neither is advertised as a complete higher-resolution global download.
-            - WARNING: Three new GeoTIFF tiers are beta; full USGS transfers and offline Windows 3MF elevation checks are pending user validation.
-            - UI: Dataset manager now shows “Applies to: <world> (<body type>)” on each included and downloadable terrain product.
-            - UI: Download confirmations identify the selected world and dataset instead of calling all planetary providers NASA.
-            - No change to terrain coordinates, native source decoders, installed data, or sampling algorithms.
-            - RESEARCH: Io (Jupiter's moon) next-world requirements and published stereo DEM sources documented in the roadmap.
-            - NEW developer tool: offline GDAL/ISIS3 or GeoTIFF header inspection with audit gates; includes synthetic regression tests.
-            - Io remains research-only: no world selection, downloadable Io pack, or converted Io elevation data is shipped.
-            - NEW: Hex Grid puzzle shape with four layouts: cropped half-hex perimeter, alternate clipping, full-hex rounded ring cluster, and full-hex square cluster.
-            - Hex Grid uses geometrically tessellated edge-sharing hexagonal pieces, with selectable terrain or flat heights on cropped perimeter pieces.
-            - Hex Grid target piece count supports 7 to 150 cells; the displayed actual number may differ where whole rings/rows are required.
-            - NEW: Optional guarded size unlock beyond 1,000 mm to 5,000 mm. Oversize prints explicitly warn about memory/slicer build volumes.
-            - Preview, print-plate spread and separate STL/3MF piece export support the new layout.
-            - FIX v1.8.1: Lattice-locked outer hex tiers prevent arbitrary clipped slivers and irregular missing perimeter pieces.
-            - UI v1.8.1: Round and hex-outline layouts use discrete 1–6 ring presets (7/19/37/61/91/127 nominal hexes). The square layout asks for N hexes across and down, exporting exactly N × N whole pieces.
-            - Hex tile profiles are flat-top with deliberate edge halves and six corner thirds on the regular six-sided border; round clusters remain whole-hex only.
-            - Keep existing oversize unlock, automatic sampling and individual STL/3MF exports.
-            - FIX v1.8.2: Preserve sampled boundary vertices in both terrain top faces and mesh sidewalls, preventing false straight-line height curtains spanning two high terrain points.
-            - FIX v1.8.2: Latitude, longitude, regional width and model width remain directly editable and now show persistent increment/decrement arrows.
-            - FIX v1.8.2: Typed exact model widths retain 1 mm precision, independent of 5 mm slider steps.
-            - New regression tests verify DEM-accurate shared top/wall vertices and user-editable coordinate step controls.
-            - FIX v1.8.3: Recenter the hex-outline grids. The prior alternating style shifted every tile in X, creating unequal left/right and top/bottom border panels.
-            - Match reference designs using flat-top hexagons for the half-hex border and centred point-top hexagons for the alternating border.
-            - Fixed point-top ring tiers prevent hairline corner pieces; ring preset labels report actual counts where the alternate orientation differs.
-            - New sixfold rotation and bilateral mirror tests verify equal-area counterpart pieces for all six ring presets.
-            - NEW v1.9.0: NASA Venus Magellan stereo topography regional beta, original 2.974 GB IEEE754 little-endian PDS4 source, native 600 m samples and ~1–2 km effective detail.
-            - PDS4 metadata and live byte-range samples checked against NASA before integration; the stereo source covers only ~20% of Venus.
-            - Native validity-based mask generation, signed height conversion (source radius offset 6,040,000 m), on-demand PNG tile decoding and transparent bundled fallback for unobserved pixels.
-            - NEW: Globe elevation coverage legend and optional geographic overlay for all worlds, showing observed stereo where a real mask is installed, nominal upgraded grids, bundled detailed patches, and unmapped areas.
-            - Preview chip and exported README report actual native stereo sample fraction vs fallback for selected Venus regions.
-            - BETA: full 2.97 GB Venus transfer, real mask comparison and offline STL/3MF test still require user validation.
-            - IMPROVEMENT v1.9.1: Venus automatic mesh density is based on effective ~1.5 km stereo detail, rather than oversampling the native 600 m raster. No other planetary drivers were modified.
-            - FIX v1.9.2: Moon LOLA southern 256/512 ppd IMG and LBL files use NASA's 00s equator suffix; retried downloads reuse completed northern files and locally cached PDS labels.
-            - FIX v1.9.2: Venus PDS4 coordinates use cart: namespace prefixes. Metadata validation now accepts documented XML namespaces while strictly checking datum, east-positive planetocentric mapping, and 600 m raster pixels.
-            - Added regression tests for southern lunar archive naming and NASA's actual namespaced Venus label structure.
-            - Existing seven-world raster engine and installed downloaded data remain unchanged.
+            Download Terrain-Press-1.10.0-Portable.exe and run it without installing Node.js or Python.
+
+            - NEW: Earth joins the seven existing offline worlds, with a bundled NOAA ETOPO 2022 terrain base and an elevation-colored globe.
+            - NEW: Himalayas, Alps, Hawaii, Andes and Mariana Trench landmarks; arbitrary coordinates remain supported.
+            - NEW: Optional Earth 60-arc-second global elevation upgrade (~466 MB / 444 MiB), checksum-pinned and available offline after installation.
+            - Earth retains signed EGM2008 elevations, including ocean depths and ice surfaces. Grid spacing is not uniform survey accuracy.
+            - Existing ornament, puzzle, STL/3MF/ZIP and source-aware mesh controls remain available.
+            - Validation: full NOAA source acquired; cross-decoder mountain/ocean samples and finite STL/3MF geometry checked. Windows download/resume/offline/removal and slicer acceptance remain pending; Earth upgrade is beta.
+            - Original Moon/Venus v1.9.2 download repairs and all existing planetary source integrations are retained.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 
-            Source is provided in this repository under AGPL-3.0-or-later.
+            See docs/EARTH.md for provenance, reproduction and limitations.
+            Source is provided under AGPL-3.0-or-later.

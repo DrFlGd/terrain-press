@@ -1,0 +1,34 @@
+{
+  "source": "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif",
+  "sha256": "9d27d4b8ea8e76977e2988bca667d7c8fa68b927355feffcddd6b4875a7fd08e",
+  "bytes": 465969062,
+  "datum": "EGM2008 metres; WGS84 geographic pixel registration",
+  "processing": "Area-average to 4096x2048 and 2048x1024, round to metres; lossless signed int16 RGB WebP",
+  "coverage": "Global composite; grid spacing does not imply uniformly measured detail",
+  "referenceSamples": [
+    {
+      "name": "Himalayas",
+      "lon": 86.925,
+      "lat": 27.9881,
+      "nativeHeightM": 8157.3564453125
+    },
+    {
+      "name": "Pacific",
+      "lon": -150,
+      "lat": 0,
+      "nativeHeightM": -4460.8125
+    },
+    {
+      "name": "Andes",
+      "lon": -70.0109,
+      "lat": -32.6532,
+      "nativeHeightM": 6188.22265625
+    },
+    {
+      "name": "Mariana",
+      "lon": 142.2,
+      "lat": 11.35,
+      "nativeHeightM": -10426.4462890625
+    }
+  ]
+}

@@ -15,6 +15,7 @@ const NASA = require('./nasa-lola');
 const MOLA = require('./nasa-mola');
 const VENUS = require('./nasa-venus');
 const TIFF = require('./usgs-geotiff');
+const isGeoTiff = p => ['usgs-geotiff', 'noaa-geotiff'].includes(p.format);
 // Driver is selected only by a catalog-controlled format.
 const rasterDriver = pack => pack.format === 'nasa-pds-img' ? NASA :
   pack.format === 'nasa-mola-img' ? MOLA :
@@ -84,15 +85,15 @@ class PackStore {
     const installed = [...this.installed].map(id => this.catalogPack(id)).filter(Boolean)
       .filter(p => {
         const driver = rasterDriver(p);
-        return p.format === 'usgs-geotiff'
+        return isGeoTiff(p)
           ? TIFF.complete(path.join(this.root, p.id), p.id)
           : driver ? driver.complete(path.join(this.root, p.id), p.ppd)
           : fs.existsSync(path.join(this.root, p.id));
       });
     return {
       root: this.root, bundled: CATALOG.builtIn, catalog: CATALOG.packs,
-      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || p.format === 'usgs-geotiff' ? 'png' : 'webp',
-        heightEncoding: p.format === 'usgs-geotiff' || p.format === 'nasa-venus-float' ? 'int24' : 'int16',
+      installed: installed.map(p => ({ id: p.id, body: p.body, w: p.w, h: p.h, tile: p.tile, label: p.name, imageExt: rasterDriver(p) || isGeoTiff(p) ? 'png' : 'webp',
+        heightEncoding: isGeoTiff(p) || p.format === 'nasa-venus-float' ? 'int24' : 'int16',
         ...(p.format === 'nasa-venus-float'
           ? { coverageMaskUrl: '/packs/' + p.id + '/coverage.png',
               coverageKind:'measured', effectivePxKm: p.effectivePxKm } : {}) })),
@@ -128,12 +129,12 @@ class PackStore {
     if (!pack) return null;
     const dir = path.join(this.root, pack.id);
     const driver = rasterDriver(pack);
-    if (!driver && pack.format !== 'usgs-geotiff') {
+    if (!driver && !isGeoTiff(pack)) {
       if (!match[2].endsWith('.webp') || !fs.existsSync(dir)) return null;
       return path.join(dir, match[2]);
     }
     if (!match[2].endsWith('.png')) return null;
-    if (pack.format === 'usgs-geotiff') {
+    if (isGeoTiff(pack)) {
       if (!TIFF.complete(dir, pack.id)) return null;
       try { TIFF.tileInfo(pack.id, match[2]); } catch { return null; }
     } else {
@@ -149,7 +150,7 @@ class PackStore {
       const job = (async () => {
         await fs.promises.mkdir(cache, { recursive: true });
         // Convert the needed native IMG cells only; never build a second whole-planet copy.
-        const png = pack.format === 'usgs-geotiff'
+        const png = isGeoTiff(pack)
           ? await TIFF.generateTile(dir, pack.id, match[2])
           : pack.format === 'nasa-mola-img' || pack.format === 'nasa-venus-float'
           ? driver.generateTile(dir, match[2])
@@ -212,7 +213,7 @@ class PackStore {
     if (this.active) throw new Error('Another dataset download is active');
     if (this.installed.has(pack.id)) throw new Error('Dataset is already installed');
     const controller = new AbortController();
-    const progress = { id: pack.id, phase: 'connecting to USGS', doneFiles: 0,
+    const progress = { id: pack.id, phase: pack.body === 'earth' ? 'connecting to NOAA' : 'connecting to USGS', doneFiles: 0,
       totalFiles: 1, downloadedBytes: 0, totalBytes: pack.downloadBytes, currentFileBytes: 0 };
     this.active = { id: pack.id, controller, progress };
     const report = () => this.notify({ ...progress });
@@ -235,7 +236,7 @@ class PackStore {
   }
   async download(id) {
     const pack = this.catalogPack(id);
-    if (pack && pack.status === 'published' && pack.format === 'usgs-geotiff')
+    if (pack && pack.status === 'published' && isGeoTiff(pack))
       return this.downloadUsGS(pack);
     if (pack && pack.status === 'published' && rasterDriver(pack)) {
       return this.downloadNasa(pack);

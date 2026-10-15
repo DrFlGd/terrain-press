@@ -40,3 +40,7 @@ The three lettering styles are glyph-outline subsets converted from these fonts.
 ## Trademarks
 
 NASA, USGS and DLR are named only to credit their data. Terrain Press is not affiliated with or endorsed by them.
+
+## Earth
+
+NOAA NCEI (2022), ETOPO 2022 Global Relief Model, https://doi.org/10.25921/fd45-gt74. Bundled elevation is area-averaged from the 60-arc-second ice-surface/ocean-floor GeoTIFF; globe colors are derived from elevation. NOAA permits private, academic and commercial use. See `docs/EARTH.md` and `site/data/earth/provenance.json`.

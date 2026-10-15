@@ -2,9 +2,13 @@
 
 **Turn real NASA elevation data into 3D-printable ornaments and jigsaw puzzles. Free, open source, no account, no paywall.**
 
-Pick a place on the Moon, Mars, Mercury, Ceres, Vesta, Venus or Pluto, choose a shape and a size, and download print-ready STL and 3MF files. Everything is computed in your browser from real spacecraft measurements; nothing is uploaded anywhere.
+Pick a place on Earth, the Moon, Mars, Mercury, Ceres, Vesta, Venus or Pluto, choose a shape and a size, and download print-ready STL and 3MF files. Everything is computed in your browser from real spacecraft measurements; nothing is uploaded anywhere.
 
 **Use it now:** <https://ianbauters.github.io/terrain-press/>
+
+## Earth support
+
+Earth includes a bundled offline NOAA ETOPO base map, five landmarks, and an optional 60-arc-second elevation upgrade (~466 MB) in the desktop manager. Ocean depths and ice-surface heights are preserved. See [Earth data and validation](docs/EARTH.md).
 
 ## Why this exists
 
