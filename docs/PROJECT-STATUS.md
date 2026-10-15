@@ -1,12 +1,12 @@
 # Terrain Press — Project status and next milestones
 
-**Updated:** 2026-10-14  ·  **Current Windows release:** [v1.9.1](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.2)  ·  **Supported bodies:** 8
+**Updated:** 2026-10-15  ·  **Current Windows testing release:** [v1.11.0](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.11.0)  ·  **Supported bodies:** 8
 
 This is the **current** status summary. The [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) contains implementation history, detailed requirements and research notes; [Windows instructions](WINDOWS.md) explain the downloadable desktop app. A **working download or render is not the same as a scientific validation of absolute elevations, datum, missing-data coverage or complete offline export behavior**.
 
 ## Earth resolution upgrades (v1.11.0 testing)
 
-Earth is implemented with a 4096 × 2048 offline ETOPO base and optional NOAA 60s/30s global relief and selected-area Copernicus 30 m/90 m surface downloads. Availability/size checks, resume, offline storage, removal and layered fallback are implemented. The full source was downloaded and decoder values checked; Windows lifecycle and slicer acceptance remain open. See [EARTH.md](EARTH.md). The seven-body table below preserves prior planetary acceptance history.
+Earth is implemented with a 4096 × 2048 offline ETOPO base and optional NOAA 60s/30s global relief and selected-area Copernicus 30 m/90 m surface downloads. Availability/size checks, resume, offline storage, removal and layered fallback are implemented. The full source was downloaded and decoder values checked; Windows lifecycle and slicer acceptance remain open. See [EARTH.md](EARTH.md). On 2026-10-15 the user reported that the Earth upgrade release works great; specific offline lifecycle and slicer acceptance cases were not reported. The seven-body table below preserves prior planetary acceptance history.
 
 ## Supported worlds and optional elevation upgrades
 
@@ -42,6 +42,10 @@ All seven bodies have offline, built-in elevation grids and selected locally sha
 - **Quality/coverage disclosure:** Built-in Venus/Pluto contain filled gaps and nonuniform observations. Venus has an **initial measured-pixel coverage legend** but full per-product provenance and confidence masks remain a priority, especially for future Pluto and Io packs.
 - **Performance and quality:** Uniform heightfield cap 2,881²; dense 460–5,000 mm puzzles can require substantial RAM and very large sliced files. Adaptive triangulation, cancellable/budgeted meshing and physical print-fit tests remain future work.
 - **Resolution vs imagery:** Extra color/globe imagery does not improve 3D print relief. An optional high-resolution globe **imagery** pack could be a separate visual enhancement, whereas printable height resolution requires a better DEM.
+
+## Feature parking lot
+
+**Water level with separate water/terrain export colors** is deferred at the user's request (2026-10-15), with no scheduled implementation or release. Proposed scope includes an adjustable elevation level, flat water surface, separate printable water/terrain volumes, colored 3MF parts and separate STL parts. See the [roadmap parking lot](TERRAIN-DATA-ROADMAP.md#feature-parking-lot--deferred-not-scheduled) for geometry, water-mask and acceptance considerations.
 
 ## Prioritized development plan (proposed, not yet implemented)
 
