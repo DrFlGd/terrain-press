@@ -29,7 +29,7 @@ test('new installation is offline and has only bundled datasets', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'terrain-packs-test-'));
   try {
     const store = new PackStore(root);
-    assert.equal(store.status().bundled.length, 7);
+    assert.equal(store.status().bundled.length, 8);
     assert.deepEqual(store.status().installed, []);
     // Installed-pack asset resolution is asynchronous.
     assert.equal(store.cancel('moon-lola-128'), false);

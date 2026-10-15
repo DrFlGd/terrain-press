@@ -5,6 +5,16 @@ const $ = id => document.getElementById(id);
 
 // ---------------- catalogue ----------------
 const WORLDS = {
+  earth: { name: 'Earth', dot: '#4d9fce', terrain: '#8ba775', grid: 'NOAA ETOPO 2022', landingTitle: '', def: 'himalaya',
+    datum: 'relative to the EGM2008 geoid (approximately mean sea level)',
+    credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe colors show elevation, not satellite imagery. Regional geometry uses a mean-radius spherical approximation.',
+    marks: [
+      { id: 'himalaya', name: 'Himalayas', note: 'Everest region', lat: 27.9881, lon: 86.925, size: 300, ex: 2 },
+      { id: 'alps', name: 'Alps', note: 'Mont Blanc region', lat: 45.8326, lon: 6.8652, size: 200, ex: 2 },
+      { id: 'hawaii', name: 'Hawaii', note: 'Volcanic island and surrounding seafloor', lat: 19.6, lon: -155.5, size: 250, ex: 2 },
+      { id: 'andes', name: 'Andes', note: 'Aconcagua region', lat: -32.6532, lon: -70.0109, size: 250, ex: 2 },
+      { id: 'mariana', name: 'Mariana Trench', note: 'Ocean-floor relief below sea level', lat: 11.35, lon: 142.2, size: 350, ex: 2 }
+    ] },
   moon: { name: 'Moon', dot: '#bdb7a6', terrain: '#8e8d87', grid: 'LOLA LDEM_64', patchName: 'LOLA LDEM_1024', patchBadge: '83 m', landingTitle: 'Apollo landing sites', def: 'tycho',
     datum: 'above the 1737.4 km sphere',
     credit: 'NASA Lunar Reconnaissance Orbiter, Lunar Orbiter Laser Altimeter (LOLA) gridded data records LDEM_64 and LDEM_1024. LOLA Science Team, NASA GSFC; PDS Geosciences Node. Public domain. Tiles mirrored by the galaxy-3d project.',
@@ -421,6 +431,8 @@ function makeGlobe() {
           ? 'Here: ~'+Math.round(v/255*100)+'% stereo samples in nearby 0.5° cell; remainder uses bundled Venus DEM.'
           : 'Here: no measured stereo samples; bundled Venus DEM is used.';
       }
+    } else if(state.world==='earth') {
+      $('coverage-at-point').textContent='Earth: global ETOPO composite; measured and interpolated terrain, including ocean depths. Grid spacing is not uniform survey accuracy.';
     } else if(state.world==='pluto') {
       $('coverage-at-point').textContent='Pluto: green indicates mapped New Horizons areas; elsewhere is filled terrain.';
     } else if(installed.length) {
@@ -843,7 +855,7 @@ function initTerrainDataManager() {
   // Use the same world IDs as the renderer rather than inferring it from
   // acronyms such as LOLA, MOLA, MESSENGER or Dawn.
   const worldKind = {
-    moon: "Earth's moon", mars: 'planet', mercury: 'planet',
+    earth: 'planet', moon: "Earth's moon", mars: 'planet', mercury: 'planet',
     venus: 'planet', ceres: 'dwarf planet', vesta: 'asteroid',
     pluto: 'dwarf planet'
   };
@@ -856,7 +868,7 @@ function initTerrainDataManager() {
     const percent = p.totalBytes ? Math.min(100, Math.floor(100 * (p.downloadedBytes + (p.currentFileBytes || 0)) / p.totalBytes)) : 0;
     progress.textContent = p.phase + ' · ' + p.doneFiles + '/' + p.totalFiles +
       ' tiles' + (p.totalBytes ? ' · ' + percent + '%' : '') + (p.error ? ' · ' + p.error : '');
-    $('data-cancel').hidden = !['manifest', 'connecting to NASA', 'connecting to USGS', 'downloading', 'downloading from NASA', 'downloading from USGS', 'verifying downloaded file', 'validating GeoTIFF'].includes(p.phase);
+    $('data-cancel').hidden = !['manifest', 'connecting to NASA', 'connecting to USGS', 'connecting to NOAA', 'downloading', 'downloading from NASA', 'downloading from USGS', 'downloading from NOAA NCEI', 'verifying downloaded file', 'validating GeoTIFF'].includes(p.phase);
     $('data-cancel').onclick = () => api.cancel(p.id);
   }
   async function render() {
@@ -875,7 +887,7 @@ function initTerrainDataManager() {
       list.appendChild(row);
     }
     list.appendChild(make('h3', 'Optional planetary downloads', 'h6 mt-3'));
-    list.appendChild(make('p', 'Moon LOLA, Mars MOLA, and regional Venus Magellan stereo elevations come directly from NASA PDS. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS GeoTIFFs. Native files are kept offline; tiles are converted locally on demand. Venus stereo detail covers only measured patches (~20% of the globe); see the observed-pixel legend on Globe. Pluto finer detail is geographically limited.', 'tp-data-muted'));
+    list.appendChild(make('p', 'Earth uses NOAA ETOPO 2022 ice-surface and ocean-floor relief (60 arc-seconds); source detail varies. Moon LOLA, Mars MOLA, and regional Venus Magellan stereo elevations come directly from NASA PDS. Mercury MESSENGER and Ceres/Vesta Dawn beta upgrades use USGS GeoTIFFs. Native files are kept offline; tiles are converted locally on demand. Venus stereo detail covers only measured patches (~20% of the globe); see the observed-pixel legend on Globe. Pluto finer detail is geographically limited.', 'tp-data-muted'));
     const installed = new Set(s.installed.map(p => p.id));
     for (const pack of s.catalog) {
       const row = make('div', '', 'tp-data-row');
@@ -884,7 +896,7 @@ function initTerrainDataManager() {
       details.appendChild(make('div', worldLabel(pack.body), 'tp-data-world'));
       details.appendChild(make('div', pack.note || pack.body, 'tp-data-muted'));
       if (pack.downloadBytes) details.appendChild(make('div',
-        (pack.format === 'usgs-geotiff' ? 'USGS GeoTIFF' : 'NASA IMG') + ' download: ~' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
+        (pack.format === 'noaa-geotiff' ? 'NOAA GeoTIFF' : pack.format === 'usgs-geotiff' ? 'USGS GeoTIFF' : 'NASA IMG') + ' download: ~' + format(pack.downloadBytes) + ' plus local tile cache', 'tp-data-muted'));
       row.appendChild(details);
       const button = make('button', installed.has(pack.id) ? 'Remove' :
         pack.status === 'published' ? 'Download' : 'Planned', 'btn btn-sm btn-tp');

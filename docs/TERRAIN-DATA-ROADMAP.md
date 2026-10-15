@@ -277,3 +277,14 @@ For genuine spatial adaptivity, the next implementation should:
 - [x] Use namespace-aware Venus PDS4 XML field validation; accept actual `cart:` cartography tags without weakening checks of dimensions, east-positive planetocentric reference, 600 m sample size or source-radius offset.
 - [x] Add regression cases for both failures and a Windows recovery guide.
 - [ ] Real Windows confirmation: Moon 256 ppd resumes from 50% and completes; Venus starts and completes the 2.97 GB image transfer; validate measured-pixel coverage atlas, original heights and STL/3MF exports.
+
+## Earth — offline base and optional global upgrade
+
+- [x] Bundle NOAA ETOPO 2022 low-resolution terrain and elevation-colored globe.
+- [x] Add Earth landmarks, signed EGM2008 heights and NOAA attribution.
+- [x] Integrate optional 60s global GeoTIFF with pinned checksum, metadata validation, on-demand tiles and bundled fallback.
+- [x] Download the original source and compare decoded mountain and ocean elevations.
+- [ ] Complete Windows download/resume/offline/removal and print acceptance.
+- [ ] Add regional 15s downloads and optional sea-level/land-only handling.
+
+See [Earth implementation and provenance](EARTH.md).

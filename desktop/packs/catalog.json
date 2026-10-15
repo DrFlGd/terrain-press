@@ -49,6 +49,13 @@
       "w": 8192,
       "h": 4096,
       "bytes": 15197304
+    },
+    {
+      "body": "earth",
+      "name": "Earth · NOAA ETOPO 2022",
+      "w": 4096,
+      "h": 2048,
+      "bytes": 10535494
     }
   ],
   "packs": [
@@ -153,6 +160,18 @@
       "format": "nasa-venus-float",
       "downloadBytes": 2974192980,
       "effectivePxKm": 1.5
+    },
+    {
+      "id": "earth-etopo-60",
+      "body": "earth",
+      "name": "Earth ETOPO 2022 · 60 arc-seconds · beta",
+      "w": 21600,
+      "h": 10800,
+      "tile": 1024,
+      "status": "published",
+      "format": "noaa-geotiff",
+      "downloadBytes": 465969062,
+      "note": "NOAA NCEI · ~1.85 km grid at equator · 466 MB · ice surface + ocean depths relative to EGM2008; varying source detail; Windows acceptance pending"
     }
   ]
 }
