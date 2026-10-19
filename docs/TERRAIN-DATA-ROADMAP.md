@@ -31,7 +31,14 @@ See [Earth data and limitations](EARTH.md).
 
 The current 3MF exporter already supports colored part roles. Shoreline geometry and reliable printable volumes are the main additional work. This item is documentation only; no implementation is requested now.
 
-## Next new-world candidate — Io, Jupiter's volcanic moon (research milestone)
+## Research checkpoint — 2026-10-18
+
+- [Additional-world terrain audit](ADDITIONAL-WORLDS-AUDIT.md): source availability, resolution, coverage, access checks and acceptance gates. Current recommendation is Enceladus, Charon, Dione/Tethys/Mimas, then selected Europa sites; Io remains blocked on source acquisition.
+- [Color panels and colored terrain](COLOR-MODELS-RESEARCH.md): feasibility of 2–8-color stacked image panels and imagery-colored relief, giant-planet image sources, export options and required slicer validation.
+
+Both documents are research only. No new world or color feature is implemented or scheduled. The detailed Io research below is retained for later work; it is no longer the first recommended integration.
+
+## Io, Jupiter's volcanic moon (research milestone)
 
 **Status: requirements and source-inspection tooling started; not yet a downloadable pack or selectable world.** Io cannot be treated as another Mars/Moon raster with a new `body` ID. Its published global stereo DEM is only partially observed, and its regional Tvashtar DEM has an arbitrary vertical zero. No Io imagery, elevation or model should be advertised as ready until the steps below pass.
 
