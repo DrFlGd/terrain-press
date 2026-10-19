@@ -320,3 +320,7 @@ For genuine spatial adaptivity, the next implementation should:
 - [ ] Add regional NOAA 15s downloads; optional water-level export remains in the [feature parking lot](#feature-parking-lot--deferred-not-scheduled).
 
 See [Earth implementation and provenance](EARTH.md).
+
+### Jupiter color-panel prototype
+
+The first image-only world is implemented as a separate [Jupiter layered panel](JUPITER-PANELS.md), with 2–8 colors, offline imagery, preview and STL/color-change schedule. Saturn is next for this mode. Colored terrain will initially use surface assignments; the Moon and other rocky planets are included in its future scope.

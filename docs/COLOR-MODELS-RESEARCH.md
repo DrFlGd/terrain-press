@@ -1,7 +1,9 @@
 # Color panels and colored terrain: feasibility research
 
 Research date: 2026-10-18 (America/New_York).
-Status: proposal/research only. No implementation or release scheduled.
+Status: Jupiter layered-panel prototype implemented; colored terrain remains planned.
+
+Accepted direction (2026-10-19): use surface color assignments for the initial colored-terrain implementation. Include the Moon and other rocky planets in that scope. Jupiter is the first layered-panel test, with Saturn next. Closed colored volumes are deferred. See [Jupiter panels](JUPITER-PANELS.md).
 
 ## Requested concept
 
@@ -88,7 +90,7 @@ Acceptance prototypes:
 
 Test disconnected islands, tiny storms, contour holes, palette duplicates, dateline/polar seams, image coverage gaps, dark/light underpainting, color-boundary cracks, puzzle-piece alignment and print orientation. Eight palette colors do not imply that every printer has eight simultaneously available material channels. Height-swap panels can use sequential manual changes; arbitrary terrain painting generally requires a suitable multicolor setup or a more involved assembly workflow.
 
-Recommended order: prove layered panels first, then the shared palette pipeline, then one slicer-tested terrain-color export path, then additional compatibility profiles. Keep this as research until implementation is explicitly requested.
+Recommended order: prove layered panels first, then the shared palette pipeline, then one slicer-tested terrain-color export path, then additional compatibility profiles. Jupiter panel implementation is now authorized; terrain-color exports remain a separate future step.
 
 ## Primary references
 
