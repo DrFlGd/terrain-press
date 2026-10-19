@@ -425,7 +425,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
-<script>const BUILD = 'upstream-sync-20261015-2'; // changes whenever worker.js or core.js change, so browsers never run stale code
+<script>const BUILD = '257e4a71c9'; // changes whenever worker.js or core.js change, so browsers never run stale code
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
@@ -1097,7 +1097,9 @@ function renderWorlds() {
     b.setAttribute('aria-pressed', String(state.world === id));
     const i = document.createElement('i'); i.style.background = W.dot; b.append(i, document.createTextNode(W.name)); b.onclick = () => setWorld(id); box.appendChild(b);
   }
+  const j = document.createElement('a'); j.href = 'jupiter.html'; j.className = 'btn btn-sm btn-tp tp-world'; j.textContent = 'Jupiter · color panel'; box.appendChild(j);
 }
+
 function setWorld(id) {
   state.world = id; document.body.dataset.world = id; renderWorlds();
   state.colors.terrain = WORLDS[id].terrain; $('c-terrain').value = WORLDS[id].terrain;

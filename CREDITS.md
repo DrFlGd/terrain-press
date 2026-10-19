@@ -53,3 +53,7 @@ produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defenc
 produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved
 
 Public distribution and license links: https://copernicus-dem-30m.s3.amazonaws.com/readme.html
+
+## Jupiter color-panel imagery
+
+Hubble OPAL Jupiter map (2015-01-19): NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), and G. Orton (JPL-Caltech). Resized offline derivative; see [source and usage details](docs/JUPITER-PANELS.md#source). Image terms are separate from the software license.

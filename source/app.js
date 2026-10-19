@@ -622,7 +622,9 @@ function renderWorlds() {
     b.setAttribute('aria-pressed', String(state.world === id));
     const i = document.createElement('i'); i.style.background = W.dot; b.append(i, document.createTextNode(W.name)); b.onclick = () => setWorld(id); box.appendChild(b);
   }
+  const j = document.createElement('a'); j.href = 'jupiter.html'; j.className = 'btn btn-sm btn-tp tp-world'; j.textContent = 'Jupiter · color panel'; box.appendChild(j);
 }
+
 function setWorld(id) {
   state.world = id; document.body.dataset.world = id; renderWorlds();
   state.colors.terrain = WORLDS[id].terrain; $('c-terrain').value = WORLDS[id].terrain;
