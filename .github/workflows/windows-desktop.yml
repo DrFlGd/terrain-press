@@ -43,15 +43,15 @@ jobs:
       - name: Preserve portable EXE as downloadable workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Terrain-Press-1.12.0-Portable-Windows
+          name: Terrain-Press-1.13.0-Portable-Windows
           path: dist/Terrain-Press-*-Portable.exe
           if-no-files-found: error
           retention-days: 30
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.12.0
-          name: Terrain Press Desktop v1.12.0 — Jupiter color panels — testing
+          tag_name: desktop-v1.13.0
+          name: Terrain Press Desktop v1.13.0 — Jupiter standard workflow — testing
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -59,15 +59,15 @@ jobs:
           make_latest: false
           body: |
             Testing pre-release of the standalone portable 64-bit Windows edition of Terrain Press.
-            Includes the first Jupiter layered color-panel prototype. Windows UI and slicer acceptance remain pending.
+            Includes Jupiter globe selection and integrated ornament/puzzle exports. Windows UI and slicer acceptance remain pending.
 
-            Download Terrain-Press-1.12.0-Portable.exe and run it without installing Node.js or Python.
+            Download Terrain-Press-1.13.0-Portable.exe and run it without installing Node.js or Python.
 
-            - NEW: Jupiter color panels with offline Hubble OPAL imagery and 2–8 editable colors.
-            - Adjustable panel size, grid detail, backing and color-band thickness.
-            - Color and 3D previews; export one solid STL plus a manual filament-change schedule.
+            - NEW: Jupiter standard workflow with offline Hubble OPAL imagery and 2–8 editable colors.
+            - Frames, lettering, trays, hex grids, individual puzzle files, piece maps and colored print-guide previews.
+            - Standard STL/3MF exports plus a shared manual filament-change schedule. 3MF surface colors are display assignments; slicer behavior varies.
             - Color-band heights are artistic construction, not gas-giant terrain.
-            - 89 automated tests pass. Browser, slicer and physical print acceptance remain pending.
+            - Geometry/export regressions and browser smoke checks are included. Slicer and physical print acceptance remain pending.
             - Existing Earth global and selected-area terrain downloads remain available.
             - Unsigned executable: Windows SmartScreen may show a publisher warning.
 

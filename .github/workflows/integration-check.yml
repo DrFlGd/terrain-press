@@ -45,3 +45,17 @@ jobs:
         run: |
           node --check site/worker.js
           node --check site/guide.js
+
+      - name: Install browser smoke dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Exercise Jupiter globe, controls and export
+        run: node tools/jupiter-smoke.cjs
+      - name: Keep Jupiter smoke screenshots and export
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jupiter-workflow-smoke
+          path: smoke-output/
+          if-no-files-found: ignore

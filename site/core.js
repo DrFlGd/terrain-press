@@ -415,6 +415,46 @@
     }
   }
 
+  // Clip color cells against the normal ornament/puzzle outline. Shared edges
+  // emit only exposed step walls, never overlapping internal solids.
+  function colorSolid(ex, panel, W, base, band, bottom, out, flat = false) {
+    const n = panel.width, cell = W / n, edges = new Map();
+    const coord = v => Math.round(v * SCALE) / SCALE;
+    const levels = [bottom, ...panel.palette.map((_, k) => bottom + base + k * band)];
+    const push = (a,b,c,z) => out.push(a[0],a[1],z,b[0],b[1],z,c[0],c[1],z);
+    const xs=ex.outer.map(v=>v[0]), ys=ex.outer.map(v=>v[1]);
+    const x0=Math.max(0,Math.floor((Math.min(...xs)+W/2)/cell));
+    const x1=Math.min(n-1,Math.floor((Math.max(...xs)+W/2)/cell));
+    const y0=Math.max(0,Math.floor((W/2-Math.max(...ys))/cell));
+    const y1=Math.min(n-1,Math.floor((W/2-Math.min(...ys))/cell));
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++) {
+      const l=coord(-W/2+x*cell),r=coord(-W/2+(x+1)*cell);
+      const t=coord(W/2-y*cell),b=coord(W/2-(y+1)*cell);
+      const regions=boolOp(CL.ClipType.ctIntersection,[ex.outer,...ex.holes],[[[l,b],[r,b],[r,t],[l,t]]]);
+      const k=flat?1:panel.labels[y*n+x]+1;
+      for(const region of regions) {
+        for(const tri of triangulate(region,[])) {
+          let [a,b,c]=tri;if(area(tri)<0)[b,c]=[c,b];
+          push(a,b,c,levels[k]);push(c,b,a,bottom);
+        }
+        for(const ring of [region.outer,...region.holes])for(let i=0;i<ring.length;i++) {
+          const a=ring[i],b=ring[(i+1)%ring.length];
+          const key=[a.join(','),b.join(',')].sort().join('|');
+          const list=edges.get(key)||[];list.push({a,b,k});edges.set(key,list);
+        }
+      }
+    }
+    for(const list of edges.values()) {
+      if(list.length>2)throw Error('Ambiguous color boundary');
+      const e=list.length===1?list[0]:list[0].k>list[1].k?list[0]:list[1];
+      const low=list.length===1?0:Math.min(list[0].k,list[1].k);
+      for(let k=low;k<e.k;k++) {
+        const a=[...e.a,levels[k]],b=[...e.b,levels[k]],c=[...e.b,levels[k+1]],d=[...e.a,levels[k+1]];
+        out.push(...a,...b,...c,...a,...c,...d);
+      }
+    }
+  }
+
   // body: {outer ccw, holes cw} (holes = through-holes such as the hanging loop); pocket: ccw rings recessed down to floorZ
   function traySolid(body, pocket, topZ, floorZ, out) {
     const push = (a, b, c) => out.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
@@ -880,7 +920,7 @@
       if (!pointInRing(gx(j), gy(i), outline) && distToRing(gx(j), gy(i), outline) > W / (N - 1) * 1.5) continue;
       const h = hf.heights[i * N + j]; if (h < hMin) hMin = h; if (h > hMax) hMax = h;
     }
-    const base = p.baseMm, k = mmPerM * p.exag;
+    const base = hf.panel ? p.panelBacking * p.panelLayer : p.baseMm, k = mmPerM * p.exag;
     const backed = p.back && (p.border || 'lettered') !== 'none';
     const floorZ = backed ? p.backMm : 0;
     const topZ = (x, y) => {
@@ -894,7 +934,10 @@
     const step = p.stepMm;
     const parts = [];
     let grid = null;
-    const reliefMm = (hMax - hMin) * k;
+    const reliefMm = hf.panel ? (hf.panel.palette.length - 1) * p.panelBand * p.panelLayer : (hMax - hMin) * k;
+    const terrainSolid = (ex, top, bottom, step, out) => hf.panel
+      ? colorSolid(ex, hf.panel, W, base, p.panelBand*p.panelLayer, bottom, out, typeof top === "number")
+      : solid(ex, top, bottom, step, out);
     // rim height above the base: exactly as set, or (optional) raised to about half the printed relief
     const frameTop = floorZ + base + (p.rimAuto ? Math.max(p.rimMm, Math.min(reliefMm * 0.55, 14)) : p.rimMm);
     const join = p.shape === 'circle' ? 'round' : 'miter';
@@ -929,7 +972,7 @@
               const ring = densify(s.outer, Math.max(0.2, step));
               const tris=[];
               const flat = hex.clip && c.partial && p.hexEdge === 'flat';
-              solid({outer:ring,holes:s.holes},flat ? floorZ+base : topZ,floorZ,step,tris);
+              terrainSolid({outer:ring,holes:s.holes},flat ? floorZ+base : topZ,floorZ,step,tris);
               if (tris.length) parts.push({name:(c.partial?'Edge hex ':'Hex ')+(parts.length+1),
                 role:'terrain',tris:new Float32Array(tris),cell:[c.i,c.j],ring:s.outer,
                 partial:c.partial,flat});
@@ -979,19 +1022,19 @@
         shr.sort((x, y) => exArea(y) - exArea(x));
         if (!shr.length) continue;
         let tris = [], ring = shr[0].outer;
-        try { solid({ outer: densify(shr[0].outer, Math.max(0.2, step)), holes: shr[0].holes }, topZ, floorZ, step, tris); }
+        try { terrainSolid({ outer: densify(shr[0].outer, Math.max(0.2, step)), holes: shr[0].holes }, topZ, floorZ, step, tris); }
         catch (e) {
           // a pinch where two tabs nearly touch: open the outline slightly and retry
           const fix = exPolysFrom(offset(offset([shr[0].outer, ...shr[0].holes], -0.15, 'round'), 0.15, 'round'));
           fix.sort((x, y) => exArea(y) - exArea(x)); tris = []; ring = fix[0].outer;
-          solid({ outer: densify(fix[0].outer, Math.max(0.2, step)), holes: fix[0].holes }, topZ, floorZ, step, tris);
+          terrainSolid({ outer: densify(fix[0].outer, Math.max(0.2, step)), holes: fix[0].holes }, topZ, floorZ, step, tris);
         }
         parts.push({ name: `Piece ${++n}`, role: 'terrain', tris: new Float32Array(tris), cell: [q.cell.i, q.cell.j], ring });
       }
       }
     } else {
       const tOut = p.separate ? densify(offset([outline], -p.gapMm / 2, join)[0], Math.max(0.2, step)) : outlineD;
-      solid({ outer: tOut, holes: [] }, topZ, floorZ, step, terrain);
+      terrainSolid({ outer: tOut, holes: [] }, topZ, floorZ, step, terrain);
       parts.push({ name: 'Terrain', role: 'terrain', tris: new Float32Array(terrain) });
     }
 
@@ -1044,6 +1087,14 @@
           const m = new Float32Array(fr.tris.length + tt.length); m.set(fr.tris); m.set(tt, fr.tris.length);
           fr.tris = m; fr.name = 'Frame with lettering';
         } else parts.push({ name: 'Lettering', role: 'text', tris: new Float32Array(tt) });
+      }
+    }
+    if (hf.panel) for (const part of parts.filter(o=>o.role==='terrain')) {
+      part.palette = hf.panel.palette.map(rgb=>'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join(''));
+      part.faceColors = new Uint8Array(part.tris.length/9);
+      for(let i=0;i<part.faceColors.length;i++) {
+        const z=(part.tris[i*9+2]+part.tris[i*9+5]+part.tris[i*9+8])/3-floorZ;
+        part.faceColors[i]=Math.max(0,Math.min(part.palette.length-1,Math.ceil((z-base)/(p.panelBand*p.panelLayer)-1e-5)));
       }
     }
     return { parts, hMin, hMax, reliefMm, mmPerM, frameTop, grid, floorZ,
@@ -1145,15 +1196,17 @@
   function model3mf(parts, colors, title) {
     const mats = [...new Set(parts.map(p => p.role))];
     let objs = '', comps = '', id = 2;
+    const palette = parts.find(p=>p.palette)?.palette || [];
+    const colorId = 100000;
     for (const p of parts) {
       const { verts, idx } = weld(p.tris);
       const v = []; for (let i = 0; i < verts.length; i += 3) v.push(`<vertex x="${verts[i].toFixed(4)}" y="${verts[i + 1].toFixed(4)}" z="${verts[i + 2].toFixed(4)}"/>`);
-      const t = []; for (let i = 0; i < idx.length; i += 3) { if (idx[i] === idx[i + 1] || idx[i + 1] === idx[i + 2] || idx[i] === idx[i + 2]) continue; t.push(`<triangle v1="${idx[i]}" v2="${idx[i + 1]}" v3="${idx[i + 2]}"/>`); }
+      const t = []; for (let i = 0; i < idx.length; i += 3) { if (idx[i] === idx[i + 1] || idx[i + 1] === idx[i + 2] || idx[i] === idx[i + 2]) continue; t.push(`<triangle v1="${idx[i]}" v2="${idx[i + 1]}" v3="${idx[i + 2]}"${p.faceColors ? ` pid="${colorId}" p1="${p.faceColors[i/3]}"` : ""}/>`); }
       objs += `<object id="${id}" name="${esc(p.name)}" type="model" pid="1" pindex="${mats.indexOf(p.role)}"><mesh><vertices>${v.join('')}</vertices><triangles>${t.join('')}</triangles></mesh></object>`;
       comps += `<component objectid="${id}"/>`; id++;
     }
     const bm = mats.map(m => `<base name="${m}" displaycolor="${colors[m] || '#888888'}"/>`).join('');
-    const model = `<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Title">${esc(title)}</metadata><metadata name="Application">Terrain Press</metadata><resources><basematerials id="1">${bm}</basematerials>${objs}<object id="${id}" name="${esc(title)}" type="model"><components>${comps}</components></object></resources><build><item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 128 128 0"/></build></model>`;
+    const model = `<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Title">${esc(title)}</metadata><metadata name="Application">Terrain Press</metadata><resources><basematerials id="1">${bm}</basematerials>${palette.length ? `<basematerials id="${colorId}">${palette.map((c,i)=>`<base name="Color ${i+1}" displaycolor="${c}"/>`).join("")}</basematerials>` : ""}${objs}<object id="${id}" name="${esc(title)}" type="model"><components>${comps}</components></object></resources><build><item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 128 128 0"/></build></model>`;
     const ct = `<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`;
     const rels = `<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`;
     return [['[Content_Types].xml', ct], ['_rels/.rels', rels], ['3D/3dmodel.model', model]];

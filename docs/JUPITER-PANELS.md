@@ -1,6 +1,6 @@
 # Jupiter layered color panels
 
-Open **Jupiter · color panel** in the world selector. This first implementation uses the entire bundled Hubble OPAL map as a rectangular panel, with 2–8 quantized colors and editable filament swatches. It works offline in the desktop app.
+The original full-map panel is available through the **Full-map panel** link in Jupiter controls. See the standard workflow integration below for the main world selector. This first implementation uses the entire bundled Hubble OPAL map as a rectangular panel, with 2–8 quantized colors and editable filament swatches. It works offline in the desktop app.
 
 Each color is assigned a height band, sorted initially from dark to light. Higher bands have nested footprints so earlier colors remain exposed. The first color also forms the backing. These heights are artistic construction, not measured cloud or terrain elevations.
 
@@ -8,7 +8,7 @@ Choose panel width, grid detail, constant printer layer height, backing layers a
 
 Quantization uses deterministic RGB clustering without dithering. Diagonal-only contacts are lowered to avoid nonmanifold edges. Preview uses that same cleaned grid. Grid resolution controls detail, not guaranteed printable feature size: narrow features, filament opacity and color mixing still need slicer inspection and a small physical print. No physical print or slicer compatibility claim is made yet.
 
-Current scope excludes crop selection, custom source images, palette reordering, terrain surface assignments and colored 3MF. Saturn is the next image-panel candidate. Surface assignments for Moon and rocky-planet terrain remain the accepted next color-terrain approach.
+The standalone full-map page excludes crop selection and colored 3MF; these are available through the standard workflow below. Custom source images, palette reordering and measured-terrain surface assignments remain future work. Saturn is the next image-panel candidate. Surface assignments for Moon and rocky-planet terrain remain the accepted next color-terrain approach.
 
 ## Source
 
@@ -26,3 +26,15 @@ The bundled JPEG is resized to 1000 × 444 from the NASA-served 2000 × 888 rend
 Automated tests cover 2–8 color mesh edge incidence, winding, positive volume, expected volume, uniform input, STL triangle count and swap schedule indexing. Browser and slicer/physical-print checks should be recorded separately.
 
 Validation for the prototype: 89 automated tests passed. Interactive browser testing was blocked by an unavailable browser binary and failed browser download in the development environment. Slicer import and physical printing are pending.
+
+## Standard workflow integration
+
+Choose **Jupiter** in the main world selector. Select an area on Globe or type its coordinates and width. Circle, square, hexagon, ornaments, frames, lettering, jigsaws and hex grids now use the same main workflow. The original full-map panel is linked from the Jupiter controls.
+
+The selected image is quantized once into 2–8 editable colors. Every piece shares its palette and height schedule. Color cells are clipped to the normal ornament/puzzle outlines. Frame/tray/lettering print separately from the color pieces. Flat hex border pieces use the first color. Exports include the usual STL/3MF, spread and individual pieces, SVG piece map, and PDF print guide (README fallback), plus color-changes.csv, JUPITER-PRINTING.txt and settings JSON. 3MF includes per-triangle surface display assignments; slicer support varies. The manual height-change schedule remains authoritative. Use a constant layer height including the first layer; disable adaptive layers.
+
+The globe and crop use the same spherical selection, with image-relative east-positive longitude (image centre = 0, left edge = -180), **not calibrated System III longitude**. Source latitude is planetographic; spherical distances are approximate. Imagery ends at ±79.9° latitude: the globe shades missing poles and the generator rejects crops crossing them. Source: Simon, Wong & Orton (2015), Figure 1, https://esahubble.org/static/archives/releases/science_papers/heic1522a.pdf .
+
+Color detail is 48, 80 or 128 cells across, identical in preview/export. DEM sampling and exaggeration do not affect Jupiter. Small islands can require coarser detail for the chosen nozzle. Region/crop selection and surface-colored 3MF are now implemented for these artistic panels; measured-terrain surface assignments remain future work.
+
+Regression tests cover watertight clipped shapes and puzzles, preserved color metadata after spreading, map orientation/seam wrapping/polar rejection, and worker export assets and build-plate-relative color schedules. Chromium CI exercises globe selection, 2/8 colors, download and switching back to Moon.
