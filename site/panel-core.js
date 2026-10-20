@@ -49,5 +49,22 @@ function mesh(panel, widthMM, layerHeight, bandLayers, backingLayers) {
 function schedule(palette,layerHeight,bandLayers,backingLayers){
   return palette.map((rgb,i)=>({color:i+1,hex:'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join(''),startLayer:i===0?1:backingLayers+(i-1)*bandLayers+1,startHeightMM:i===0?0:(backingLayers+(i-1)*bandLayers)*layerHeight}));
 }
-root.TPPanel={quantize,mesh,schedule};
+// Image-relative longitude: image centre = 0, left edge = -180.
+// Source latitude is planetographic; spherical selection distances are approximate.
+function crop(rgba,w,h,q,n) {
+  const out=new Uint8Array(n*n*4),r=71492,rad=Math.PI/180;
+  const p=q.lat*rad,l=q.lon*rad;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++) {
+    const dx=((x+.5)/n-.5)*q.size,dy=(.5-(y+.5)/n)*q.size;
+    const rho=Math.hypot(dx,dy),c=rho/r;
+    const lat=rho?Math.asin(Math.max(-1,Math.min(1,Math.cos(c)*Math.sin(p)+dy*Math.sin(c)*Math.cos(p)/rho))):p;
+    const lon=rho?l+Math.atan2(dx*Math.sin(c),rho*Math.cos(p)*Math.cos(c)-dy*Math.sin(p)*Math.sin(c)):l;
+    if(Math.abs(lat/rad)>79.9)throw Error('Selection crosses unmapped polar imagery. Move toward the equator or reduce region width.');
+    const u=((lon/rad+180)%360+360)%360/360;
+    const ix=Math.min(w-1,Math.floor(u*w)),iy=Math.max(0,Math.min(h-1,Math.floor((79.9-lat/rad)/159.8*h)));
+    out.set(rgba.subarray((iy*w+ix)*4,(iy*w+ix)*4+4),(y*n+x)*4);
+  }
+  return out;
+}
+root.TPPanel={quantize,mesh,schedule,crop};
 })(typeof self!=='undefined'?self:globalThis);

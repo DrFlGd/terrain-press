@@ -5,6 +5,9 @@ const $ = id => document.getElementById(id);
 
 // ---------------- catalogue ----------------
 const WORLDS = {
+  jupiter: {name:'Jupiter',dot:'#d7ac7e',terrain:'#b5835b',grid:'Hubble OPAL color map',landingTitle:'',def:'redspot',datum:'artistic color bands, not elevation',
+    credit:'Hubble OPAL, 19 January 2015. NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), G. Orton (JPL-Caltech). Filter composite. Map-relative longitude (image centre = 0), not calibrated System III. Planetographic latitude; spherical selection distances are approximate. No imagery beyond ±79.9°.',
+    marks:[{id:'redspot',name:'Great Red Spot (2015)',note:'Approximate location in the bundled image',lat:-22.4,lon:54,size:35000,ex:1},{id:'belts',name:'Equatorial cloud bands',note:'Color bands in the 2015 image',lat:0,lon:0,size:60000,ex:1}]},
   earth: { name: 'Earth', dot: '#4d9fce', terrain: '#8ba775', grid: 'NOAA ETOPO 2022', landingTitle: '', def: 'himalaya',
     datum: 'relative to the EGM2008 geoid (approximately mean sea level)',
     credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe colors show elevation, not satellite imagery. Regional geometry uses a mean-radius spherical approximation. Optional surface data produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
@@ -144,8 +147,10 @@ async function ensureFont(id) {
 
 // ---------------- parameters ----------------
 function params(step) {
-  const product = state.product, border = state.border;
+  const product = state.product, border = state.border, colored = state.world === 'jupiter';
   return {
+    panelLayer:+$('jp-layer').value,panelBand:+$('jp-band').value,panelBacking:+$('jp-backing').value,
+    colorPanel:colored,
     shape: state.shape, product, widthMm: +$('width-num').value, exag: exFromSlider(+$('exag').value),
     hexLayout: $('hex-layout').value, hexEdge: $('hex-edge').value,
     hexRings: +$('hex-rings').value,
@@ -158,7 +163,7 @@ function params(step) {
         : 1 + 3 * (+$('hex-rings').value) * (+$('hex-rings').value + 1))
       : Math.round(clamp(+$('pieces').value, 2, 12, 5)),
     gapMm: clamp(+$('gap').value, 0.1, 0.6, 0.3),
-    separate: product === 'ornament' && border !== 'none' && $('separate').checked,
+    separate: product === 'ornament' && border !== 'none' && (colored || $('separate').checked),
     loop: product === 'ornament' && border !== 'none' && $('loop').checked,
     stepMm: typeof step === 'number' ? step : 0.5, border, mergeText: $('merge').checked, back: $('back').checked, backMm: clamp(+$('back-mm').value, 0.8, 4, 1.6),
     seed: Math.abs(Math.round(state.lat * 1000) * 31 + Math.round(state.lon * 1000)) + 7,
@@ -170,10 +175,12 @@ const query = (step, fastPreview = false) => ({
   // Fast preview stays inexpensive regardless of configured export ceiling.
   samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
+  ...(state.world==='jupiter'?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette}:{}),
   featureMm: +$('min-feature').value
 });
 
 // ---------------- build ----------------
+let jupiterPalette = null;
 let timer = null, buildId = 0, exportId = 0, building = false, again = false;
 let planSequence = 0;
 async function refreshPlan() {
@@ -182,6 +189,7 @@ async function refreshPlan() {
   try {
     const r = await call({ type: 'plan', q: query(state.detail) });
     if (seq !== planSequence) return;
+    if(state.world==='jupiter') { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent='Use the Jupiter detail setting. Small islands may need coarser sampling for your nozzle.'; return; }
     const p = r.plan, samples = (p.N * p.N).toLocaleString('en-US');
     $('grid-plan').textContent = 'Export: ' + p.N.toLocaleString('en-US') +
       ' × ' + p.N.toLocaleString('en-US') + ' (' + samples + ' heights) · ' +
@@ -206,7 +214,7 @@ async function build() {
   if (!ready) return;
   if (building) { again = true; return; }
   building = true; again = false;
-  busy('Loading elevation…');
+  busy(state.world==='jupiter'?'Sampling cloud colors…':'Loading elevation…');
   try {
     if (state.border === 'lettered') await ensureFont(state.font);
     const step = $('preview-high').checked ? state.detail : PREVIEW_STEP;
@@ -215,7 +223,7 @@ async function build() {
     const msg = { type: 'build', q: query(step, !$('preview-high').checked), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
-    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); }
+    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(state.world==='jupiter')renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); }
   } catch (e) { console.error(e); toast('Could not build this region: ' + e.message, 'danger'); }
   finally { building = false; busy(null); if (again) build(); }
 }
@@ -244,6 +252,7 @@ function showStats(p, r) {
     (p.hexLayout === 'square' ? p.hexAcross + ' × ' + p.hexAcross + ' whole hexes'
       : p.hexRings + ' ring(s) · ' + p.pieces + ' nominal hexes') +
     ' · rendered ' + n + ' printable pieces.';
+  if(state.world==='jupiter') { $('st-low').textContent='Color 1';$('st-high').textContent='Color '+$('jp-count').value;$('st-relief').textContent=s.reliefMm.toFixed(2)+' mm color steps'; }
   const rel = s.reliefMm;
   $('exag-hint').textContent = `${p.exag}× · 1× is true scale. ` + (rel < 2 ? 'Relief is shallow; try more exaggeration.' : rel > 25 ? 'Tall; check the slicer for steep walls.' : 'Reads well at this width.');
   // Pluto: warn when the region strays into the unmapped half
@@ -307,17 +316,18 @@ const bench = (() => {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const p of parts) {
       let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p.verts, 3)); g.setIndex(new THREE.BufferAttribute(p.idx, 1));
-      if (p.role !== 'terrain') g = g.toNonIndexed();          // crisp edges on the frame and letters
+      if (p.role !== 'terrain' || p.faceColors) g = g.toNonIndexed();
+      if(p.faceColors){const c=new Float32Array(p.faceColors.length*9);p.faceColors.forEach((k,i)=>{const rgb=new THREE.Color(p.palette[k]).convertSRGBToLinear();for(let j=0;j<3;j++)c.set([rgb.r,rgb.g,rgb.b],i*9+j*3);});g.setAttribute('color',new THREE.BufferAttribute(c,3));}          // crisp edges on the frame and letters
       g.computeVertexNormals(); g.computeBoundingBox();
       const b = g.boundingBox; minX = Math.min(minX, b.min.x); maxX = Math.max(maxX, b.max.x); minY = Math.min(minY, b.min.y); maxY = Math.max(maxY, b.max.y);
-      const m = new THREE.MeshStandardMaterial({ color: state.colors[p.role], roughness: p.role === 'text' ? 0.45 : 0.88, metalness: p.role === 'text' ? 0.25 : 0 });
+      const m = new THREE.MeshStandardMaterial({ color: p.faceColors?'#ffffff':state.colors[p.role], vertexColors:!!p.faceColors, roughness: p.role === 'text' ? 0.45 : 0.88, metalness: p.role === 'text' ? 0.25 : 0 });
       const mesh = new THREE.Mesh(g, m); mesh.castShadow = mesh.receiveShadow = true; mesh.userData.role = p.role; group.add(mesh);
     }
     scene.add(group);
     frameTo(Math.max(maxX - minX, maxY - minY, 100));
     render();
   }
-  function recolor() { group.children.forEach(m => m.material.color.set(state.colors[m.userData.role])); render(); }
+  function recolor() { group.children.forEach(m => m.material.color.set(m.material.vertexColors?'#ffffff':state.colors[m.userData.role])); render(); }
   TPTheme.listeners.push(() => setTimeout(theme, 0));
   theme(); setSun(18);
   return { setParts, recolor, setSun, resize, render };
@@ -431,6 +441,8 @@ function makeGlobe() {
           ? 'Here: ~'+Math.round(v/255*100)+'% stereo samples in nearby 0.5° cell; remainder uses bundled Venus DEM.'
           : 'Here: no measured stereo samples; bundled Venus DEM is used.';
       }
+    } else if(state.world==='jupiter') {
+      $('coverage-at-point').textContent='2015 imagery · no data beyond ±79.9°. Longitude is image-relative, not System III. Heights are color bands.';
     } else if(state.world==='earth') {
       $('coverage-at-point').textContent='Earth: NOAA global relief plus saved Copernicus surface regions where available. Boxes show installed cells, not survey confidence. Grid spacing is not uniform survey accuracy.';
     } else if(state.world==='pluto') {
@@ -485,6 +497,9 @@ function makeGlobe() {
         coverKey('#7a818a','Bundled Venus DEM (global)');
         coverKey('transparent','Stereo-derived terrain is available as an optional download; no map mask installed');
       }
+    } else if(world==='jupiter') {
+      coverKey('#394049','Unmapped poles · imagery ends at ±79.9°');
+      coverKey('transparent','2015 Hubble color map · not elevation');
     } else if(world==='pluto') {
       coverKey('rgba(84,192,207,.50)','New Horizons mapped surface (bundled mask)');
       coverKey('#7a818a','Unmapped / filled area');
@@ -534,6 +549,11 @@ function makeGlobe() {
   ctl.addEventListener('change', () => { const d = cam.position.length(); if (fpPts && Math.abs(d - fpDist) / fpDist > 0.08) drawFootprint(); render(); });
   function theme() { scene.background = new THREE.Color(css('--tp-stage') || '#0d1014'); stars.material.color.set(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 0x8a919b : 0x9a958c); refresh(); }
   function setWorld(w) {
+    if(w==='jupiter'&&!tex[w]) {
+      const cv=document.createElement('canvas');cv.width=1000;cv.height=500;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,1000,500);
+      tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
+      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*500,1000,159.8/180*500);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015.jpg';
+    }
     if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;
     coverageUpdate();
@@ -611,7 +631,21 @@ function selectMark(L, fromGlobe) {
   if (fromGlobe) showTab('model');
 }
 function syncInputs() { $('lat').value = +state.lat.toFixed(4); $('lon').value = +state.lon.toFixed(4); $('size').value = Math.round(state.size); }
-function updateCoord() { $('coord').innerHTML = `<span><b>${WORLDS[state.world].name}</b></span><span>${fmtLat(state.lat)} ${fmtLon(state.lon)}</span><span>${Math.round(state.size)} km wide</span>`; }
+function updateCoord() { $('coord').innerHTML = `<span><b>${WORLDS[state.world].name}</b></span><span>${fmtLat(state.lat)} ${fmtLon(state.lon)}${state.world==='jupiter'?' (map-relative)':''}</span><span>${Math.round(state.size)} km wide</span>`; }
+
+function syncJupiter() {
+  const yes=state.world==='jupiter';$('jupiter-options').hidden=!yes;
+  $('exag').disabled=$('base').disabled=$('c-terrain').disabled=yes;
+  $('exag').parentElement.hidden=yes;
+  $('separate').disabled=yes;
+  $('size').max=yes?120000:9000;
+  if(yes)$('separate').checked=true;
+}
+function renderJupiterPalette(palette) {
+  if(!palette)return;
+  $('jp-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label','Jupiter filament '+(k+1));input.onchange=()=>{jupiterPalette=Array.from($('jp-palette').children,x=>x.value);schedule();};return input;}));
+}
+for(const id of ['jp-count','jp-grid','jp-layer','jp-band','jp-backing'])$(id).onchange=()=>{jupiterPalette=null;schedule();};
 
 // ---------------- worlds ----------------
 function renderWorlds() {
@@ -622,11 +656,10 @@ function renderWorlds() {
     b.setAttribute('aria-pressed', String(state.world === id));
     const i = document.createElement('i'); i.style.background = W.dot; b.append(i, document.createTextNode(W.name)); b.onclick = () => setWorld(id); box.appendChild(b);
   }
-  const j = document.createElement('a'); j.href = 'jupiter.html'; j.className = 'btn btn-sm btn-tp tp-world'; j.textContent = 'Jupiter · color panel'; box.appendChild(j);
 }
 
 function setWorld(id) {
-  state.world = id; document.body.dataset.world = id; renderWorlds();
+  state.world = id; jupiterPalette=null; syncJupiter(); document.body.dataset.world = id; renderWorlds();
   state.colors.terrain = WORLDS[id].terrain; $('c-terrain').value = WORLDS[id].terrain;
   $('mark-filter').value = '';
   $('credits').innerHTML = '';
@@ -654,6 +687,7 @@ function showTab(t) {
 }
 $('tab-model').onclick = () => showTab('model'); $('tab-globe').onclick = () => showTab('globe');
 function syncMode() {
+  syncJupiter();
   state.product = radio('product'); state.shape = radio('shape');
   state.border = state.shape === 'hexgrid' ? 'none' : radio('border'); state.font = radio('font');
   const automaticResolution = radio('resolution-mode') === 'auto';
@@ -773,7 +807,7 @@ $('exag').addEventListener('input', () => { $('o-exag').textContent = exFromSlid
 $('sun').addEventListener('input', () => { $('o-sun').textContent = $('sun').value + '°'; bench.setSun(+$('sun').value); });
 $('mark-filter').addEventListener('input', renderMarks);
 for (const id of ['lat', 'lon', 'size']) $(id).addEventListener('change', () => {
-  state.lat = clamp(+$('lat').value, -90, 90, state.lat); state.lon = clamp(+$('lon').value, -180, 180, state.lon); state.size = clamp(+$('size').value, 10, 9000, state.size);
+  state.lat = clamp(+$('lat').value, -90, 90, state.lat); state.lon = clamp(+$('lon').value, -180, 180, state.lon); state.size = clamp(+$('size').value, 10, state.world==='jupiter'?120000:9000, state.size);
   state.mark = null; syncInputs(); renderMarks(); updateCoord(); if (globe) globe.refresh(); schedule(true);
 });
 for (const k of ['terrain', 'frame', 'text']) $('c-' + k).addEventListener('input', e => { state.colors[k] = e.target.value; bench.recolor(); });
@@ -847,7 +881,7 @@ $('export').onclick = async () => {
     if (p.widthMm > 1000 && !confirm(
       'Export a ' + p.widthMm.toLocaleString('en-US') + ' mm-wide model? Hex pieces and high-detail meshes may use substantial RAM and produce very large print files. Continue?')) return;
     const slug = ((L ? L.name : WORLDS[state.world].name + ' ' + fmtLat(state.lat) + ' ' + fmtLon(state.lon)) + ' ' + p.product + ' ' + p.shape).toLowerCase().replace(/°/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    btn.textContent = 'Loading elevation…';
+    btn.textContent = state.world==='jupiter'?'Sampling cloud colors…':'Loading elevation…';
     const pr = call({ type: 'export', q: query(state.detail), p, font: state.border === 'lettered' ? state.font : null, readme: readmeTemplate(p, slug),
       x: { slug, colors: state.colors, spread: state.product === 'puzzle', spreadGap: clamp(+$('spread-gap').value, 1, 15, 3), perPiece: state.product === 'puzzle' } });
     exportId = reqId;
@@ -1005,6 +1039,7 @@ function initTerrainDataManager() {
   busy('Loading…');
   try {
     meta = await fetch('data/meta.json?v=' + BUILD).then(r => r.json());
+    meta.jupiter={radiusKm:71492};
     if (window.terrainPacks) {
       try {
         const status = await window.terrainPacks.status();

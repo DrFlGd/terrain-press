@@ -1,5 +1,5 @@
 // Terrain Press worker: decodes elevation tiles, builds meshes and print files off the main thread.
-importScripts('https://cdn.jsdelivr.net/npm/poly2tri@1.5.0/dist/poly2tri.min.js', 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'core.js' + self.location.search);
+importScripts('https://cdn.jsdelivr.net/npm/poly2tri@1.5.0/dist/poly2tri.min.js', 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'core.js' + self.location.search, 'panel-core.js' + self.location.search);
 const C = self.TPCore;
 let meta = null, store = null;
 const fonts = {};
@@ -29,6 +29,10 @@ async function decode(path) {
 
 // Probe the coordinate-specific DEM cheaply, before allocating large grids.
 function planHeights(q) {
+  if(q.world==='jupiter') {
+    const N=Math.round(Math.max(24,Math.min(128,q.panelGrid||80)));
+    return {plan:{N,stepMm:q.widthMm/N,limited:false,cap:128,samplingLimit:128,recommendedLimit:128,featureMm:q.widthMm/N,sourceStepMm:q.widthMm*(360/1000)/(q.size/71492*180/Math.PI),detailOptimized:false},source:{kind:'image',label:'Hubble OPAL 2015 color map',pxKm:71492*Math.PI*2/1000}};
+  }
   const probeN = Math.min(201, Math.round(q.widthMm / 0.5) + 1);
   const source = store.chooseSource(q.world, q.lat, q.lon, q.size, probeN);
   const plan = C.meshPlan(q.widthMm, q.size, source.pxKm, q.step,
@@ -41,8 +45,23 @@ async function heights(q, onProgress) {
   return { heights: s.heights, N: plan.N, sizeKm: q.size, source: s.source,
     stepMm: plan.stepMm, limited: plan.limited, plan };
 }
+let jupiterImage;
+async function colorHF(q) {
+  if(!jupiterImage) {
+    const response=await fetch('data/jupiter/opal-2015.jpg');if(!response.ok)throw Error('Jupiter image could not be loaded');
+    const bmp=await createImageBitmap(await response.blob());
+    const cv=new OffscreenCanvas(bmp.width,bmp.height),ctx=cv.getContext('2d');ctx.drawImage(bmp,0,0);
+    jupiterImage={rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();
+  }
+  const {plan,source}=planHeights(q),im=jupiterImage;
+  const pixels=TPPanel.crop(im.rgba,im.w,im.h,q,plan.N);
+  const panel=TPPanel.quantize(pixels,plan.N,plan.N,q.panelCount||4);
+  if(q.panelPalette?.length===panel.palette.length)panel.palette=q.panelPalette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16)));
+  return {panel,N:plan.N,heights:new Float32Array(plan.N**2),sizeKm:q.size,stepMm:plan.stepMm,plan,source,limited:false};
+}
 const cache = { key: '', hf: null };
 async function getHF(q, id) {
+  if(q.world==='jupiter')return colorHF(q);
   const key = [q.world, q.lat, q.lon, q.size, q.widthMm,
     q.step, q.samplingLimit, q.featureMm].join('|');
   if (cache.key !== key) {
@@ -58,7 +77,7 @@ function pack(model, forPreview) {
   for (const p of model.parts) {
     if (forPreview) {
       const w = C.weld(p.tris), v = new Float32Array(w.verts);
-      parts.push({ name: p.name, role: p.role, cell: p.cell || null, verts: v, idx: w.idx }); transfer.push(v.buffer, w.idx.buffer);
+      parts.push({ name: p.name, role: p.role, cell: p.cell || null, palette:p.palette, faceColors:p.faceColors, verts: v, idx: w.idx }); transfer.push(v.buffer, w.idx.buffer);
     } else parts.push(p);
   }
   return { parts, transfer };
@@ -187,7 +206,7 @@ function exportFiles(model, p, x) {
 }
 // geometry for the guide's renders: welded, and only what the page needs
 function plateForGuide(pl, transfer) {
-  const parts = pl.parts.map(o => { const w = C.weld(o.tris), v = new Float32Array(w.verts); transfer.push(v.buffer, w.idx.buffer); return { role: o.role, verts: v, idx: w.idx }; });
+  const parts = pl.parts.map(o => { const w = C.weld(o.tris), v = new Float32Array(w.verts); transfer.push(v.buffer, w.idx.buffer); return { role: o.role, palette:o.palette, faceColors:o.faceColors, verts: v, idx: w.idx }; });
   return { ...pl, parts };
 }
 
@@ -243,6 +262,12 @@ self.onmessage = async e => {
         .replace('{{SOURCESTEP}}', hf.plan.sourceStepMm.toFixed(3))
         .replace('{{SAMPLEMODE}}', String(hf.plan.samplingLimit));
       const out = await exportFiles(model, printParams, m.x), transfer = [];
+      if(hf.panel) {
+        const palette=hf.panel.palette, steps=TPPanel.schedule(palette,m.p.panelLayer,m.p.panelBand,m.p.panelBacking);
+        out.files.push(['color-changes.csv','color,hex,start_layer,change_at_z_mm\n'+steps.map(s=>[s.color,s.hex,s.startLayer,s.startHeightMM.toFixed(3)].join(',')).join('\n')]);
+        out.files.push(['JUPITER-PRINTING.txt',`Print terrain/pieces files separately from frame/tray/lettering. The assembled 3MF is a reference. Use ${m.p.panelLayer} mm for ALL layers including the first; disable adaptive layers. CSV layers are 1-based: change before that layer, at the listed completed Z. All pieces use the same palette and backing. STL has no color metadata. 3MF carries surface display assignments; slicers may ignore them. The manual height-change CSV is authoritative. Heights are artistic color bands, not real terrain. Longitude is image-relative (image centre = 0), not calibrated System III. Latitude follows the source map; spherical distances are approximate. Source: Hubble OPAL 2015-01-19, https://science.nasa.gov/asset/hubble/jupiter-global-map-from-hubble-opal-data-rotation-1/ . Credit: NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), G. Orton (JPL-Caltech).`]);
+        out.files.push(['jupiter-settings.json',JSON.stringify({query:m.q,print:m.p,palette},null,2)]);
+      }
       const plates = out.plates.map(pl => plateForGuide(pl, transfer));
       for (const f of out.files) if (f[1] instanceof Uint8Array) transfer.push(f[1].buffer);
       const stats = {
@@ -255,7 +280,7 @@ self.onmessage = async e => {
       };
       self.postMessage({ type: 'exported', id: m.id,
         files: out.files, plates, pieces: out.pieces, stats,
-        readmeFallback: readme(model) }, transfer);
+        readmeFallback: hf.panel ? out.files.find(f=>f[0]==='JUPITER-PRINTING.txt')[1] : readme(model) }, transfer);
       return;
     }
     if (m.type === 'zip') {

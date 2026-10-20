@@ -22,9 +22,10 @@
     const group = new THREE.Group(), box = new THREE.Box3();
     for (const p of parts) {
       let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p.verts, 3)); g.setIndex(new THREE.BufferAttribute(p.idx, 1));
-      if (p.role !== 'terrain') g = g.toNonIndexed();
+      if (p.role !== 'terrain' || p.faceColors) g = g.toNonIndexed();
+      if(p.faceColors){const c=new Float32Array(p.faceColors.length*9);p.faceColors.forEach((k,i)=>{const rgb=new THREE.Color(p.palette[k]).convertSRGBToLinear();for(let j=0;j<3;j++)c.set([rgb.r,rgb.g,rgb.b],i*9+j*3);});g.setAttribute('color',new THREE.BufferAttribute(c,3));}
       g.computeVertexNormals();
-      const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: colors[p.role] || '#cccccc', roughness: p.role === 'text' ? 0.45 : 0.85, metalness: p.role === 'text' ? 0.2 : 0 }));
+      const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: p.faceColors?'#ffffff':colors[p.role] || '#cccccc', vertexColors:!!p.faceColors, roughness: p.role === 'text' ? 0.45 : 0.85, metalness: p.role === 'text' ? 0.2 : 0 }));
       m.castShadow = m.receiveShadow = true; group.add(m);
     }
     scene.add(group); box.setFromObject(group);
@@ -156,13 +157,13 @@
     y = field(doc, 'Centre', ctx.coords, y);
     y = field(doc, 'Area shown', `${ctx.size} km across`, y);
     y = field(doc, 'Model size', `${p.widthMm} mm terrain · ${ctx.footprint} overall`, y);
-    y = field(doc, 'Relief', `${ctx.stats.reliefMm.toFixed(1)} mm printed · ${((ctx.stats.hMax - ctx.stats.hMin) / 1000).toFixed(1)} km real · ${p.exag}× exaggeration`, y);
+    y = field(doc, 'Relief', p.colorPanel ? `${ctx.stats.reliefMm.toFixed(1)} mm artistic color steps (not terrain)` : `${ctx.stats.reliefMm.toFixed(1)} mm printed · ${((ctx.stats.hMax - ctx.stats.hMin) / 1000).toFixed(1)} km real · ${p.exag}× exaggeration`, y);
     if (puzzle && ctx.pieces) y = field(doc, 'Pieces', `${ctx.pieces.list.length}`, y);
     // about the data, in small print under the facts
     y += 2; doc.setDrawColor(215, 215, 215); doc.setLineWidth(0.2); doc.line(LX, y - 3, LX + LW, y - 3); y += 2;
     const sample = ctx.stats.pxM < 1000 ? Math.round(ctx.stats.pxM) + ' m' : (ctx.stats.pxM / 1000).toFixed(1) + ' km';
     if (ctx.landmark) y = para(doc, `${ctx.landmark.name}: ${ctx.landmark.note}.`, y, 9, INK);
-    y = para(doc, `Heights ${Math.round(ctx.stats.hMin)} m to ${Math.round(ctx.stats.hMax)} m, ${ctx.world.datum}, sampled every ${sample}. ${ctx.world.credit}`, y, 7.6, SOFT);
+    y = para(doc, p.colorPanel ? `Layered color panel. Image-relative longitude, planetographic latitude. See color-changes.csv and JUPITER-PRINTING.txt for mandatory height changes and image details. ${ctx.world.credit}` : `Heights ${Math.round(ctx.stats.hMin)} m to ${Math.round(ctx.stats.hMax)} m, ${ctx.world.datum}, sampled every ${sample}. ${ctx.world.credit}`, y, 7.6, SOFT);
     y = para(doc, 'A decorative model, not survey-grade data. Not endorsed by NASA, the USGS or DLR. Terrain Press is free and open source (AGPL-3.0); what you make with it is yours to print, share and give away.', y, 7.6, SOFT);
     panel(doc, hero); done();
 
@@ -170,7 +171,7 @@
     next(); y = title(doc, 'General Print Settings');
     y = para(doc, 'These settings work for every part. If a part page says otherwise, follow the part page.', y); y += 2;
     y = field(doc, 'Nozzle size', '0.4 mm', y);
-    y = field(doc, 'Layer height', '0.12 to 0.16 mm  (finer layers show more of the relief)', y);
+    y = field(doc, 'Layer height', p.colorPanel ? `${p.panelLayer} mm for ALL layers including first. No adaptive layers. Use color-changes.csv.` : '0.12 to 0.16 mm  (finer layers show more of the relief)', y);
     y = field(doc, 'Supports', 'None', y);
     y = field(doc, 'Part orientation', 'As exported: flat side down', y);
     y = field(doc, 'Infill', '15 % gyroid', y);
