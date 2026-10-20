@@ -427,13 +427,31 @@
     const x1=Math.min(n-1,Math.floor((Math.max(...xs)+W/2)/cell));
     const y0=Math.max(0,Math.floor((W/2-Math.max(...ys))/cell));
     const y1=Math.min(n-1,Math.floor((W/2-Math.min(...ys))/cell));
+    // For convex outlines, only boundary cells need polygon clipping.
+    const convex = !ex.holes.length && ex.outer.every((a,i)=>{
+      const b=ex.outer[(i+1)%ex.outer.length],c=ex.outer[(i+2)%ex.outer.length];
+      return (b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0])>=0;
+    });
+    const spans=new Map();
+    if(convex)for(let y=y0;y<=y1;y++) {
+      const t=coord(W/2-y*cell),b=coord(W/2-(y+1)*cell);
+      let lo=-Infinity,hi=Infinity;
+      for(let i=0;i<ex.outer.length;i++) {
+        const a=ex.outer[i],v=ex.outer[(i+1)%ex.outer.length],dx=v[0]-a[0],dy=v[1]-a[1],yy=dx>=0?b:t;
+        if(Math.abs(dy)<1e-12){if(dx*(yy-a[1])<0){lo=Infinity;hi=-Infinity;break;}}
+        else {const xx=a[0]+dx*(yy-a[1])/dy;if(dy>0)hi=Math.min(hi,xx);else lo=Math.max(lo,xx);}
+      }
+      spans.set(y,[lo,hi]);
+    }
     for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++) {
       const l=coord(-W/2+x*cell),r=coord(-W/2+(x+1)*cell);
       const t=coord(W/2-y*cell),b=coord(W/2-(y+1)*cell);
-      const regions=boolOp(CL.ClipType.ctIntersection,[ex.outer,...ex.holes],[[[l,b],[r,b],[r,t],[l,t]]]);
+      const rect=[[l,b],[r,b],[r,t],[l,t]],span=spans.get(y);
+      const full=span && l>span[0]+1/SCALE && r<span[1]-1/SCALE;
+      const regions=full?[{outer:rect,holes:[]}]:boolOp(CL.ClipType.ctIntersection,[ex.outer,...ex.holes],[rect]);
       const k=flat?1:panel.labels[y*n+x]+1;
       for(const region of regions) {
-        for(const tri of triangulate(region,[])) {
+        for(const tri of full ? [[rect[0],rect[1],rect[2]],[rect[0],rect[2],rect[3]]] : triangulate(region,[])) {
           let [a,b,c]=tri;if(area(tri)<0)[b,c]=[c,b];
           push(a,b,c,levels[k]);push(c,b,a,bottom);
         }

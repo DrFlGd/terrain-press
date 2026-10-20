@@ -19,7 +19,7 @@ Credit: NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), and G. Orton (JPL-Cal
 - https://science.nasa.gov/asset/hubble/jupiter-global-map-from-hubble-opal-data-rotation-1/
 - https://www.nasa.gov/nasa-brand-center/images-and-media/
 
-The bundled JPEG is resized to 1000 × 444 from the NASA-served 2000 × 888 rendition, with no geographic crop. Original published image dimensions: 3600 × 1598. The image is used with its own NASA media terms and credit, not relicensed under the code license. No agency endorsement.
+The bundled NASA-served JPEG uses the full published 3600 × 1598 dimensions, with no geographic crop or upscaling. It replaces the former 1000 × 444 derivative. The globe texture uses up to 3600 × 1800 with blank polar margins, limited by GPU texture capacity. The image is used with its own NASA media terms and credit, not relicensed under the code license. No agency endorsement.
 
 ## Verification
 
@@ -35,6 +35,12 @@ The selected image is quantized once into 2–8 editable colors. Every piece sha
 
 The globe and crop use the same spherical selection, with image-relative east-positive longitude (image centre = 0, left edge = -180), **not calibrated System III longitude**. Source latitude is planetographic; spherical distances are approximate. Imagery ends at ±79.9° latitude: the globe shades missing poles and the generator rejects crops crossing them. Source: Simon, Wong & Orton (2015), Figure 1, https://esahubble.org/static/archives/releases/science_papers/heic1522a.pdf .
 
-Color detail is 48, 80 or 128 cells across, identical in preview/export. DEM sampling and exaggeration do not affect Jupiter. Small islands can require coarser detail for the chosen nozzle. Region/crop selection and surface-colored 3MF are now implemented for these artistic panels; measured-terrain surface assignments remain future work.
+Color detail is 48, 80, 128 (default), 192, 256, 384 or 512 cells across, identical in preview/export. DEM sampling and exaggeration do not affect Jupiter. Small islands can require coarser detail for the chosen nozzle. Region/crop selection and surface-colored 3MF are now implemented for these artistic panels; measured-terrain surface assignments remain future work.
 
 Regression tests cover watertight clipped shapes and puzzles, preserved color metadata after spreading, map orientation/seam wrapping/polar rejection, and worker export assets and build-plate-relative color schedules. Chromium CI exercises globe selection, 2/8 colors, download and switching back to Moon.
+
+## Higher-detail imagery
+
+Both workflows use the full-resolution image offline. The main workflow maximum rises from 128 to 512 cells across (16 times as many cells). The full-map panel also supports 384 and 512, with 256 as its default. Preview and export use the same sampled grid and retain 2–8 colors. Higher detail increases build time, memory use and file size; it cannot recover features absent from the source or guarantee printable islands. Source spacing estimates now use the 3600-pixel width.
+
+Published JPEG: https://assets.science.nasa.gov/content/dam/science/missions/hubble/releases/2015/10/STScI-01EVT28CB7CN0CEYRV56WP1S6A.tif/jcr:content/renditions/3600x1598.jpg

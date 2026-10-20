@@ -30,8 +30,8 @@ async function decode(path) {
 // Probe the coordinate-specific DEM cheaply, before allocating large grids.
 function planHeights(q) {
   if(q.world==='jupiter') {
-    const N=Math.round(Math.max(24,Math.min(128,q.panelGrid||80)));
-    return {plan:{N,stepMm:q.widthMm/N,limited:false,cap:128,samplingLimit:128,recommendedLimit:128,featureMm:q.widthMm/N,sourceStepMm:q.widthMm*(360/1000)/(q.size/71492*180/Math.PI),detailOptimized:false},source:{kind:'image',label:'Hubble OPAL 2015 color map',pxKm:71492*Math.PI*2/1000}};
+    const N=Math.round(Math.max(24,Math.min(512,q.panelGrid||128)));
+    return {plan:{N,stepMm:q.widthMm/N,limited:false,cap:512,samplingLimit:512,recommendedLimit:128,featureMm:q.widthMm/N,sourceStepMm:q.widthMm*(360/3600)/(q.size/71492*180/Math.PI),detailOptimized:false},source:{kind:'image',label:'Hubble OPAL 2015 color map',pxKm:71492*Math.PI*2/3600}};
   }
   const probeN = Math.min(201, Math.round(q.widthMm / 0.5) + 1);
   const source = store.chooseSource(q.world, q.lat, q.lon, q.size, probeN);
@@ -48,7 +48,7 @@ async function heights(q, onProgress) {
 let jupiterImage;
 async function colorHF(q) {
   if(!jupiterImage) {
-    const response=await fetch('data/jupiter/opal-2015.jpg');if(!response.ok)throw Error('Jupiter image could not be loaded');
+    const response=await fetch('data/jupiter/opal-2015-3600.jpg');if(!response.ok)throw Error('Jupiter image could not be loaded');
     const bmp=await createImageBitmap(await response.blob());
     const cv=new OffscreenCanvas(bmp.width,bmp.height),ctx=cv.getContext('2d');ctx.drawImage(bmp,0,0);
     jupiterImage={rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();

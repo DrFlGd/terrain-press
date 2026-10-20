@@ -50,4 +50,4 @@ try{
   new ResizeObserver(()=>{const w=$('view').clientWidth,h=$('view').clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}).observe($('view'));
   renderer.setAnimationLoop(()=>renderer.render(scene,camera));
 }catch(e){renderer=null;$('view').textContent='3D preview unavailable. The color preview and STL export still work.';}
-source.onload=()=>{$('build').disabled=false;build();};source.onerror=()=>{$('status').textContent='Bundled Jupiter map could not be loaded. Reinstall or rebuild the application.';};source.src='data/jupiter/opal-2015.jpg';
+source.onload=()=>{$('build').disabled=false;build();};source.onerror=()=>{$('status').textContent='Bundled Jupiter map could not be loaded. Reinstall or rebuild the application.';};source.src='data/jupiter/opal-2015-3600.jpg';

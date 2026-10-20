@@ -248,11 +248,11 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <h3 class="tp-label">Jupiter color bands</h3>
         <p class="tp-hint">Select a region on Globe, then choose any shape or puzzle layout. Heights represent color order. Frame and color pieces print separately. <a href="jupiter.html">Full-map panel</a></p>
         <label class="tp-label" for="jp-count">Colors</label><select id="jp-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-        <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80" selected>Standard · 80 cells</option><option value="128">Fine · 128 cells</option></select>
+        <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80">Quick · 80 cells</option><option value="128" selected>Standard · 128 cells</option><option value="192">Fine · 192 cells</option><option value="256">High · 256 cells</option><option value="384">Very high · 384 cells</option><option value="512">Maximum · 512 cells</option></select>
         <label class="tp-label" for="jp-layer">Printer layer height (including first layer)</label><select id="jp-layer" class="form-select form-select-sm"><option>0.1</option><option selected>0.2</option><option>0.3</option></select>
         <label class="tp-label" for="jp-band">Printer layers per color band</label><select id="jp-band" class="form-select form-select-sm"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
         <label class="tp-label" for="jp-backing">Backing layers (first color)</label><select id="jp-backing" class="form-select form-select-sm"><option>6</option><option selected>8</option><option>10</option><option>12</option></select>
-        <p class="tp-hint">Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
+        <p class="tp-hint">384–512 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
       </div>
       <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
       <div class="row g-2">
@@ -435,7 +435,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
-<script>const BUILD = '84a0eae8f1'; // changes whenever worker.js or core.js change, so browsers never run stale code
+<script>const BUILD = 'a5012cd8da'; // changes whenever worker.js or core.js change, so browsers never run stale code
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
@@ -674,7 +674,7 @@ async function refreshPlan() {
   try {
     const r = await call({ type: 'plan', q: query(state.detail) });
     if (seq !== planSequence) return;
-    if(state.world==='jupiter') { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent='Use the Jupiter detail setting. Small islands may need coarser sampling for your nozzle.'; return; }
+    if(state.world==='jupiter') { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent='Source image: 3600 × 1598. '+(r.plan.N>=384?'High detail: longer builds and larger files. ':'')+'Small islands may need coarser sampling for your nozzle.'; return; }
     const p = r.plan, samples = (p.N * p.N).toLocaleString('en-US');
     $('grid-plan').textContent = 'Export: ' + p.N.toLocaleString('en-US') +
       ' × ' + p.N.toLocaleString('en-US') + ' (' + samples + ' heights) · ' +
@@ -1035,9 +1035,9 @@ function makeGlobe() {
   function theme() { scene.background = new THREE.Color(css('--tp-stage') || '#0d1014'); stars.material.color.set(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 0x8a919b : 0x9a958c); refresh(); }
   function setWorld(w) {
     if(w==='jupiter'&&!tex[w]) {
-      const cv=document.createElement('canvas');cv.width=1000;cv.height=500;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,1000,500);
+      const cv=document.createElement('canvas');cv.width=Math.min(3600,renderer.capabilities.maxTextureSize);cv.height=cv.width/2;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,cv.width,cv.height);
       tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
-      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*500,1000,159.8/180*500);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015.jpg';
+      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*cv.height,cv.width,159.8/180*cv.height);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015-3600.jpg';
     }
     if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;

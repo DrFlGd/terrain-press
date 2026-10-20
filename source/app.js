@@ -189,7 +189,7 @@ async function refreshPlan() {
   try {
     const r = await call({ type: 'plan', q: query(state.detail) });
     if (seq !== planSequence) return;
-    if(state.world==='jupiter') { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent='Use the Jupiter detail setting. Small islands may need coarser sampling for your nozzle.'; return; }
+    if(state.world==='jupiter') { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent='Source image: 3600 × 1598. '+(r.plan.N>=384?'High detail: longer builds and larger files. ':'')+'Small islands may need coarser sampling for your nozzle.'; return; }
     const p = r.plan, samples = (p.N * p.N).toLocaleString('en-US');
     $('grid-plan').textContent = 'Export: ' + p.N.toLocaleString('en-US') +
       ' × ' + p.N.toLocaleString('en-US') + ' (' + samples + ' heights) · ' +
@@ -550,9 +550,9 @@ function makeGlobe() {
   function theme() { scene.background = new THREE.Color(css('--tp-stage') || '#0d1014'); stars.material.color.set(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 0x8a919b : 0x9a958c); refresh(); }
   function setWorld(w) {
     if(w==='jupiter'&&!tex[w]) {
-      const cv=document.createElement('canvas');cv.width=1000;cv.height=500;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,1000,500);
+      const cv=document.createElement('canvas');cv.width=Math.min(3600,renderer.capabilities.maxTextureSize);cv.height=cv.width/2;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,cv.width,cv.height);
       tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
-      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*500,1000,159.8/180*500);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015.jpg';
+      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*cv.height,cv.width,159.8/180*cv.height);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015-3600.jpg';
     }
     if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;
