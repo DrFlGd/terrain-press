@@ -23,10 +23,30 @@ test('worker exports standard puzzle assets, shared palette and grounded schedul
 const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');const pixels=new Uint8Array(100*50*4);for(let i=0;i<pixels.length;i+=4)pixels.set([i%255,(i/8)%255,(i/40)%255,255],i);
 const messages=[];const ctx=vm.createContext({console,Uint8Array,Uint32Array,Float32Array,Float64Array,ArrayBuffer,DataView,TextEncoder,Response,ClipperLib:global.ClipperLib,poly2tri:global.poly2tri,fetch:async()=>({ok:true,blob:async()=>new Blob()}),createImageBitmap:async()=>({width:100,height:50,close(){}}),OffscreenCanvas:class{getContext(){return{drawImage(){},getImageData(){return{data:pixels};}};}}});
 ctx.self=ctx;ctx.location={search:''};ctx.postMessage=m=>messages.push(m);ctx.importScripts=(...urls)=>urls.forEach(u=>{if(u.includes('core.js'))vm.runInContext(fs.readFileSync(path.join(__dirname,'..','source',u),'utf8'),ctx);});vm.runInContext(fs.readFileSync(path.join(__dirname,'..','source','worker.js'),'utf8'),ctx);
-await ctx.onmessage({data:{type:'init',meta:{jupiter:{radiusKm:71492}}}});const q={world:'jupiter',lat:-22,lon:54,size:35000,widthMm:120,panelCount:4,panelGrid:24};const p={...common,shape:'square',product:'puzzle',border:'plain',back:true,backMm:1.6,colorPanel:true};
+await ctx.onmessage({data:{type:'init',meta:{jupiter:{radiusKm:71492}}}});
+for(const n of [128,192,256,384,512,999]){
+ await ctx.onmessage({data:{type:'plan',id:100+n,q:{world:'jupiter',widthMm:120,size:35000,panelGrid:n}}});
+ const plan=messages.find(m=>m.id===100+n);assert.equal(plan.plan.N,Math.min(n,512));
+ assert.ok(Math.abs(plan.source.pxKm-71492*Math.PI*2/3600)<1e-8);
+}
+const q={world:'jupiter',lat:-22,lon:54,size:35000,widthMm:120,panelCount:4,panelGrid:24};const p={...common,shape:'square',product:'puzzle',border:'plain',back:true,backMm:1.6,colorPanel:true};
 await ctx.onmessage({data:{type:'build',id:1,q,p}});const built=messages.find(m=>m.id===1&&m.type!=='progress');assert.equal(built.type,'built',built.text);assert.ok(built.parts.some(p=>p.faceColors?.length));
 await ctx.onmessage({data:{type:'export',id:2,q,p,readme:'test',x:{slug:'jupiter-test',colors:{terrain:'#888888',frame:'#444444'},spread:true,spreadGap:3,perPiece:true}}});const result=messages.find(m=>m.id===2&&m.type!=='progress');assert.equal(result.type,'exported',result.text);
 const names=result.files.map(f=>f[0]);for(const suffix of ['-pieces-spread.stl','-pieces-spread.3mf','-assembled.3mf','-frame.stl','-piece-map.svg'])assert.ok(names.some(n=>n.endsWith(suffix)),suffix);assert.ok(names.some(n=>n.startsWith('single-pieces/')));
 assert.match(result.files.find(f=>f[0]==='color-changes.csv')[1],/,9,1.600/);assert.match(result.readmeFallback,/not real terrain/);
 for(const part of result.plates.find(p=>p.key==='pieces').parts){assert.ok(part.palette);assert.equal(part.faceColors.length,part.idx.length/3);let min=Infinity;for(let i=2;i<part.verts.length;i+=3)min=Math.min(min,part.verts[i]);assert.ok(Math.abs(min)<1e-5);}
+});
+
+test('256-cell curved color panel stays watertight at fine grid intersections',()=>{
+ const n=256,labels=Uint8Array.from({length:n*n},(_,i)=>Math.floor((i%n)/32)%4),palette=[[10,20,30],[70,80,90],[130,140,150],[210,220,230]];
+ const model=TPCore.buildModel({...common,shape:'circle',product:'ornament',border:'none',stepMm:120/n},{panel:{width:n,height:n,labels,palette},N:n,sizeKm:35000,heights:new Float32Array(n*n)},null);
+ watertight(model.parts[0].tris);assert.equal(model.parts[0].faceColors.length,model.parts[0].tris.length/9);
+});
+test('bundled Jupiter map retains published dimensions',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const b=fs.readFileSync(path.join(__dirname,'../site/data/jupiter/opal-2015-3600.jpg'));
+ assert.equal(b.readUInt16BE(0),0xffd8);let found=false;
+ for(let i=2;i<b.length;){assert.equal(b[i],255);const marker=b[i+1],len=b.readUInt16BE(i+2);
+ if([0xc0,0xc1,0xc2].includes(marker)){assert.equal(b.readUInt16BE(i+5),1598);assert.equal(b.readUInt16BE(i+7),3600);found=true;break;}i+=2+len;}
+ assert.ok(found);
 });
