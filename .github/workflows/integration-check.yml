@@ -59,3 +59,13 @@ jobs:
           name: jupiter-workflow-smoke
           path: smoke-output/
           if-no-files-found: ignore
+
+      - name: Exercise Moon surface colors and colored puzzle exports
+        run: node tools/moon-smoke.cjs
+      - name: Keep Moon surface color screenshots and export
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moon-surface-color-smoke
+          path: moon-smoke-output/
+          if-no-files-found: ignore

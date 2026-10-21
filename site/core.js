@@ -3,21 +3,6 @@
 (function (root) {
   const P2T = root.poly2tri, CL = root.ClipperLib;
   const SCALE = 1000; // clipper units per mm
-  // ---------- elevation store ----------
-  // Global grids are pixel-registered: 8192 x 4096, tiles 512, row 0 at the north.
-  function makeStore(meta, loader) {
-    // loader(path) -> Promise<Float32Array> (decoded, row-major)
-    const cache = new Map();
-    function get(path) {
-      if (!cache.has(path)) {
-        const promise = Promise.resolve().then(() => loader(path));
-        cache.set(path, promise.catch(error => {
-          cache.delete(path); // A transient read failure must not poison later exports.
-          throw error;
-        }));
-      }
-      return cache.get(path);
-    }
     function nodeGrid(lat0, lon0, sizeKm, N, R) {
       // returns arrays of lat/lon for an N x N azimuthal-equidistant grid (row 0 = north edge)
       const lats = new Float64Array(N * N), lons = new Float64Array(N * N);
@@ -40,6 +25,21 @@
         }
       }
       return { lats, lons };
+    }
+  // ---------- elevation store ----------
+  // Global grids are pixel-registered: 8192 x 4096, tiles 512, row 0 at the north.
+  function makeStore(meta, loader) {
+    // loader(path) -> Promise<Float32Array> (decoded, row-major)
+    const cache = new Map();
+    function get(path) {
+      if (!cache.has(path)) {
+        const promise = Promise.resolve().then(() => loader(path));
+        cache.set(path, promise.catch(error => {
+          cache.delete(path); // A transient read failure must not poison later exports.
+          throw error;
+        }));
+      }
+      return cache.get(path);
     }
     function chooseSource(body, lat0, lon0, sizeKm, N, ignoreInstalled = false) {
       const m = meta[body], R = m.radiusKm;
@@ -1115,6 +1115,21 @@
         part.faceColors[i]=Math.max(0,Math.min(part.palette.length-1,Math.ceil((z-base)/(p.panelBand*p.panelLayer)-1e-5)));
       }
     }
+    // Paint only upward terrain faces. Geometry is identical to unpainted terrain;
+    // walls and undersides use the first filament, frames keep their own material.
+    if(hf.surface) for(const part of parts.filter(o=>o.role==='terrain')) {
+      const {labels,palette,width:n}=hf.surface,t=part.tris;
+      part.palette=palette.map(rgb=>'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join(''));
+      part.faceColors=new Uint8Array(t.length/9);
+      for(let i=0;i<t.length;i+=9) {
+        const nz=(t[i+3]-t[i])*(t[i+7]-t[i+1])-(t[i+4]-t[i+1])*(t[i+6]-t[i]);
+        if(nz<=1e-10)continue;
+        const x=(t[i]+t[i+3]+t[i+6])/3,y=(t[i+1]+t[i+4]+t[i+7])/3;
+        const col=Math.max(0,Math.min(n-1,Math.floor((x/W+.5)*n)));
+        const row=Math.max(0,Math.min(n-1,Math.floor((.5-y/W)*n)));
+        part.faceColors[i/9]=labels[row*n+col];
+      }
+    }
     return { parts, hMin, hMax, reliefMm, mmPerM, frameTop, grid, floorZ,
       widthMm:hex ? hex.width : W, depthMm:H, actualPieces:hex ? parts.filter(o=>o.cell).length : null };
   }
@@ -1265,5 +1280,5 @@
     return out;
   }
 
-  root.TPCore = { makeStore, meshPlan, buildModel, hexGridCells, spreadPieces, spreadPreview, stl, model3mf, zip, weld, shapeOutline };
+  root.TPCore = { nodeGrid, makeStore, meshPlan, buildModel, hexGridCells, spreadPieces, spreadPreview, stl, model3mf, zip, weld, shapeOutline };
 })(typeof self !== 'undefined' ? self : globalThis);

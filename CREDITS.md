@@ -57,3 +57,7 @@ Public distribution and license links: https://copernicus-dem-30m.s3.amazonaws.c
 ## Jupiter color-panel imagery
 
 Hubble OPAL Jupiter map (2015-01-19): NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), and G. Orton (JPL-Caltech). Resized offline derivative; see [source and usage details](docs/JUPITER-PANELS.md#source). Image terms are separate from the software license.
+
+## Moon surface-color imagery
+
+The optional Moon surface colors and lunar globe use NASA Scientific Visualization Studio's 2025 CGI Moon Kit color map, derived from LRO/LROC WAC data (NASA/GSFC/Arizona State University). Credit NASA's Scientific Visualization Studio and Ernie Wright (USRA). The 8192 × 4096 RGB8 JPEG is a derivative of the published sRGB TIFF; no geographic crop or resampling. Polar fill uses monochrome LOLA albedo. Source and conversion details: [Moon surface colors](docs/MOON-SURFACE-COLORS.md), https://svs.gsfc.nasa.gov/4720/ . Imagery has separate NASA source terms, not the code license. No agency endorsement.

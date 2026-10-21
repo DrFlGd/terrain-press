@@ -172,6 +172,7 @@
     y = para(doc, 'These settings work for every part. If a part page says otherwise, follow the part page.', y); y += 2;
     y = field(doc, 'Nozzle size', '0.4 mm', y);
     y = field(doc, 'Layer height', p.colorPanel ? `${p.panelLayer} mm for ALL layers including first. No adaptive layers. Use color-changes.csv.` : '0.12 to 0.16 mm  (finer layers show more of the relief)', y);
+    if(p.surfaceColors)y = para(doc, 'Moon surface colors: use colored 3MF files and map materials to filaments in a compatible slicer. STL has no colors. A layer may need multiple filaments; there is no height-change schedule. See MOON-COLOR-PRINTING.txt and surface-palette.csv. Imagery: NASA SVS / LROC 2025, 8192 x 4096; polar regions use monochrome albedo.', y);
     y = field(doc, 'Supports', 'None', y);
     y = field(doc, 'Part orientation', 'As exported: flat side down', y);
     y = field(doc, 'Infill', '15 % gyroid', y);
@@ -192,7 +193,7 @@
     for (const pl of ctx.plates) {
       next(); y = title(doc, pl.title);
       const qty = pl.key === 'pieces' || (pl.together && puzzle) ? `${pl.count} pieces` : '1 pcs';
-      y = specTable(doc, [['Filament use', `ca. ${grams(pl)} g`], ['Quantity', qty], ['File', pl.files[0]]], y);
+      y = specTable(doc, [['Filament use', `ca. ${grams(pl)} g`], ['Quantity', qty], ['File', p.surfaceColors ? (pl.files.find(f=>f.endsWith('.3mf')) || pl.files[0]) : pl.files[0]]], y);
       const isPieces = pl.key === 'pieces', isFrame = pl.key === 'frame';
       y = field(doc, 'Wall count', isFrame ? '3 or more' : '2 or more', y);
       y = field(doc, 'Infill density', isFrame ? '20 % or more' : '15 %', y);
