@@ -1,0 +1,66 @@
+{
+  "earth": {
+    "download": "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74117/world.200408.3x5400x2700.png",
+    "input_sha256": "6e8a1296caef991dcdba963fdc72816e4095720d005e7af6688b060e5fb85aa4",
+    "input_dimensions": [
+      5400,
+      2700
+    ],
+    "output": "site/data/earth/blue-marble-200408-5400.jpg",
+    "output_sha256": "b1faa6c05484d3dc2dcac3f0a3bc99f8b2493b67deba51a065cf0575261e57bb",
+    "output_dimensions": [
+      5400,
+      2700
+    ],
+    "projection": "Equirectangular; north-up; east-positive; longitude -180..180; latitude 90..-90",
+    "processing": "RGB8; full-frame Lanczos resize where needed; JPEG quality 90, chroma subsampling 0"
+  },
+  "mars": {
+    "download": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Mars_Viking_MDIM21_ClrMosaic_1km.jpg",
+    "input_sha256": "fdfcd335559c3dc67052b7e8a9565d850e336ac0d1f3ea7f5eb7826ffb44ecb2",
+    "input_dimensions": [
+      21339,
+      10670
+    ],
+    "output": "site/data/mars/viking-color-8k.jpg",
+    "output_sha256": "65d629b7e8b01e8580058a14c1c41f95067b75f4a5dfa73f64912cf4bda9c8cf",
+    "output_dimensions": [
+      8192,
+      4096
+    ],
+    "projection": "Equirectangular; north-up; east-positive; longitude -180..180; latitude 90..-90",
+    "processing": "RGB8; full-frame Lanczos resize where needed; JPEG quality 90, chroma subsampling 0"
+  },
+  "mercury": {
+    "download": "https://planetarydata.jpl.nasa.gov/img/data/test/messenger/MDIS_MAPS/EXTRAS/BROWSE/Mercury_MESSENGER_MDIS_Basemap_EnhancedColor_Mosaic_Global_665m.jpg",
+    "input_sha256": "e9d394bfd4ab472aa1463878b389e7f84cb898ac072211d68cc5f457fe2f4fa0",
+    "input_dimensions": [
+      11520,
+      5760
+    ],
+    "output": "site/data/mercury/messenger-enhanced-8k.jpg",
+    "output_sha256": "d47a41dc21c7ddb5de12eecb6b9ae1d34012f8bd385d61afecc6826b12f908e1",
+    "output_dimensions": [
+      8192,
+      4096
+    ],
+    "projection": "Equirectangular; north-up; east-positive; longitude -180..180; latitude 90..-90",
+    "processing": "RGB8; full-frame Lanczos resize where needed; JPEG quality 80, chroma subsampling 2"
+  },
+  "venus": {
+    "download": "https://www.davidrumsey.com/rumsey/download.pl?image=/185/10606000.jp2",
+    "input_sha256": "f317e9db3c80690bcb1d371b22a87f3f6e8ed112ad99164fa0691854cea98604",
+    "input_dimensions": [
+      16384,
+      8192
+    ],
+    "output": "site/data/venus/magellan-synthetic-8k.jpg",
+    "output_sha256": "46261b876b277483757e4a5b77528297bfcf539a8b4a99b2f3b13b8f7945a736",
+    "output_dimensions": [
+      8192,
+      4096
+    ],
+    "projection": "Equirectangular; north-up; east-positive; longitude -180..180; latitude 90..-90",
+    "processing": "RGB8; full-frame Lanczos resize where needed; JPEG quality 90, chroma subsampling 2"
+  }
+}

@@ -67,20 +67,20 @@ test('Automatic and Advanced modes preserve the planner contract', () => {
     'resolution-auto': { checked: true },
     'sampling-limit': { value: '1441' },
     'min-feature': { value: '0.4' },
-    'moon-color': { checked: false }, 'moon-count': { value: '4' }, 'moon-grid': { value: '256' }
+    'surface-color': { checked: false }, 'surface-count': { value: '4' }, 'surface-grid': { value: '256' }
   };
   const $ = id => controls[id];
-  const moonHelper = app.match(/function moonColorEnabled\(\)\{[^}]+\}/)[0];
-  const query = Function('state', '$', 'const moonPalette=null;'+moonHelper+match[0] + '\nreturn query;')(state, $);
+  const moonHelper = app.match(/function surfaceColorEnabled\(\)\{[^}]+\}/)[0];
+  const query = Function('state', '$', 'const surfacePalette=null; const TPSurface={maps:{moon:{}}};'+moonHelper+match[0] + '\nreturn query;')(state, $);
   assert.deepEqual(query('source'), {
     world: 'moon', lat: 0, lon: 25, size: 100, widthMm: 1000,
     step: 'source', samplingLimit: 'auto', featureMm: 0.4
   });
-  controls['moon-color'].checked = true;
+  controls['surface-color'].checked = true;
   assert.equal(query('source').surfaceColors, true);
   assert.equal(query('source').surfaceCount, 4);
   assert.equal(query('source').surfaceGrid, 256);
-  controls['moon-color'].checked = false;
+  controls['surface-color'].checked = false;
   controls['min-feature'].value = '0.8';
   assert.equal(query('source').featureMm, 0.8);
   controls['resolution-auto'].checked = false;

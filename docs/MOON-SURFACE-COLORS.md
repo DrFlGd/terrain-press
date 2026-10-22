@@ -25,3 +25,5 @@ Map the 3MF materials to filament in a compatible slicer and inspect its sliced 
 ## Verification
 
 Regression tests cover shared geographic projection, north/south and seam behavior, diagonal paint preservation, unchanged relief geometry, face classification, shared puzzle colors through spreading, colored individual 3MF exports, manual palette edits, and switching paint off without stale color data in the DEM cache. Browser CI covers controls, globe, 2/8-color palettes, export and disabling colors. Physical print acceptance remains separate.
+
+The same workflow is extended to Earth, Mars, Mercury and Venus in v1.16; see [shared surface-color documentation](SURFACE-COLORS.md). Moon imagery and existing export filenames are preserved.

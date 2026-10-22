@@ -1,0 +1,13 @@
+// Shared imagery catalog: north-up, east-positive, equirectangular maps,
+// spanning -180..180 longitude and 90..-90 latitude. See docs/SURFACE-COLORS.md.
+(function(root){
+  const maps={
+    moon:{name:'Moon',path:'data/moon/lroc-color-2025-8k.jpg',title:'NASA SVS / LROC 2025',width:8192,height:4096,kmPerPixel:1.33,source:'https://svs.gsfc.nasa.gov/4720/',credit:'NASA/GSFC/Arizona State University',note:'Aesthetically adjusted imagery. Beyond ±70°, lower-resolution monochrome LOLA albedo and inpainting replace color observations.'},
+    earth:{name:'Earth',path:'data/earth/blue-marble-200408-5400.jpg',title:'Blue Marble Next Generation · August 2004',width:5400,height:2700,kmPerPixel:7.41,source:'https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-map/',credit:'NASA Earth Observatory; Reto Stöckli, NASA/GSFC; MODIS',note:'Monthly visible-light composite, not current imagery. Ocean colors paint the existing seafloor terrain; this does not add a water level.'},
+    mars:{name:'Mars',path:'data/mars/viking-color-8k.jpg',title:'Viking MDIM 2.1 colorized mosaic',width:8192,height:4096,kmPerPixel:2.60,source:'https://astrogeology.usgs.gov/search/map/mars_viking_colorized_global_mosaic_232m',credit:'NASA/JPL/USGS; colorization NASA Ames',note:'Processed Viking color blended over a monochrome mosaic. Illumination, seams and polar artifacts remain; colors are not calibrated surface measurements.'},
+    mercury:{name:'Mercury',path:'data/mercury/messenger-enhanced-8k.jpg',title:'MESSENGER MDIS enhanced color',width:8192,height:4096,kmPerPixel:1.87,source:'https://astrogeology.usgs.gov/search/map/mercury_messenger_mdis_basemap_enhanced_color_global_mosaic_665m',credit:'NASA/JHU Applied Physics Laboratory/Carnegie Science/Arizona State University; Applied Coherent Technology; USGS',note:'Enhanced spectral colors, not natural color. Dark polar gaps are missing imagery and may form a dark filament region; they are not terrain features.'},
+    venus:{name:'Venus',path:'data/venus/magellan-synthetic-8k.jpg',title:'Magellan C3-MIDR synthetic color',width:8192,height:4096,kmPerPixel:4.64,source:'https://astrogeology.usgs.gov/search/map/venus_magellan_global_c3_mdir_synthetic_color_mosaic_4641m',credit:'NASA/JPL/MIT/PDS Geosciences Node; USGS Astrogeology',note:'Radar-derived synthetic colors, not visible-light surface photographs. Radar seams, gaps and processing artifacts remain.'}
+  };
+  function description(world){const m=maps[world];return m?`${m.title} · ${m.width} × ${m.height} · about ${m.kmPerPixel} km/pixel at the equator. ${m.note} Terrain may resolve finer features than the imagery.`:'';}
+  root.TPSurface={maps,description};
+})(typeof self!=='undefined'?self:globalThis);

@@ -235,14 +235,14 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         </div>
         <p id="hex-count-hint" class="tp-hint mt-1">Select a ring size. Borders are lattice-aligned, with no tiny leftover slivers.</p>
       </div>
-      <div id="moon-color-options" hidden>
-        <div class="form-check form-switch"><input id="moon-color" class="form-check-input" type="checkbox" role="switch"><label for="moon-color" class="form-check-label">Surface colors from lunar imagery</label></div>
-        <div id="moon-color-controls" hidden>
-          <label class="tp-label" for="moon-count">Filament colors</label><select id="moon-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-          <label class="tp-label" for="moon-grid">Color sampling</label><select id="moon-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option></select>
-          <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="moon-palette" class="d-flex gap-1 flex-wrap"></div>
+      <div id="surface-color-options" hidden>
+        <div class="form-check form-switch"><input id="surface-color" class="form-check-input" type="checkbox" role="switch"><label for="surface-color" class="form-check-label">Surface colors from imagery</label></div>
+        <div id="surface-color-controls" hidden>
+          <label class="tp-label" for="surface-count">Filament colors</label><select id="surface-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option></select>
+          <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="surface-palette" class="d-flex gap-1 flex-wrap"></div>
           <p class="tp-hint">Use colored 3MF in a compatible slicer; STL has no colors. Terrain mesh detail limits color edges. Enable high-detail preview to match export. No layer-height color schedule.</p>
-          <p class="tp-hint">NASA SVS / LROC 2025 · 8192 × 4096 · about 1.33 km/pixel at the equator. Local terrain can be much finer. Natural colors are subtle; polar imagery beyond ±70° uses monochrome albedo. <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">Source</a></p>
+          <p class="tp-hint"><span id="surface-source-text"></span> <a id="surface-source-link" target="_blank" rel="noopener">Source</a></p>
         </div>
       </div>
       <div id="jupiter-options" hidden>
@@ -436,4 +436,5 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="surface-core.js?v=__BUILD__"></script>
 <script>/*APP*/</script>
