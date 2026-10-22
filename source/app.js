@@ -150,7 +150,7 @@ function params(step) {
   const product = state.product, border = state.border, colored = state.world === 'jupiter';
   return {
     panelLayer:+$('jp-layer').value,panelBand:+$('jp-band').value,panelBacking:+$('jp-backing').value,
-    colorPanel:colored,
+    colorPanel:colored, surfaceColors:moonColorEnabled(),
     shape: state.shape, product, widthMm: +$('width-num').value, exag: exFromSlider(+$('exag').value),
     hexLayout: $('hex-layout').value, hexEdge: $('hex-edge').value,
     hexRings: +$('hex-rings').value,
@@ -175,12 +175,14 @@ const query = (step, fastPreview = false) => ({
   // Fast preview stays inexpensive regardless of configured export ceiling.
   samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
+  ...(moonColorEnabled()?{surfaceColors:true,surfaceCount:+$('moon-count').value,surfaceGrid:+$('moon-grid').value,surfacePalette:moonPalette}:{}),
   ...(state.world==='jupiter'?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette}:{}),
   featureMm: +$('min-feature').value
 });
 
 // ---------------- build ----------------
-let jupiterPalette = null;
+let jupiterPalette = null, moonPalette = null;
+function moonColorEnabled(){return state.world==='moon' && $('moon-color').checked;}
 let timer = null, buildId = 0, exportId = 0, building = false, again = false;
 let planSequence = 0;
 async function refreshPlan() {
@@ -223,7 +225,7 @@ async function build() {
     const msg = { type: 'build', q: query(step, !$('preview-high').checked), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
-    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(state.world==='jupiter')renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); }
+    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(state.world==='jupiter')renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); if(moonColorEnabled())renderMoonPalette(r.parts.find(p=>p.palette)?.palette); }
   } catch (e) { console.error(e); toast('Could not build this region: ' + e.message, 'danger'); }
   finally { building = false; busy(null); if (again) build(); }
 }
@@ -554,7 +556,7 @@ function makeGlobe() {
       tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
       const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*cv.height,cv.width,159.8/180*cv.height);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015-3600.jpg';
     }
-    if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
+    if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(w==='moon'?'data/moon/lroc-color-2025-8k.jpg':`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;
     coverageUpdate();
     if (WORLDS[w].shape) {
@@ -633,6 +635,17 @@ function selectMark(L, fromGlobe) {
 function syncInputs() { $('lat').value = +state.lat.toFixed(4); $('lon').value = +state.lon.toFixed(4); $('size').value = Math.round(state.size); }
 function updateCoord() { $('coord').innerHTML = `<span><b>${WORLDS[state.world].name}</b></span><span>${fmtLat(state.lat)} ${fmtLon(state.lon)}${state.world==='jupiter'?' (map-relative)':''}</span><span>${Math.round(state.size)} km wide</span>`; }
 
+function syncMoonColors(){
+  $('moon-color-options').hidden=state.world!=='moon';
+  $('moon-color-controls').hidden=!moonColorEnabled();
+  $('c-terrain').disabled=state.world==='jupiter'||moonColorEnabled();
+}
+function renderMoonPalette(palette){
+  if(!palette)return;
+  $('moon-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label','Moon filament '+(k+1));input.onchange=()=>{moonPalette=Array.from($('moon-palette').children,x=>x.value);schedule();};return input;}));
+}
+$('moon-color').onchange=()=>{syncMoonColors();schedule();};
+for(const id of ['moon-count','moon-grid'])$(id).onchange=()=>{moonPalette=null;schedule();};
 function syncJupiter() {
   const yes=state.world==='jupiter';$('jupiter-options').hidden=!yes;
   $('exag').disabled=$('base').disabled=$('c-terrain').disabled=yes;
@@ -640,6 +653,7 @@ function syncJupiter() {
   $('separate').disabled=yes;
   $('size').max=yes?120000:9000;
   if(yes)$('separate').checked=true;
+  syncMoonColors();
 }
 function renderJupiterPalette(palette) {
   if(!palette)return;
@@ -659,7 +673,7 @@ function renderWorlds() {
 }
 
 function setWorld(id) {
-  state.world = id; jupiterPalette=null; syncJupiter(); document.body.dataset.world = id; renderWorlds();
+  state.world = id; jupiterPalette=null; moonPalette=null; syncJupiter(); document.body.dataset.world = id; renderWorlds();
   state.colors.terrain = WORLDS[id].terrain; $('c-terrain').value = WORLDS[id].terrain;
   $('mark-filter').value = '';
   $('credits').innerHTML = '';

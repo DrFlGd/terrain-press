@@ -59,6 +59,33 @@ async function colorHF(q) {
   if(q.panelPalette?.length===panel.palette.length)panel.palette=q.panelPalette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16)));
   return {panel,N:plan.N,heights:new Float32Array(plan.N**2),sizeKm:q.size,stepMm:plan.stepMm,plan,source,limited:false};
 }
+let moonImage, moonSurfaceCache;
+async function moonSurface(q) {
+  const n=[128,256,512].includes(q.surfaceGrid)?q.surfaceGrid:256;
+  const count=q.surfaceCount||4,key=[q.lat,q.lon,q.size,n,count].join('|');
+  if(moonSurfaceCache?.key!==key) {
+    if(!moonImage) {
+      const response=await fetch('data/moon/lroc-color-2025-8k.jpg');
+      if(!response.ok)throw Error('Moon color image could not be loaded. Disable Surface colors to use terrain only.');
+      const bmp=await createImageBitmap(await response.blob());
+      const cv=new OffscreenCanvas(bmp.width,bmp.height),ctx=cv.getContext('2d');ctx.drawImage(bmp,0,0);
+      moonImage={rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();
+    }
+    const im=moonImage,g=C.nodeGrid(q.lat,q.lon,q.size*(1-1/n),n,meta.moon.radiusKm);
+    const pixels=new Uint8Array(n*n*4);
+    for(let k=0;k<n*n;k++) {
+      const x=Math.min(im.w-1,Math.floor((g.lons[k]+180)/360*im.w));
+      const y=Math.max(0,Math.min(im.h-1,Math.floor((90-g.lats[k])/180*im.h)));
+      pixels.set(im.rgba.subarray((y*im.w+x)*4,(y*im.w+x)*4+4),k*4);
+    }
+    // No geometry-dependent cleanup: surface paint can safely meet diagonally.
+    moonSurfaceCache={key,surface:TPPanel.quantize(pixels,n,n,count,false)};
+  }
+  const surface=moonSurfaceCache.surface;
+  const palette=q.surfacePalette;
+  if(palette && (palette.length!==surface.palette.length || !palette.every(c=>/^#[0-9a-f]{6}$/i.test(c))))throw Error('Invalid surface palette');
+  return {...surface,palette:palette?palette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16))):surface.palette};
+}
 const cache = { key: '', hf: null };
 async function getHF(q, id) {
   if(q.world==='jupiter')return colorHF(q);
@@ -69,7 +96,7 @@ async function getHF(q, id) {
       self.postMessage({ type: 'progress', id, text: 'Loading elevation · ' + d + '/' + n }));
     cache.key = key; cache.hf = hf;
   }
-  return cache.hf;
+  return q.world==='moon' && q.surfaceColors ? {...cache.hf,surface:await moonSurface(q)} : cache.hf;
 }
 
 function pack(model, forPreview) {
@@ -196,7 +223,11 @@ function exportFiles(model, p, x) {
       const pcs = numberPieces(model, p), pad = Math.max(2, String(pcs.length).length);
       pieces = { outline: C.shapeOutline(p.shape === 'hexgrid' && p.hexLayout !== 'square' ? 'hexagon' : p.shape, p.widthMm), list: pcs.map((o, k) => { const lp = labelPoint(o.ring); return { n: k + 1, ring: o.ring, at: lp.at, room: lp.room }; }) };
       if (x.perPiece) {
-        pcs.forEach((o, k) => files.push([`single-pieces/${s}-piece-${String(k + 1).padStart(pad, '0')}.stl`, C.stl([centre(o)])]));
+        for(const [k,o] of pcs.entries()) {
+          const name=`single-pieces/${s}-piece-${String(k+1).padStart(pad,'0')}`,part=centre(o);
+          files.push([name+'.stl',C.stl([part])]);
+          if(o.faceColors)await three(name+'.3mf',[part],o.name);
+        }
         files.push([`single-pieces/${s}-piece-map.svg`, pieceMap(pcs, p, s)]);
         pieces.files = `single-pieces/${s}-piece-01.stl … ${String(pcs.length).padStart(pad, '0')}.stl`;
       }
@@ -267,6 +298,12 @@ self.onmessage = async e => {
         out.files.push(['color-changes.csv','color,hex,start_layer,change_at_z_mm\n'+steps.map(s=>[s.color,s.hex,s.startLayer,s.startHeightMM.toFixed(3)].join(',')).join('\n')]);
         out.files.push(['JUPITER-PRINTING.txt',`Print terrain/pieces files separately from frame/tray/lettering. The assembled 3MF is a reference. Use ${m.p.panelLayer} mm for ALL layers including the first; disable adaptive layers. CSV layers are 1-based: change before that layer, at the listed completed Z. All pieces use the same palette and backing. STL has no color metadata. 3MF carries surface display assignments; slicers may ignore them. The manual height-change CSV is authoritative. Heights are artistic color bands, not real terrain. Longitude is image-relative (image centre = 0), not calibrated System III. Latitude follows the source map; spherical distances are approximate. Source: Hubble OPAL 2015-01-19, https://science.nasa.gov/asset/hubble/jupiter-global-map-from-hubble-opal-data-rotation-1/ . Credit: NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), G. Orton (JPL-Caltech).`]);
         out.files.push(['jupiter-settings.json',JSON.stringify({query:m.q,print:m.p,palette},null,2)]);
+      }
+      if(hf.surface) {
+        const palette=hf.surface.palette.map(rgb=>'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join(''));
+        out.files.push(['surface-palette.csv','color,hex\n'+palette.map((hex,i)=>`${i+1},${hex}`).join('\n')]);
+        out.files.push(['moon-surface-settings.json',JSON.stringify({query:m.q,print:m.p,palette,imagery:'NASA SVS CGI Moon Kit 2025; 8192 x 4096; sRGB 8-bit JPEG derivative',source:'https://svs.gsfc.nasa.gov/4720/'},null,2)]);
+        out.files.push(['MOON-COLOR-PRINTING.txt','Real terrain with 2–8 image-derived surface colors. Colors do not change terrain heights. Use the colored 3MF files, including individual piece 3MFs, and map their materials to your filaments in a compatible slicer. These are standard per-triangle 3MF base-material assignments, not printer-specific paint commands; some slicers ignore them. Inspect the sliced preview before printing. STL cannot carry these colors. No height-change schedule applies: a single layer may need multiple filaments. Frame and lettering keep their own materials; walls and undersides use color 1. Preview mesh detail may be lower than export; enable export-detail preview to compare. Color sampling uses a shared crop for all pieces; the terrain triangles limit visible color boundaries. Source: NASA Scientific Visualization Studio CGI Moon Kit (2025 map), https://svs.gsfc.nasa.gov/4720/ ; LRO/LROC WAC, NASA/GSFC/Arizona State University. 8192 x 4096 sRGB JPEG derivative (~1.33 km/pixel at equator), with no geographic crop. Aesthetically adjusted imagery, not scientific color measurements; polar areas beyond 70 degrees use lower-resolution monochrome LOLA albedo, with some inpainting. Local terrain may resolve much finer features than this image.']);
       }
       const plates = out.plates.map(pl => plateForGuide(pl, transfer));
       for (const f of out.files) if (f[1] instanceof Uint8Array) transfer.push(f[1].buffer);

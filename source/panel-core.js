@@ -2,7 +2,7 @@
 (function(root) {
 'use strict';
 const luminance = c => .2126*c[0]+.7152*c[1]+.0722*c[2];
-function quantize(rgba, width, height, count) {
+function quantize(rgba, width, height, count, cleanDiagonals = true) {
   if (!Number.isInteger(count)||count<2||count>8||rgba.length!==width*height*4) throw Error('Invalid palette or image');
   const pixels=Array.from({length:width*height},(_,i)=>Array.from(rgba.slice(i*4,i*4+3)));
   const sorted=pixels.slice().sort((a,b)=>luminance(a)-luminance(b));
@@ -17,7 +17,7 @@ function quantize(rgba, width, height, count) {
   const labels=Uint8Array.from(pixels,nearest);
   // Remove diagonal-only connections at every threshold. Lowering terminates,
   // preserves nested masks and avoids four faces meeting along one vertical edge.
-  let changed=true, removed=0;
+  let changed=cleanDiagonals, removed=0;
   while(changed){changed=false;for(let y=0;y<height-1;y++)for(let x=0;x<width-1;x++){
     const a=y*width+x,b=a+1,c=a+width,d=c+1;
     for(const [u,v,r,s] of [[a,d,b,c],[b,c,a,d]]) {
