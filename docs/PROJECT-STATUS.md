@@ -1,5 +1,8 @@
 # Terrain Press — Project status and next milestones
 
+**v1.16 implementation:** Earth, Mars, Mercury and Venus now share the released Moon imagery-painting workflow: 2–8 editable colors, real terrain, colored 3MFs and print guides. Jupiter retains its stacked-color workflow. See [surface colors and imagery provenance](SURFACE-COLORS.md).
+
+
 **Updated:** 2026-10-15  ·  **Current Windows testing release:** [v1.11.0](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.11.0)  ·  **Supported bodies:** 8
 
 This is the **current** status summary. The [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) contains implementation history, detailed requirements and research notes; [Windows instructions](WINDOWS.md) explain the downloadable desktop app. A **working download or render is not the same as a scientific validation of absolute elevations, datum, missing-data coverage or complete offline export behavior**.

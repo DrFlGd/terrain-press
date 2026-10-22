@@ -551,6 +551,8 @@ function makeGlobe() {
   ctl.addEventListener('change', () => { const d = cam.position.length(); if (fpPts && Math.abs(d - fpDist) / fpDist > 0.08) drawFootprint(); render(); });
   function theme() { scene.background = new THREE.Color(css('--tp-stage') || '#0d1014'); stars.material.color.set(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 0x8a919b : 0x9a958c); refresh(); }
   function setWorld(w) {
+    // An 8K RGB map can occupy over 100 MB on the GPU; retain one surface map.
+    for(const key of Object.keys(tex))if(key!==w&&TPSurface.maps[key]){tex[key].dispose();delete tex[key];}
     if(w==='jupiter'&&!tex[w]) {
       const cv=document.createElement('canvas');cv.width=Math.min(3600,renderer.capabilities.maxTextureSize);cv.height=cv.width/2;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,cv.width,cv.height);
       tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
