@@ -69,3 +69,13 @@ jobs:
           name: moon-surface-color-smoke
           path: moon-smoke-output/
           if-no-files-found: ignore
+
+      - name: Exercise Earth, Mars, Mercury and Venus painting and exports
+        run: node tools/rocky-smoke.cjs
+      - name: Keep rocky-world screenshots and exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rocky-surface-color-smoke
+          path: rocky-smoke-output/
+          if-no-files-found: ignore

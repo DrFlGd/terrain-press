@@ -61,3 +61,9 @@ Hubble OPAL Jupiter map (2015-01-19): NASA, ESA, A. Simon (GSFC), M. Wong (UC Be
 ## Moon surface-color imagery
 
 The optional Moon surface colors and lunar globe use NASA Scientific Visualization Studio's 2025 CGI Moon Kit color map, derived from LRO/LROC WAC data (NASA/GSFC/Arizona State University). Credit NASA's Scientific Visualization Studio and Ernie Wright (USRA). The 8192 × 4096 RGB8 JPEG is a derivative of the published sRGB TIFF; no geographic crop or resampling. Polar fill uses monochrome LOLA albedo. Source and conversion details: [Moon surface colors](docs/MOON-SURFACE-COLORS.md), https://svs.gsfc.nasa.gov/4720/ . Imagery has separate NASA source terms, not the code license. No agency endorsement.
+
+## Rocky-planet surface imagery
+
+Earth surface painting uses NASA Earth Observatory Blue Marble Next Generation (August 2004), Reto Stöckli / NASA GSFC / MODIS. Mars uses the NASA/JPL/USGS Viking MDIM 2.1 mosaic colorized by NASA Ames. Mercury uses NASA/JHU APL/Carnegie Science/ASU MESSENGER MDIS enhanced colors (Applied Coherent Technology; USGS). Venus uses the NASA/JPL/MIT/PDS Geosciences Node / USGS Magellan synthetic-color radar mosaic. Mercury and Venus colors are not natural-color photographs.
+
+See [surface imagery sources, mirror credits and preparation](docs/SURFACE-COLORS.md) and `tools/surface/imagery.json` for exact provenance, resolutions and file hashes.

@@ -330,3 +330,7 @@ Jupiter now uses the standard globe, region, ornament and puzzle workflow. See [
 ### Moon terrain surface-color prototype
 
 Implemented as optional surface assignments in the standard Moon workflow: 8K offline NASA SVS imagery, 2–8 editable colors, real DEM geometry, colored preview/print guide and assembled/spread/individual-piece 3MFs. See [Moon surface colors](MOON-SURFACE-COLORS.md). Slicer/physical print acceptance and downloadable higher-resolution imagery remain open. Additional gas giants and rocky worlds can follow this established split between image-only height bands and measured-terrain surface assignments.
+
+## Rocky-planet surface colors — v1.16 implementation
+
+Earth, Mars, Mercury and Venus now share the Moon's 2–8-color imagery painting and 3MF workflow, including globe selection, editable palettes, puzzle-piece colors and print guides. See [surface colors and source limitations](SURFACE-COLORS.md). This adds no elevation sources or water geometry. Ceres, Vesta and Pluto imagery are deferred pending registration/coverage work; additional gas giants remain future work.

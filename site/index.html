@@ -244,14 +244,14 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         </div>
         <p id="hex-count-hint" class="tp-hint mt-1">Select a ring size. Borders are lattice-aligned, with no tiny leftover slivers.</p>
       </div>
-      <div id="moon-color-options" hidden>
-        <div class="form-check form-switch"><input id="moon-color" class="form-check-input" type="checkbox" role="switch"><label for="moon-color" class="form-check-label">Surface colors from lunar imagery</label></div>
-        <div id="moon-color-controls" hidden>
-          <label class="tp-label" for="moon-count">Filament colors</label><select id="moon-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-          <label class="tp-label" for="moon-grid">Color sampling</label><select id="moon-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option></select>
-          <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="moon-palette" class="d-flex gap-1 flex-wrap"></div>
+      <div id="surface-color-options" hidden>
+        <div class="form-check form-switch"><input id="surface-color" class="form-check-input" type="checkbox" role="switch"><label for="surface-color" class="form-check-label">Surface colors from imagery</label></div>
+        <div id="surface-color-controls" hidden>
+          <label class="tp-label" for="surface-count">Filament colors</label><select id="surface-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option></select>
+          <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="surface-palette" class="d-flex gap-1 flex-wrap"></div>
           <p class="tp-hint">Use colored 3MF in a compatible slicer; STL has no colors. Terrain mesh detail limits color edges. Enable high-detail preview to match export. No layer-height color schedule.</p>
-          <p class="tp-hint">NASA SVS / LROC 2025 · 8192 × 4096 · about 1.33 km/pixel at the equator. Local terrain can be much finer. Natural colors are subtle; polar imagery beyond ±70° uses monochrome albedo. <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">Source</a></p>
+          <p class="tp-hint"><span id="surface-source-text"></span> <a id="surface-source-link" target="_blank" rel="noopener">Source</a></p>
         </div>
       </div>
       <div id="jupiter-options" hidden>
@@ -445,7 +445,8 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
-<script>const BUILD = 'b8da781f8e'; // changes whenever worker.js or core.js change, so browsers never run stale code
+<script src="surface-core.js?v=51a150f8d2"></script>
+<script>const BUILD = '51a150f8d2'; // changes whenever worker.js or core.js change, so browsers never run stale code
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
@@ -457,7 +458,7 @@ const WORLDS = {
     marks:[{id:'redspot',name:'Great Red Spot (2015)',note:'Approximate location in the bundled image',lat:-22.4,lon:54,size:35000,ex:1},{id:'belts',name:'Equatorial cloud bands',note:'Color bands in the 2015 image',lat:0,lon:0,size:60000,ex:1}]},
   earth: { name: 'Earth', dot: '#4d9fce', terrain: '#8ba775', grid: 'NOAA ETOPO 2022', landingTitle: '', def: 'himalaya',
     datum: 'relative to the EGM2008 geoid (approximately mean sea level)',
-    credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe colors show elevation, not satellite imagery. Regional geometry uses a mean-radius spherical approximation. Optional surface data produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
+    credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe imagery: NASA Blue Marble Next Generation, August 2004; terrain retains ocean-floor relief. Regional geometry uses a mean-radius spherical approximation. Optional surface data produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
     marks: [
       { id: 'himalaya', name: 'Himalayas', note: 'Everest region', lat: 27.9881, lon: 86.925, size: 300, ex: 2 },
       { id: 'alps', name: 'Alps', note: 'Mont Blanc region', lat: 45.8326, lon: 6.8652, size: 200, ex: 2 },
@@ -645,7 +646,7 @@ function params(step) {
   const product = state.product, border = state.border, colored = state.world === 'jupiter';
   return {
     panelLayer:+$('jp-layer').value,panelBand:+$('jp-band').value,panelBacking:+$('jp-backing').value,
-    colorPanel:colored, surfaceColors:moonColorEnabled(),
+    colorPanel:colored, surfaceColors:surfaceColorEnabled(),
     shape: state.shape, product, widthMm: +$('width-num').value, exag: exFromSlider(+$('exag').value),
     hexLayout: $('hex-layout').value, hexEdge: $('hex-edge').value,
     hexRings: +$('hex-rings').value,
@@ -670,14 +671,14 @@ const query = (step, fastPreview = false) => ({
   // Fast preview stays inexpensive regardless of configured export ceiling.
   samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
-  ...(moonColorEnabled()?{surfaceColors:true,surfaceCount:+$('moon-count').value,surfaceGrid:+$('moon-grid').value,surfacePalette:moonPalette}:{}),
+  ...(surfaceColorEnabled()?{surfaceColors:true,surfaceCount:+$('surface-count').value,surfaceGrid:+$('surface-grid').value,surfacePalette:surfacePalette}:{}),
   ...(state.world==='jupiter'?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette}:{}),
   featureMm: +$('min-feature').value
 });
 
 // ---------------- build ----------------
-let jupiterPalette = null, moonPalette = null;
-function moonColorEnabled(){return state.world==='moon' && $('moon-color').checked;}
+let jupiterPalette = null, surfacePalette = null;
+function surfaceColorEnabled(){return !!TPSurface.maps[state.world] && $('surface-color').checked;}
 let timer = null, buildId = 0, exportId = 0, building = false, again = false;
 let planSequence = 0;
 async function refreshPlan() {
@@ -720,7 +721,7 @@ async function build() {
     const msg = { type: 'build', q: query(step, !$('preview-high').checked), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
-    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(state.world==='jupiter')renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); if(moonColorEnabled())renderMoonPalette(r.parts.find(p=>p.palette)?.palette); }
+    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(state.world==='jupiter')renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); if(surfaceColorEnabled())renderSurfacePalette(r.parts.find(p=>p.palette)?.palette); }
   } catch (e) { console.error(e); toast('Could not build this region: ' + e.message, 'danger'); }
   finally { building = false; busy(null); if (again) build(); }
 }
@@ -1051,7 +1052,7 @@ function makeGlobe() {
       tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
       const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*cv.height,cv.width,159.8/180*cv.height);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015-3600.jpg';
     }
-    if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(w==='moon'?'data/moon/lroc-color-2025-8k.jpg':`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
+    if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(TPSurface.maps[w]?.path||`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;
     coverageUpdate();
     if (WORLDS[w].shape) {
@@ -1130,17 +1131,20 @@ function selectMark(L, fromGlobe) {
 function syncInputs() { $('lat').value = +state.lat.toFixed(4); $('lon').value = +state.lon.toFixed(4); $('size').value = Math.round(state.size); }
 function updateCoord() { $('coord').innerHTML = `<span><b>${WORLDS[state.world].name}</b></span><span>${fmtLat(state.lat)} ${fmtLon(state.lon)}${state.world==='jupiter'?' (map-relative)':''}</span><span>${Math.round(state.size)} km wide</span>`; }
 
-function syncMoonColors(){
-  $('moon-color-options').hidden=state.world!=='moon';
-  $('moon-color-controls').hidden=!moonColorEnabled();
-  $('c-terrain').disabled=state.world==='jupiter'||moonColorEnabled();
+function syncSurfaceColors(){
+  const imagery=TPSurface.maps[state.world];
+  $('surface-color-options').hidden=!imagery;
+  $('surface-source-text').textContent=TPSurface.description(state.world);
+  $('surface-source-link').href=imagery?.source||'#';
+  $('surface-color-controls').hidden=!surfaceColorEnabled();
+  $('c-terrain').disabled=state.world==='jupiter'||surfaceColorEnabled();
 }
-function renderMoonPalette(palette){
+function renderSurfacePalette(palette){
   if(!palette)return;
-  $('moon-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label','Moon filament '+(k+1));input.onchange=()=>{moonPalette=Array.from($('moon-palette').children,x=>x.value);schedule();};return input;}));
+  $('surface-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label',TPSurface.maps[state.world].name+' filament '+(k+1));input.onchange=()=>{surfacePalette=Array.from($('surface-palette').children,x=>x.value);schedule();};return input;}));
 }
-$('moon-color').onchange=()=>{syncMoonColors();schedule();};
-for(const id of ['moon-count','moon-grid'])$(id).onchange=()=>{moonPalette=null;schedule();};
+$('surface-color').onchange=()=>{syncSurfaceColors();schedule();};
+for(const id of ['surface-count','surface-grid'])$(id).onchange=()=>{surfacePalette=null;$('surface-palette').replaceChildren();schedule();};
 function syncJupiter() {
   const yes=state.world==='jupiter';$('jupiter-options').hidden=!yes;
   $('exag').disabled=$('base').disabled=$('c-terrain').disabled=yes;
@@ -1148,7 +1152,7 @@ function syncJupiter() {
   $('separate').disabled=yes;
   $('size').max=yes?120000:9000;
   if(yes)$('separate').checked=true;
-  syncMoonColors();
+  syncSurfaceColors();
 }
 function renderJupiterPalette(palette) {
   if(!palette)return;
@@ -1168,7 +1172,7 @@ function renderWorlds() {
 }
 
 function setWorld(id) {
-  state.world = id; jupiterPalette=null; moonPalette=null; syncJupiter(); document.body.dataset.world = id; renderWorlds();
+  state.world = id; jupiterPalette=null; surfacePalette=null; $('surface-palette').replaceChildren(); syncJupiter(); document.body.dataset.world = id; renderWorlds();
   state.colors.terrain = WORLDS[id].terrain; $('c-terrain').value = WORLDS[id].terrain;
   $('mark-filter').value = '';
   $('credits').innerHTML = '';
@@ -1370,7 +1374,7 @@ async function printGuide(r, p, slug) {
   const font = await fetch('data/fonts/worm.json').then(x => x.json()).catch(() => null);
   const shape = { circle: 'Circle', square: 'Square', hexagon: 'Hexagon', hexgrid: 'Hex Grid' }[p.shape];
   return TPGuide.make({
-    p, slug, colors: state.colors, plates: r.plates, pieces: r.pieces, stats: r.stats, world: { ...W, radiusKm: meta[state.world]?.radiusKm },
+    p, slug, colors: state.colors, plates: r.plates, pieces: r.pieces, stats: r.stats, world: { ...W, imagery: TPSurface.description(state.world), radiusKm: meta[state.world]?.radiusKm },
     place: L ? L.name : `${fmtLat(state.lat)} ${fmtLon(state.lon)}`, landmark: L || null, coords: `${fmtLat(state.lat)}  ${fmtLon(state.lon)}`,
     lat: state.lat, lon: state.lon, size: state.size, kind: `${shape} ${p.product}`,
     footprint: `${Math.round((r.stats.widthMm || p.widthMm) + 2 * fr)} × ${Math.round(H + 2 * fr + (p.loop ? 11 : 0))} mm`,

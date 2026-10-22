@@ -648,7 +648,7 @@ function renderSurfacePalette(palette){
   $('surface-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label',TPSurface.maps[state.world].name+' filament '+(k+1));input.onchange=()=>{surfacePalette=Array.from($('surface-palette').children,x=>x.value);schedule();};return input;}));
 }
 $('surface-color').onchange=()=>{syncSurfaceColors();schedule();};
-for(const id of ['surface-count','surface-grid'])$(id).onchange=()=>{surfacePalette=null;schedule();};
+for(const id of ['surface-count','surface-grid'])$(id).onchange=()=>{surfacePalette=null;$('surface-palette').replaceChildren();schedule();};
 function syncJupiter() {
   const yes=state.world==='jupiter';$('jupiter-options').hidden=!yes;
   $('exag').disabled=$('base').disabled=$('c-terrain').disabled=yes;
@@ -676,7 +676,7 @@ function renderWorlds() {
 }
 
 function setWorld(id) {
-  state.world = id; jupiterPalette=null; surfacePalette=null; syncJupiter(); document.body.dataset.world = id; renderWorlds();
+  state.world = id; jupiterPalette=null; surfacePalette=null; $('surface-palette').replaceChildren(); syncJupiter(); document.body.dataset.world = id; renderWorlds();
   state.colors.terrain = WORLDS[id].terrain; $('c-terrain').value = WORLDS[id].terrain;
   $('mark-filter').value = '';
   $('credits').innerHTML = '';
