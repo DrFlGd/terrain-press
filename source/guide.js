@@ -172,7 +172,7 @@
     y = para(doc, 'These settings work for every part. If a part page says otherwise, follow the part page.', y); y += 2;
     y = field(doc, 'Nozzle size', '0.4 mm', y);
     y = field(doc, 'Layer height', p.colorPanel ? `${p.panelLayer} mm for ALL layers including first. No adaptive layers. Use color-changes.csv.` : '0.12 to 0.16 mm  (finer layers show more of the relief)', y);
-    if(p.surfaceColors)y = para(doc, 'Moon surface colors: use colored 3MF files and map materials to filaments in a compatible slicer. STL has no colors. A layer may need multiple filaments; there is no height-change schedule. See MOON-COLOR-PRINTING.txt and surface-palette.csv. Imagery: NASA SVS / LROC 2025, 8192 x 4096; polar regions use monochrome albedo.', y);
+    if(p.surfaceColors)y = para(doc, `${ctx.world.name} surface colors: use colored 3MF files and map materials to filaments in a compatible slicer. STL has no colors. A layer may need multiple filaments; there is no height-change schedule. See the included ${ctx.world.name.toUpperCase()}-COLOR-PRINTING.txt and surface-palette.csv. Imagery: ${ctx.world.imagery}`, y);
     y = field(doc, 'Supports', 'None', y);
     y = field(doc, 'Part orientation', 'As exported: flat side down', y);
     y = field(doc, 'Infill', '15 % gyroid', y);
