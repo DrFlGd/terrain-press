@@ -1,5 +1,8 @@
 # Terrain Press — Project status and next milestones
 
+**v1.17 implementation:** Earth paint imagery increases to 21600 × 10800 (about 1.85 km/pixel), with a sharper 8K globe overview and offline regional tile sampling. See [surface colors](SURFACE-COLORS.md).
+
+
 **v1.16 implementation:** Earth, Mars, Mercury and Venus now share the released Moon imagery-painting workflow: 2–8 editable colors, real terrain, colored 3MFs and print guides. Jupiter retains its stacked-color workflow. See [surface colors and imagery provenance](SURFACE-COLORS.md).
 
 

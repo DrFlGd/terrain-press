@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Prepare bundled imagery: python3 tools/surface/prepare.py /path/to/downloads.
+Earth is prepared separately by prepare-earth.py.
 Requires Pillow (with JPEG2000 for the Venus archival mirror). No color stretching,
 longitude rotation or crop. Input hashes make accidental source changes fail.
 """
@@ -9,7 +10,6 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 Image.MAX_IMAGE_PIXELS = None
 specs = [
- ('earth', 'earth-color.png', 'blue-marble-200408-5400.jpg', (5400,2700), (5400,2700), 'https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74117/world.200408.3x5400x2700.png'),
  ('mars', 'mars-color.jpg', 'viking-color-8k.jpg', (21339,10670), (8192,4096), 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Mars_Viking_MDIM21_ClrMosaic_1km.jpg'),
  ('mercury', 'mercury-color.jpg', 'messenger-enhanced-8k.jpg', (11520,5760), (8192,4096), 'https://planetarydata.jpl.nasa.gov/img/data/test/messenger/MDIS_MAPS/EXTRAS/BROWSE/Mercury_MESSENGER_MDIS_Basemap_EnhancedColor_Mosaic_Global_665m.jpg'),
  ('venus', 'venus-color.jp2', 'magellan-synthetic-8k.jpg', (16384,8192), (8192,4096), 'https://www.davidrumsey.com/rumsey/download.pl?image=/185/10606000.jp2'),

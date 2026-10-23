@@ -60,12 +60,33 @@ async function colorHF(q) {
   return {panel,N:plan.N,heights:new Float32Array(plan.N**2),sizeKm:q.size,stepMm:plan.stepMm,plan,source,limited:false};
 }
 let surfaceImage, surfaceCache;
+const surfaceTiles=new Map();
+async function loadSurfaceTile(path){
+  let im=surfaceTiles.get(path);
+  if(im){surfaceTiles.delete(path);surfaceTiles.set(path,im);return im;}
+  const response=await fetch(path);
+  if(!response.ok)throw Error('Earth imagery tile could not be loaded. Disable Surface colors to use terrain only.');
+  const bmp=await createImageBitmap(await response.blob());
+  const cv=new OffscreenCanvas(bmp.width,bmp.height),ctx=cv.getContext('2d');ctx.drawImage(bmp,0,0);
+  im={rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();
+  // Bound retained decoded data to two 3600-square tiles (~99 MiB).
+  surfaceTiles.set(path,im);
+  while(surfaceTiles.size>2)surfaceTiles.delete(surfaceTiles.keys().next().value);
+  return im;
+}
 async function imageSurface(q) {
   const n=[128,256,512].includes(q.surfaceGrid)?q.surfaceGrid:256;
   const imagery=TPSurface.maps[q.world];
   if(!imagery)throw Error('Surface imagery is not available for this world');
   const count=q.surfaceCount||4,key=[q.world,q.lat,q.lon,q.size,n,count].join('|');
   if(surfaceCache?.key!==key) {
+    const g=C.nodeGrid(q.lat,q.lon,q.size*(1-1/n),n,meta[q.world].radiusKm);
+    let pixels;
+    if(imagery.tiles){
+      surfaceImage=null;
+      pixels=await TPSurface.tiledPixels(g,imagery,loadSurfaceTile);
+    }else{
+    surfaceTiles.clear();
     if(surfaceImage?.world!==q.world) {
       surfaceImage=null; // Keep only one decoded global map in worker memory.
       const response=await fetch(imagery.path);
@@ -74,12 +95,13 @@ async function imageSurface(q) {
       const cv=new OffscreenCanvas(bmp.width,bmp.height),ctx=cv.getContext('2d');ctx.drawImage(bmp,0,0);
       surfaceImage={world:q.world,rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();
     }
-    const im=surfaceImage,g=C.nodeGrid(q.lat,q.lon,q.size*(1-1/n),n,meta[q.world].radiusKm);
-    const pixels=new Uint8Array(n*n*4);
+    const im=surfaceImage;
+    pixels=new Uint8Array(n*n*4);
     for(let k=0;k<n*n;k++) {
       const x=Math.min(im.w-1,Math.floor((g.lons[k]+180)/360*im.w));
       const y=Math.max(0,Math.min(im.h-1,Math.floor((90-g.lats[k])/180*im.h)));
       pixels.set(im.rgba.subarray((y*im.w+x)*4,(y*im.w+x)*4+4),k*4);
+    }
     }
     // No geometry-dependent cleanup: surface paint can safely meet diagonally.
     surfaceCache={key,surface:TPPanel.quantize(pixels,n,n,count,false)};
