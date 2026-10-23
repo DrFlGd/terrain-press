@@ -1,0 +1,148 @@
+{
+  "download": "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74117/world.200408.3x21600x10800.png",
+  "input_sha256": "c2bc02fcbae696e1a733a38388e09cf0b6e477a2192675165aa87da73397a4c4",
+  "input_dimensions": [
+    21600,
+    10800
+  ],
+  "tile_size": 3600,
+  "columns": 6,
+  "rows": 3,
+  "projection": "Equirectangular; north-up; east-positive; longitude -180..180; latitude 90..-90",
+  "processing": "RGB8 JPEG quality 90, no chroma subsampling. Tiles preserve source pixel dimensions; globe reduced with Lanczos. No color stretch, longitude roll or geographic crop.",
+  "outputs": [
+    {
+      "path": "site/data/earth/blue-marble-200408-8k.jpg",
+      "width": 8192,
+      "height": 4096,
+      "sha256": "b80a3a2fc2fff28e056ccd3e811262b22c23eb0d4e40009ee10ac9d06e5aec13",
+      "bytes": 4309170
+    },
+    {
+      "path": "site/data/earth/color-21600/0_0.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "aca93a5497578626ee09ae6d7b76918e18695d14bd3d47a014bcae7ec9701534",
+      "bytes": 1209285
+    },
+    {
+      "path": "site/data/earth/color-21600/1_0.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "2fd5b228fcf720239e7cdce575088be1c25881dffd4eeeacbfb595e81e4d7386",
+      "bytes": 2821219
+    },
+    {
+      "path": "site/data/earth/color-21600/2_0.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "578ccada6f3c414e3ee2a9ac3cf4cf5634407d8630774bb2d9b402f6156f3e02",
+      "bytes": 983763
+    },
+    {
+      "path": "site/data/earth/color-21600/3_0.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "7c74f2d5957677b1e0a7846f2d48b46539c13bcf484e64af38c77b2e426b7ade",
+      "bytes": 2585425
+    },
+    {
+      "path": "site/data/earth/color-21600/4_0.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "76ea7943302fc0df43721d5bb8873aac6299461dd4f5312c1f36ed0147ed8232",
+      "bytes": 3112454
+    },
+    {
+      "path": "site/data/earth/color-21600/5_0.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "62d0993e4415b2a09dfa7d022ec7765d3b55f1c14ae9c138f921df6da3be8800",
+      "bytes": 1616324
+    },
+    {
+      "path": "site/data/earth/color-21600/0_1.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "84f3041ac535676bd55f1048aae776eb58c096c7f97ecad6c0e2a6bca225efef",
+      "bytes": 181289
+    },
+    {
+      "path": "site/data/earth/color-21600/1_1.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "739cca693fd364da3ee579628ec9b91c7f6e2fd17f7f648494b8fa9b54b193de",
+      "bytes": 1217055
+    },
+    {
+      "path": "site/data/earth/color-21600/2_1.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "0d1f30502d1a870cb3bdfe41ddfaf45330c28b093f3619b153c37a41ad916afe",
+      "bytes": 1202022
+    },
+    {
+      "path": "site/data/earth/color-21600/3_1.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "25fdb1893ae5af4da363593934952050454ac4858c5cabefd3cf856ab1e3ed10",
+      "bytes": 2252780
+    },
+    {
+      "path": "site/data/earth/color-21600/4_1.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "2998aaffcf1f81e1577f673da0c07a72e80eee513eeaaefdf1fcf424e45c3f1d",
+      "bytes": 1413466
+    },
+    {
+      "path": "site/data/earth/color-21600/5_1.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "655d86e1290a3a18e22d689d1f95e8ae71f05892f7dde0a3060dce096bf8219d",
+      "bytes": 1041161
+    },
+    {
+      "path": "site/data/earth/color-21600/0_2.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "1a843aa92c6866892e8fd279083d7eb4441f63943f5efd3a45d08135a05f1683",
+      "bytes": 688453
+    },
+    {
+      "path": "site/data/earth/color-21600/1_2.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "1e0348ae71fbe80769e5be4a27e96a7cfd861363c6d9f402e46de09c52fff63b",
+      "bytes": 1310485
+    },
+    {
+      "path": "site/data/earth/color-21600/2_2.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "b65ab379be8e7f3f3fb33c0cc0a3bcb6676eca25cc3ce5cb533806795b367ea6",
+      "bytes": 762166
+    },
+    {
+      "path": "site/data/earth/color-21600/3_2.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "78168c300912db1bc10c2c3c62e6f80609f4013ede6eab25fab40b148eb8f643",
+      "bytes": 821900
+    },
+    {
+      "path": "site/data/earth/color-21600/4_2.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "c15b8518974594cb6d2e4dd39eceda7f2d875ec6c1e5d44acd95703a5ec95786",
+      "bytes": 869763
+    },
+    {
+      "path": "site/data/earth/color-21600/5_2.jpg",
+      "width": 3600,
+      "height": 3600,
+      "sha256": "57de81b5fd79899c85610cbbb3b9f0bbb58fa838122f759677073c6e54f4715c",
+      "bytes": 1402277
+    }
+  ]
+}

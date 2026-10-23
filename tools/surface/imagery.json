@@ -1,20 +1,4 @@
 {
-  "earth": {
-    "download": "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74117/world.200408.3x5400x2700.png",
-    "input_sha256": "6e8a1296caef991dcdba963fdc72816e4095720d005e7af6688b060e5fb85aa4",
-    "input_dimensions": [
-      5400,
-      2700
-    ],
-    "output": "site/data/earth/blue-marble-200408-5400.jpg",
-    "output_sha256": "b1faa6c05484d3dc2dcac3f0a3bc99f8b2493b67deba51a065cf0575261e57bb",
-    "output_dimensions": [
-      5400,
-      2700
-    ],
-    "projection": "Equirectangular; north-up; east-positive; longitude -180..180; latitude 90..-90",
-    "processing": "RGB8; full-frame Lanczos resize where needed; JPEG quality 90, chroma subsampling 0"
-  },
   "mars": {
     "download": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Mars_Viking_MDIM21_ClrMosaic_1km.jpg",
     "input_sha256": "fdfcd335559c3dc67052b7e8a9565d850e336ac0d1f3ea7f5eb7826ffb44ecb2",

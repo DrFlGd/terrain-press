@@ -27,8 +27,10 @@ for(const [shape,product] of [['circle','ornament'],['square','puzzle'],['hexago
 });
 for(const world of ['moon','earth','mars','mercury','venus'])test(`${world} worker exports surface colors and isolates image/DEM caches`,async()=>{
  const requested=[],radii=[],messages=[],N=13,h=hf(),pixels=new Uint8Array(16*8*4);for(let y=0;y<8;y++)for(let x=0;x<16;x++)pixels.set([x*16,y*32,x*10,255],(y*16+x)*4);
- const ctx=vm.createContext({console,Uint8Array,Uint32Array,Float32Array,Float64Array,ArrayBuffer,DataView,TextEncoder,Response,Blob,ClipperLib:global.ClipperLib,poly2tri:global.poly2tri,fetch:async url=>{requested.push(url);return {ok:true,blob:async()=>new Blob()};},createImageBitmap:async()=>({width:16,height:8,close(){}}),OffscreenCanvas:class{getContext(){return{drawImage(){},getImageData(){return{data:pixels};}};}}});
+ const ctx=vm.createContext({console,Uint8Array,Uint32Array,Float32Array,Float64Array,ArrayBuffer,DataView,TextEncoder,Response,Blob,ClipperLib:global.ClipperLib,poly2tri:global.poly2tri,fetch:async url=>{requested.push(url);return {ok:true,blob:async()=>({url})};},createImageBitmap:async blob=>({width:blob.url.includes('color-21600')?8:16,height:8,close(){}}),OffscreenCanvas:class{getContext(){return{drawImage(){},getImageData(){return{data:pixels};}};}}});
  ctx.self=ctx;ctx.location={search:''};ctx.postMessage=m=>messages.push(m);ctx.importScripts=(...urls)=>urls.forEach(u=>{if(u.includes('core.js'))vm.runInContext(fs.readFileSync(path.join(__dirname,'../source',u),'utf8'),ctx);});vm.runInContext(fs.readFileSync(path.join(__dirname,'../source/worker.js'),'utf8'),ctx);
+ Object.assign(ctx.TPSurface.maps.earth,{width:16,height:8,tileSize:8});
+ const correctPath=(url,w)=>ctx.TPSurface.maps[w].tiles?url.startsWith(ctx.TPSurface.maps[w].tiles+'/'):url===ctx.TPSurface.maps[w].path;
  ctx.TPCore.makeStore=()=>({chooseSource:()=>({kind:'tiles',label:'test DEM',pxKm:1}),sample:async()=>({heights:h.heights,source:{kind:'tiles',label:'test DEM',pxKm:1}})});
  ctx.TPCore.meshPlan=()=>({N,stepMm:5,limited:false,cap:721,featureMm:.4,sourceStepMm:.5,samplingLimit:721});
  const meta={moon:{radiusKm:1737.4},earth:{radiusKm:6371},mars:{radiusKm:3389.5},mercury:{radiusKm:2439.4},venus:{radiusKm:6051.8}};
@@ -39,7 +41,7 @@ for(const world of ['moon','earth','mars','mercury','venus'])test(`${world} work
  const out=messages.find(m=>m.id===1&&m.type!=='progress');assert.equal(out.type,'exported',out.text);
  const names=out.files.map(f=>f[0]);for(const name of ['surface-palette.csv',world.toUpperCase()+'-COLOR-PRINTING.txt',world+'-surface-settings.json'])assert.ok(names.includes(name));assert.ok(!names.includes('color-changes.csv'));
  const settings=JSON.parse(out.files.find(f=>f[0]===world+'-surface-settings.json')[1]);assert.equal(settings.imagery.name,ctx.TPSurface.maps[world].name);assert.equal(settings.source,ctx.TPSurface.maps[world].source);
- assert.equal(requested[0],ctx.TPSurface.maps[world].path);assert.equal(radii[0],meta[world].radiusKm);
+ assert.ok(correctPath(requested[0],world));assert.equal(radii[0],meta[world].radiusKm);
  const individual=out.files.filter(f=>/^single-pieces\/.*\.3mf$/.test(f[0]));assert.ok(individual.length>0);assert.equal(individual.length,out.files.filter(f=>/^single-pieces\/.*\.stl$/.test(f[0])).length);
  assert.match(new TextDecoder().decode(individual[0][1]),/pid="100000" p1=/);
  for(const part of out.plates.find(pl=>pl.key==='pieces').parts){assert.equal(part.palette.length,8);assert.equal(part.faceColors.length,part.idx.length/3);}
@@ -50,9 +52,11 @@ for(const world of ['moon','earth','mars','mercury','venus'])test(`${world} work
  const before=requested.length;
  const other=world==='earth'?'mars':'earth';
  await ctx.onmessage({data:{type:'build',id:4,q:{...q,world:other},p:{...p,shape:'circle',product:'ornament',border:'none'}}});
- assert.equal(requested.length,before+1);assert.equal(requested.at(-1),ctx.TPSurface.maps[other].path);assert.equal(radii.at(-1),meta[other].radiusKm);
+ assert.ok(requested.length>before);assert.ok(correctPath(requested.at(-1),other));assert.equal(radii.at(-1),meta[other].radiusKm);
  assert.equal(messages.find(m=>m.id===4&&m.type!=='progress').type,'built');
+ const afterOther=requested.length;
  await ctx.onmessage({data:{type:'build',id:5,q,p:{...p,shape:'circle',product:'ornament',border:'none'}}});
- assert.equal(requested.at(-1),ctx.TPSurface.maps[world].path);assert.equal(requested.length,before+2);
+ assert.ok(correctPath(requested.at(-1),world));assert.ok(requested.length>afterOther);
+ assert.ok(vm.runInContext("surfaceTiles.size",ctx)<=2);
 
 });

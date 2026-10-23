@@ -43,15 +43,15 @@ jobs:
       - name: Preserve portable EXE as downloadable workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Terrain-Press-1.16.0-Portable-Windows
+          name: Terrain-Press-1.17.0-Portable-Windows
           path: dist/Terrain-Press-*-Portable.exe
           if-no-files-found: error
           retention-days: 30
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.16.0
-          name: Terrain Press Desktop v1.16.0 — Rocky planet surface colors — testing
+          tag_name: desktop-v1.17.0
+          name: Terrain Press Desktop v1.17.0 — Sharper Earth imagery — testing
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -61,9 +61,10 @@ jobs:
             Testing pre-release of the standalone portable 64-bit Windows edition of Terrain Press.
             Includes Jupiter globe selection and integrated ornament/puzzle exports. Windows UI and slicer acceptance remain pending.
 
-            Download Terrain-Press-1.16.0-Portable.exe and run it without installing Node.js or Python.
+            Download Terrain-Press-1.17.0-Portable.exe and run it without installing Node.js or Python.
 
-            - NEW: Earth, Mars, Mercury and Venus imagery painting with 2–8 editable colors; same colored 3MF workflow as the Moon. Mercury uses enhanced colors; Venus uses synthetic radar colors.
+            - NEW: Earth imagery at 21600 × 10800 for terrain painting (4× linear detail), with an 8K globe overview and offline tiles.
+            - Earth, Mars, Mercury and Venus imagery painting with 2–8 editable colors; same colored 3MF workflow as the Moon. Mercury uses enhanced colors; Venus uses synthetic radar colors.
             - Moon terrain surface colors from offline 8192 × 4096 NASA SVS imagery, with 2–8 editable colors and colored 3MF exports.
             - Full 3600 × 1598 offline Jupiter imagery and color detail up to 512 cells across.
             - NEW: Jupiter standard workflow with offline Hubble OPAL imagery and 2–8 editable colors.
