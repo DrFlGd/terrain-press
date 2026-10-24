@@ -50,6 +50,16 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.56.1
           npx playwright install --with-deps chromium
+      - name: Exercise Saturn, Uranus, Neptune and 1024 color detail
+        run: node tools/giants-smoke.cjs
+      - name: Keep giant-planet screenshots and exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: giant-planets-smoke
+          path: giants-smoke-output/
+          if-no-files-found: ignore
+
       - name: Exercise Jupiter globe, controls and export
         run: node tools/jupiter-smoke.cjs
       - name: Keep Jupiter smoke screenshots and export
@@ -80,12 +90,3 @@ jobs:
           path: rocky-smoke-output/
           if-no-files-found: ignore
 
-      - name: Exercise Saturn, Uranus, Neptune and 1024 color detail
-        run: node tools/giants-smoke.cjs
-      - name: Keep giant-planet screenshots and exports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: giant-planets-smoke
-          path: giants-smoke-output/
-          if-no-files-found: ignore
