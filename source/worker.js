@@ -1,5 +1,5 @@
 // Terrain Press worker: decodes elevation tiles, builds meshes and print files off the main thread.
-importScripts('https://cdn.jsdelivr.net/npm/poly2tri@1.5.0/dist/poly2tri.min.js', 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'core.js' + self.location.search, 'panel-core.js' + self.location.search, 'surface-core.js' + self.location.search);
+importScripts('https://cdn.jsdelivr.net/npm/poly2tri@1.5.0/dist/poly2tri.min.js', 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'core.js' + self.location.search, 'panel-core.js' + self.location.search, 'surface-core.js' + self.location.search, 'giant-core.js' + self.location.search);
 const C = self.TPCore;
 let meta = null, store = null;
 const fonts = {};
@@ -29,9 +29,10 @@ async function decode(path) {
 
 // Probe the coordinate-specific DEM cheaply, before allocating large grids.
 function planHeights(q) {
-  if(q.world==='jupiter') {
-    const N=Math.round(Math.max(24,Math.min(512,q.panelGrid||128)));
-    return {plan:{N,stepMm:q.widthMm/N,limited:false,cap:512,samplingLimit:512,recommendedLimit:128,featureMm:q.widthMm/N,sourceStepMm:q.widthMm*(360/3600)/(q.size/71492*180/Math.PI),detailOptimized:false},source:{kind:'image',label:'Hubble OPAL 2015 color map',pxKm:71492*Math.PI*2/3600}};
+  if(TPGiants.maps[q.world]) {
+    const imagery=TPGiants.maps[q.world];
+    const N=Math.round(Math.max(24,Math.min(1024,q.panelGrid||128)));
+    return {plan:{N,stepMm:q.widthMm/N,limited:false,cap:1024,samplingLimit:1024,recommendedLimit:128,featureMm:q.widthMm/N,sourceStepMm:q.widthMm*(360/imagery.width)/(q.size/imagery.radiusKm*180/Math.PI),detailOptimized:false},source:{kind:'image',label:imagery.label,pxKm:imagery.radiusKm*Math.PI*2/imagery.width}};
   }
   const probeN = Math.min(201, Math.round(q.widthMm / 0.5) + 1);
   const source = store.chooseSource(q.world, q.lat, q.lon, q.size, probeN);
@@ -45,16 +46,17 @@ async function heights(q, onProgress) {
   return { heights: s.heights, N: plan.N, sizeKm: q.size, source: s.source,
     stepMm: plan.stepMm, limited: plan.limited, plan };
 }
-let jupiterImage;
+let giantImage;
 async function colorHF(q) {
-  if(!jupiterImage) {
-    const response=await fetch('data/jupiter/opal-2015-3600.jpg');if(!response.ok)throw Error('Jupiter image could not be loaded');
+  const imagery=TPGiants.maps[q.world];
+  if(giantImage?.world!==q.world) {
+    const response=await fetch(imagery.path);if(!response.ok)throw Error(imagery.name+' image could not be loaded');
     const bmp=await createImageBitmap(await response.blob());
     const cv=new OffscreenCanvas(bmp.width,bmp.height),ctx=cv.getContext('2d');ctx.drawImage(bmp,0,0);
-    jupiterImage={rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();
+    giantImage={world:q.world,rgba:ctx.getImageData(0,0,bmp.width,bmp.height).data,w:bmp.width,h:bmp.height};bmp.close();
   }
-  const {plan,source}=planHeights(q),im=jupiterImage;
-  const pixels=TPPanel.crop(im.rgba,im.w,im.h,q,plan.N);
+  const {plan,source}=planHeights(q),im=giantImage;
+  const pixels=TPPanel.crop(im.rgba,im.w,im.h,q,plan.N,imagery);
   const panel=TPPanel.quantize(pixels,plan.N,plan.N,q.panelCount||4);
   if(q.panelPalette?.length===panel.palette.length)panel.palette=q.panelPalette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16)));
   return {panel,N:plan.N,heights:new Float32Array(plan.N**2),sizeKm:q.size,stepMm:plan.stepMm,plan,source,limited:false};
@@ -75,7 +77,7 @@ async function loadSurfaceTile(path){
   return im;
 }
 async function imageSurface(q) {
-  const n=[128,256,512].includes(q.surfaceGrid)?q.surfaceGrid:256;
+  const n=[128,256,512,1024].includes(q.surfaceGrid)?q.surfaceGrid:256;
   const imagery=TPSurface.maps[q.world];
   if(!imagery)throw Error('Surface imagery is not available for this world');
   const count=q.surfaceCount||4,key=[q.world,q.lat,q.lon,q.size,n,count].join('|');
@@ -113,7 +115,7 @@ async function imageSurface(q) {
 }
 const cache = { key: '', hf: null };
 async function getHF(q, id) {
-  if(q.world==='jupiter')return colorHF(q);
+  if(TPGiants.maps[q.world])return colorHF(q);
   const key = [q.world, q.lat, q.lon, q.size, q.widthMm,
     q.step, q.samplingLimit, q.featureMm].join('|');
   if (cache.key !== key) {
@@ -321,8 +323,8 @@ self.onmessage = async e => {
       if(hf.panel) {
         const palette=hf.panel.palette, steps=TPPanel.schedule(palette,m.p.panelLayer,m.p.panelBand,m.p.panelBacking);
         out.files.push(['color-changes.csv','color,hex,start_layer,change_at_z_mm\n'+steps.map(s=>[s.color,s.hex,s.startLayer,s.startHeightMM.toFixed(3)].join(',')).join('\n')]);
-        out.files.push(['JUPITER-PRINTING.txt',`Print terrain/pieces files separately from frame/tray/lettering. The assembled 3MF is a reference. Use ${m.p.panelLayer} mm for ALL layers including the first; disable adaptive layers. CSV layers are 1-based: change before that layer, at the listed completed Z. All pieces use the same palette and backing. STL has no color metadata. 3MF carries surface display assignments; slicers may ignore them. The manual height-change CSV is authoritative. Heights are artistic color bands, not real terrain. Longitude is image-relative (image centre = 0), not calibrated System III. Latitude follows the source map; spherical distances are approximate. Source: Hubble OPAL 2015-01-19, https://science.nasa.gov/asset/hubble/jupiter-global-map-from-hubble-opal-data-rotation-1/ . Credit: NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), G. Orton (JPL-Caltech).`]);
-        out.files.push(['jupiter-settings.json',JSON.stringify({query:m.q,print:m.p,palette},null,2)]);
+        out.files.push([m.q.world.toUpperCase()+'-PRINTING.txt',`Print terrain/pieces files separately from frame/tray/lettering. The assembled 3MF is a reference. Use ${m.p.panelLayer} mm for ALL layers including the first; disable adaptive layers. CSV layers are 1-based: change before that layer, at the listed completed Z. All pieces use the same palette and backing. STL has no color metadata. 3MF carries surface display assignments; slicers may ignore them. The manual height-change CSV is authoritative. Heights are artistic color bands, not real terrain. ${TPGiants.description(m.q.world)} ${TPGiants.maps[m.q.world].acknowledgement}`]);
+        out.files.push([m.q.world+'-settings.json',JSON.stringify({query:m.q,print:m.p,palette,imagery:TPGiants.maps[m.q.world]},null,2)]);
       }
       if(hf.surface) {
         const palette=hf.surface.palette.map(rgb=>'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join(''));
@@ -343,7 +345,7 @@ self.onmessage = async e => {
       };
       self.postMessage({ type: 'exported', id: m.id,
         files: out.files, plates, pieces: out.pieces, stats,
-        readmeFallback: hf.panel ? out.files.find(f=>f[0]==='JUPITER-PRINTING.txt')[1] : readme(model) }, transfer);
+        readmeFallback: hf.panel ? out.files.find(f=>f[0]===m.q.world.toUpperCase()+'-PRINTING.txt')[1] : readme(model) }, transfer);
       return;
     }
     if (m.type === 'zip') {

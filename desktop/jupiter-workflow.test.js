@@ -15,21 +15,32 @@ for(const part of model.parts.filter(p=>p.role==='terrain')){watertight(part.tri
 const xml=TPCore.model3mf(model.parts,{terrain:'#cccccc',frame:'#444444'},'Jupiter')[2][1];assert.match(xml,/pid="100000" p1="/);
 if(product==='puzzle'){const spread=TPCore.spreadPieces(model.parts,model.grid,3,model.floorZ);for(const p of spread.parts){assert.equal(p.faceColors.length,p.tris.length/9);watertight(p.tris);}}
 });}
+test('puzzle outline grazing color-cell boundaries triangulates and stays watertight',()=>{
+// The Neptune 80-cell browser export: a jigsaw socket ran along x = -16.25 mm, a cell boundary, so the
+// clipped cell touched itself and poly2tri rejected it ("Collinear not supported"). Both neighbours must
+// also describe the shared boundary with the same vertices, or faces and walls leave T-junctions.
+const n=80,rgba=new Uint8Array(n*n*4);let s=929976;for(let i=0;i<rgba.length;i+=4){s=(s*1664525+1013904223)>>>0;rgba.set([s>>>24,(s>>>16)&255,(s>>>8)&255,255],i);}
+const panel={panel:TPPanel.quantize(rgba,n,n,4),heights:new Float32Array(n*n),N:n,sizeKm:20000};
+const model=TPCore.buildModel({...common,widthMm:100,pieces:5,stepMm:.5,back:true,backMm:1.6,seed:929976,shape:'square',product:'puzzle',border:'plain'},panel,null);
+const pieces=model.parts.filter(p=>p.role==='terrain');assert.equal(pieces.length,25);
+for(const part of pieces){watertight(part.tris);assert.equal(part.faceColors.length,part.tris.length/9);}
+for(const part of TPCore.spreadPieces(model.parts,model.grid,3,model.floorZ).parts)if(part.faceColors)watertight(part.tris);
+});
 test('map crop preserves orientation, wraps seam and rejects polar gaps',()=>{const w=360,h=160,pixels=new Uint8Array(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++)pixels.set([x%256,y,0,255],(y*w+x)*4);
 const sample=(lon,lat=0)=>TPPanel.crop(pixels,w,h,{lat,lon,size:1000},1);
 assert.equal(sample(0)[0],180);assert.deepEqual(sample(179),sample(-181));assert.ok(sample(0,20)[1]<sample(0,-20)[1]);assert.throws(()=>sample(0,85),/polar/);
 });
-test('worker exports standard puzzle assets, shared palette and grounded schedule',async()=>{
+for(const world of ['jupiter','saturn','uranus','neptune'])test(world+' exports standard puzzle assets, shared palette and grounded schedule',async()=>{
 const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');const pixels=new Uint8Array(100*50*4);for(let i=0;i<pixels.length;i+=4)pixels.set([i%255,(i/8)%255,(i/40)%255,255],i);
 const messages=[];const ctx=vm.createContext({console,Uint8Array,Uint32Array,Float32Array,Float64Array,ArrayBuffer,DataView,TextEncoder,Response,ClipperLib:global.ClipperLib,poly2tri:global.poly2tri,fetch:async()=>({ok:true,blob:async()=>new Blob()}),createImageBitmap:async()=>({width:100,height:50,close(){}}),OffscreenCanvas:class{getContext(){return{drawImage(){},getImageData(){return{data:pixels};}};}}});
 ctx.self=ctx;ctx.location={search:''};ctx.postMessage=m=>messages.push(m);ctx.importScripts=(...urls)=>urls.forEach(u=>{if(u.includes('core.js'))vm.runInContext(fs.readFileSync(path.join(__dirname,'..','source',u),'utf8'),ctx);});vm.runInContext(fs.readFileSync(path.join(__dirname,'..','source','worker.js'),'utf8'),ctx);
 await ctx.onmessage({data:{type:'init',meta:{jupiter:{radiusKm:71492}}}});
-for(const n of [128,192,256,384,512,999]){
+for(const n of [128,192,256,384,512,1024,2048]){
  await ctx.onmessage({data:{type:'plan',id:100+n,q:{world:'jupiter',widthMm:120,size:35000,panelGrid:n}}});
- const plan=messages.find(m=>m.id===100+n);assert.equal(plan.plan.N,Math.min(n,512));
+ const plan=messages.find(m=>m.id===100+n);assert.equal(plan.plan.N,Math.min(n,1024));
  assert.ok(Math.abs(plan.source.pxKm-71492*Math.PI*2/3600)<1e-8);
 }
-const q={world:'jupiter',lat:-22,lon:54,size:35000,widthMm:120,panelCount:4,panelGrid:24};const p={...common,shape:'square',product:'puzzle',border:'plain',back:true,backMm:1.6,colorPanel:true};
+const q={world,lat:world==='saturn'?35:world==='uranus'?35:-22,lon:54,size:10000,widthMm:120,panelCount:4,panelGrid:24};const p={...common,shape:'square',product:'puzzle',border:'plain',back:true,backMm:1.6,colorPanel:true};
 await ctx.onmessage({data:{type:'build',id:1,q,p}});const built=messages.find(m=>m.id===1&&m.type!=='progress');assert.equal(built.type,'built',built.text);assert.ok(built.parts.some(p=>p.faceColors?.length));
 await ctx.onmessage({data:{type:'export',id:2,q,p,readme:'test',x:{slug:'jupiter-test',colors:{terrain:'#888888',frame:'#444444'},spread:true,spreadGap:3,perPiece:true}}});const result=messages.find(m=>m.id===2&&m.type!=='progress');assert.equal(result.type,'exported',result.text);
 const names=result.files.map(f=>f[0]);for(const suffix of ['-pieces-spread.stl','-pieces-spread.3mf','-assembled.3mf','-frame.stl','-piece-map.svg'])assert.ok(names.some(n=>n.endsWith(suffix)),suffix);assert.ok(names.some(n=>n.startsWith('single-pieces/')));

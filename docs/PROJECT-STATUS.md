@@ -1,5 +1,8 @@
 # Terrain Press — Project status and next milestones
 
+Current addition (v1.18.0): Saturn, Uranus and Neptune share Jupiter’s cloud-print workflow, and color detail supports 1024 cells across. See [giant planets](GIANT-PLANETS.md) for source coverage and printing limits. Earlier dated milestones below are historical.
+
+
 **v1.17 implementation:** Earth paint imagery increases to 21600 × 10800 (about 1.85 km/pixel), with a sharper 8K globe overview and offline regional tile sampling. See [surface colors](SURFACE-COLORS.md).
 
 

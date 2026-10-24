@@ -35,7 +35,7 @@ def localise(text):
 if not os.path.isdir(NM): sys.exit('Run "npm install" in the repository root first.')
 
 core, worker = read(SRC, 'core.js'), read(SRC, 'worker.js')
-version = hashlib.sha1((worker + core + read(SRC, 'app.js') + read(SRC, 'panel-core.js') + read(SRC, 'surface-core.js') + read(SRC, 'panel-app.js') + read(SRC, 'jupiter.html') + read(SRC, 'guide.js') + read(SITE, 'data', 'meta.json')).encode()).hexdigest()[:10]
+version = hashlib.sha1((worker + core + read(SRC, 'app.js') + read(SRC, 'panel-core.js') + read(SRC, 'surface-core.js') + read(SRC, 'giant-core.js') + read(SRC, 'panel-app.js') + read(SRC, 'jupiter.html') + read(SRC, 'guide.js') + read(SITE, 'data', 'meta.json')).encode()).hexdigest()[:10]
 
 app = read(SRC, 'app.js').replace('__BUILD__', version)
 for key in ('MOON', 'MARS', 'MERCURY'):
@@ -70,5 +70,5 @@ left = [u for u in LIBS if u in html or u in localise(worker)]
 assert not left, left
 print(f'site/ built · build {version} · Bootstrap {len(css)//1024} KB · index.html {len(html)//1024} KB')
 
-for name in ('jupiter.html', 'panel-core.js', 'panel-app.js', 'surface-core.js'):
+for name in ('jupiter.html', 'panel-core.js', 'panel-app.js', 'surface-core.js', 'giant-core.js'):
     shutil.copy(os.path.join(SRC, name), os.path.join(SITE, name))

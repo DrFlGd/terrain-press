@@ -163,7 +163,7 @@
     y += 2; doc.setDrawColor(215, 215, 215); doc.setLineWidth(0.2); doc.line(LX, y - 3, LX + LW, y - 3); y += 2;
     const sample = ctx.stats.pxM < 1000 ? Math.round(ctx.stats.pxM) + ' m' : (ctx.stats.pxM / 1000).toFixed(1) + ' km';
     if (ctx.landmark) y = para(doc, `${ctx.landmark.name}: ${ctx.landmark.note}.`, y, 9, INK);
-    y = para(doc, p.colorPanel ? `Layered color panel. Image-relative longitude, planetographic latitude. See color-changes.csv and JUPITER-PRINTING.txt for mandatory height changes and image details. ${ctx.world.credit}` : `Heights ${Math.round(ctx.stats.hMin)} m to ${Math.round(ctx.stats.hMax)} m, ${ctx.world.datum}, sampled every ${sample}. ${ctx.world.credit}`, y, 7.6, SOFT);
+    y = para(doc, p.colorPanel ? `Layered color panel. Image-relative longitude, planetographic latitude. See color-changes.csv and ${ctx.world.name.toUpperCase()}-PRINTING.txt for mandatory height changes and image details. ${ctx.world.credit}` : `Heights ${Math.round(ctx.stats.hMin)} m to ${Math.round(ctx.stats.hMax)} m, ${ctx.world.datum}, sampled every ${sample}. ${ctx.world.credit}`, y, 7.6, SOFT);
     y = para(doc, 'A decorative model, not survey-grade data. Not endorsed by NASA, the USGS or DLR. Terrain Press is free and open source (AGPL-3.0); what you make with it is yours to print, share and give away.', y, 7.6, SOFT);
     panel(doc, hero); done();
 

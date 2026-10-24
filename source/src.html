@@ -239,21 +239,21 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <div class="form-check form-switch"><input id="surface-color" class="form-check-input" type="checkbox" role="switch"><label for="surface-color" class="form-check-label">Surface colors from imagery</label></div>
         <div id="surface-color-controls" hidden>
           <label class="tp-label" for="surface-count">Filament colors</label><select id="surface-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option></select>
+          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
           <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="surface-palette" class="d-flex gap-1 flex-wrap"></div>
           <p class="tp-hint">Use colored 3MF in a compatible slicer; STL has no colors. Terrain mesh detail limits color edges. Enable high-detail preview to match export. No layer-height color schedule.</p>
           <p class="tp-hint"><span id="surface-source-text"></span> <a id="surface-source-link" target="_blank" rel="noopener">Source</a></p>
         </div>
       </div>
       <div id="jupiter-options" hidden>
-        <h3 class="tp-label">Jupiter color bands</h3>
-        <p class="tp-hint">Select a region on Globe, then choose any shape or puzzle layout. Heights represent color order. Frame and color pieces print separately. <a href="jupiter.html">Full-map panel</a></p>
+        <h3 class="tp-label"><span id="giant-name">Jupiter</span> color bands</h3>
+        <p class="tp-hint">Select a region on Globe, then choose any shape or puzzle layout. Heights represent color order. Frame and color pieces print separately. <a id="giant-panel-link" href="jupiter.html">Full-map panel</a></p>
         <label class="tp-label" for="jp-count">Colors</label><select id="jp-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-        <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80">Quick · 80 cells</option><option value="128" selected>Standard · 128 cells</option><option value="192">Fine · 192 cells</option><option value="256">High · 256 cells</option><option value="384">Very high · 384 cells</option><option value="512">Maximum · 512 cells</option></select>
+        <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80">Quick · 80 cells</option><option value="128" selected>Standard · 128 cells</option><option value="192">Fine · 192 cells</option><option value="256">High · 256 cells</option><option value="384">Very high · 384 cells</option><option value="512">Ultra · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
         <label class="tp-label" for="jp-layer">Printer layer height (including first layer)</label><select id="jp-layer" class="form-select form-select-sm"><option>0.1</option><option selected>0.2</option><option>0.3</option></select>
         <label class="tp-label" for="jp-band">Printer layers per color band</label><select id="jp-band" class="form-select form-select-sm"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
         <label class="tp-label" for="jp-backing">Backing layers (first color)</label><select id="jp-backing" class="form-select form-select-sm"><option>6</option><option selected>8</option><option>10</option><option>12</option></select>
-        <p class="tp-hint">384–512 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
+        <p class="tp-hint">384–1024 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
       </div>
       <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
       <div class="row g-2">
@@ -436,5 +436,6 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="giant-core.js?v=__BUILD__"></script>
 <script src="surface-core.js?v=__BUILD__"></script>
 <script>/*APP*/</script>

@@ -71,7 +71,7 @@ test('Automatic and Advanced modes preserve the planner contract', () => {
   };
   const $ = id => controls[id];
   const moonHelper = app.match(/function surfaceColorEnabled\(\)\{[^}]+\}/)[0];
-  const query = Function('state', '$', 'const surfacePalette=null; const TPSurface={maps:{moon:{}}};'+moonHelper+match[0] + '\nreturn query;')(state, $);
+  const query = Function('state', '$', 'const surfacePalette=null; const TPGiants={maps:{}}; const TPSurface={maps:{moon:{}}};'+moonHelper+match[0] + '\nreturn query;')(state, $);
   assert.deepEqual(query('source'), {
     world: 'moon', lat: 0, lon: 25, size: 100, widthMm: 1000,
     step: 'source', samplingLimit: 'auto', featureMm: 0.4

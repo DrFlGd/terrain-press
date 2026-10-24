@@ -10,7 +10,7 @@ await page.locator('#width-num').fill('60');await page.locator('#width-num').dis
 for(const world of ['earth','mars','mercury','venus']){
  await page.locator('#w-'+world).click();
  await page.locator('#surface-color').check();
- await page.selectOption('#surface-grid','128');
+ await page.selectOption('#surface-grid',world==='earth'?'1024':'128');
  await page.selectOption('#surface-count',world==='earth'?'2':'8');
  const name=world[0].toUpperCase()+world.slice(1);
  await page.waitForFunction(({name,count})=>document.querySelectorAll('#surface-palette input').length===count&&document.querySelector('#surface-palette input')?.getAttribute('aria-label')===name+' filament 1'&&document.getElementById('busy').hidden,{name,count:world==='earth'?2:8});
@@ -26,6 +26,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  settings=json.loads(z.read(world+'-surface-settings.json'))
  assert settings['query']['world']==world
  if world=='earth':
+  assert settings['query']['surfaceGrid']==1024
   assert settings['imagery']['width']==21600
   assert settings['imagery']['globeWidth']==8192
  assert settings['imagery']['name'].lower()==world

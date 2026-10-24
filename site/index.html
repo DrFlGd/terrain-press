@@ -248,21 +248,21 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         <div class="form-check form-switch"><input id="surface-color" class="form-check-input" type="checkbox" role="switch"><label for="surface-color" class="form-check-label">Surface colors from imagery</label></div>
         <div id="surface-color-controls" hidden>
           <label class="tp-label" for="surface-count">Filament colors</label><select id="surface-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option></select>
+          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
           <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="surface-palette" class="d-flex gap-1 flex-wrap"></div>
           <p class="tp-hint">Use colored 3MF in a compatible slicer; STL has no colors. Terrain mesh detail limits color edges. Enable high-detail preview to match export. No layer-height color schedule.</p>
           <p class="tp-hint"><span id="surface-source-text"></span> <a id="surface-source-link" target="_blank" rel="noopener">Source</a></p>
         </div>
       </div>
       <div id="jupiter-options" hidden>
-        <h3 class="tp-label">Jupiter color bands</h3>
-        <p class="tp-hint">Select a region on Globe, then choose any shape or puzzle layout. Heights represent color order. Frame and color pieces print separately. <a href="jupiter.html">Full-map panel</a></p>
+        <h3 class="tp-label"><span id="giant-name">Jupiter</span> color bands</h3>
+        <p class="tp-hint">Select a region on Globe, then choose any shape or puzzle layout. Heights represent color order. Frame and color pieces print separately. <a id="giant-panel-link" href="jupiter.html">Full-map panel</a></p>
         <label class="tp-label" for="jp-count">Colors</label><select id="jp-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-        <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80">Quick · 80 cells</option><option value="128" selected>Standard · 128 cells</option><option value="192">Fine · 192 cells</option><option value="256">High · 256 cells</option><option value="384">Very high · 384 cells</option><option value="512">Maximum · 512 cells</option></select>
+        <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80">Quick · 80 cells</option><option value="128" selected>Standard · 128 cells</option><option value="192">Fine · 192 cells</option><option value="256">High · 256 cells</option><option value="384">Very high · 384 cells</option><option value="512">Ultra · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
         <label class="tp-label" for="jp-layer">Printer layer height (including first layer)</label><select id="jp-layer" class="form-select form-select-sm"><option>0.1</option><option selected>0.2</option><option>0.3</option></select>
         <label class="tp-label" for="jp-band">Printer layers per color band</label><select id="jp-band" class="form-select form-select-sm"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
         <label class="tp-label" for="jp-backing">Backing layers (first color)</label><select id="jp-backing" class="form-select form-select-sm"><option>6</option><option selected>8</option><option>10</option><option>12</option></select>
-        <p class="tp-hint">384–512 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
+        <p class="tp-hint">384–1024 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
       </div>
       <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
       <div class="row g-2">
@@ -445,8 +445,9 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
-<script src="surface-core.js?v=391ebaa12b"></script>
-<script>const BUILD = '391ebaa12b'; // changes whenever worker.js or core.js change, so browsers never run stale code
+<script src="giant-core.js?v=f9eece675e"></script>
+<script src="surface-core.js?v=f9eece675e"></script>
+<script>const BUILD = 'f9eece675e'; // changes whenever worker.js or core.js change, so browsers never run stale code
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
@@ -456,6 +457,10 @@ const WORLDS = {
   jupiter: {name:'Jupiter',dot:'#d7ac7e',terrain:'#b5835b',grid:'Hubble OPAL color map',landingTitle:'',def:'redspot',datum:'artistic color bands, not elevation',
     credit:'Hubble OPAL, 19 January 2015. NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), G. Orton (JPL-Caltech). Filter composite. Map-relative longitude (image centre = 0), not calibrated System III. Planetographic latitude; spherical selection distances are approximate. No imagery beyond ±79.9°.',
     marks:[{id:'redspot',name:'Great Red Spot (2015)',note:'Approximate location in the bundled image',lat:-22.4,lon:54,size:35000,ex:1},{id:'belts',name:'Equatorial cloud bands',note:'Color bands in the 2015 image',lat:0,lon:0,size:60000,ex:1}]},
+  ...Object.fromEntries(['saturn','uranus','neptune'].map(key=>{
+    const m=TPGiants.maps[key];return [key,{name:m.name,dot:m.dot,terrain:m.dot,grid:m.label,landingTitle:'',def:'clouds',datum:'artistic color bands, not elevation',credit:TPGiants.description(key),
+      marks:[{id:'clouds',name:'Cloud bands',note:'Observed cloud colors in the bundled OPAL map',lat:m.lat,lon:m.lon,size:m.size,ex:1}]}];
+  })),
   earth: { name: 'Earth', dot: '#4d9fce', terrain: '#8ba775', grid: 'NOAA ETOPO 2022', landingTitle: '', def: 'himalaya',
     datum: 'relative to the EGM2008 geoid (approximately mean sea level)',
     credit: 'NOAA NCEI (2022), ETOPO 2022 Global Relief Model, doi:10.25921/fd45-gt74. WGS84 coordinates; EGM2008 metre heights. Ice surface and ocean-floor relief, including negative depths. Global composite with varying measured/interpolated detail. Globe imagery: NASA Blue Marble Next Generation, August 2004; terrain retains ocean-floor relief. Regional geometry uses a mean-radius spherical approximation. Optional surface data produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
@@ -643,7 +648,7 @@ async function ensureFont(id) {
 
 // ---------------- parameters ----------------
 function params(step) {
-  const product = state.product, border = state.border, colored = state.world === 'jupiter';
+  const product = state.product, border = state.border, colored = !!TPGiants.maps[state.world];
   return {
     panelLayer:+$('jp-layer').value,panelBand:+$('jp-band').value,panelBacking:+$('jp-backing').value,
     colorPanel:colored, surfaceColors:surfaceColorEnabled(),
@@ -672,7 +677,7 @@ const query = (step, fastPreview = false) => ({
   samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
   ...(surfaceColorEnabled()?{surfaceColors:true,surfaceCount:+$('surface-count').value,surfaceGrid:+$('surface-grid').value,surfacePalette:surfacePalette}:{}),
-  ...(state.world==='jupiter'?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette}:{}),
+  ...(!!TPGiants.maps[state.world]?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette}:{}),
   featureMm: +$('min-feature').value
 });
 
@@ -687,7 +692,7 @@ async function refreshPlan() {
   try {
     const r = await call({ type: 'plan', q: query(state.detail) });
     if (seq !== planSequence) return;
-    if(state.world==='jupiter') { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent='Source image: 3600 × 1598. '+(r.plan.N>=384?'High detail: longer builds and larger files. ':'')+'Small islands may need coarser sampling for your nozzle.'; return; }
+    if(!!TPGiants.maps[state.world]) { $('grid-plan').textContent=`Color sampling: ${r.plan.N} × ${r.plan.N} cells · ${r.plan.stepMm.toFixed(2)} mm per cell`; $('grid-plan-note').textContent=`Source image: ${TPGiants.maps[state.world].width} × ${TPGiants.maps[state.world].height}. `+(r.plan.N>=384?'High detail: longer builds and larger files. ':'')+'Small islands may need coarser sampling for your nozzle.'; return; }
     const p = r.plan, samples = (p.N * p.N).toLocaleString('en-US');
     $('grid-plan').textContent = 'Export: ' + p.N.toLocaleString('en-US') +
       ' × ' + p.N.toLocaleString('en-US') + ' (' + samples + ' heights) · ' +
@@ -712,7 +717,7 @@ async function build() {
   if (!ready) return;
   if (building) { again = true; return; }
   building = true; again = false;
-  busy(state.world==='jupiter'?'Sampling cloud colors…':'Loading elevation…');
+  busy(!!TPGiants.maps[state.world]?'Sampling cloud colors…':'Loading elevation…');
   try {
     if (state.border === 'lettered') await ensureFont(state.font);
     const step = $('preview-high').checked ? state.detail : PREVIEW_STEP;
@@ -721,7 +726,7 @@ async function build() {
     const msg = { type: 'build', q: query(step, !$('preview-high').checked), p, font: state.border === 'lettered' ? state.font : null, spread, spreadGap: clamp(+$('spread-gap').value, 1, 15, 3) };
     const pr = call(msg); buildId = reqId;
     const r = await pr;
-    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(state.world==='jupiter')renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); if(surfaceColorEnabled())renderSurfacePalette(r.parts.find(p=>p.palette)?.palette); }
+    if (!again) { lastStats = r.stats; lastSource = r.source; bench.setParts(r.parts, spread); showStats(p, r); if(!!TPGiants.maps[state.world])renderJupiterPalette(r.parts.find(p=>p.palette)?.palette); if(surfaceColorEnabled())renderSurfacePalette(r.parts.find(p=>p.palette)?.palette); }
   } catch (e) { console.error(e); toast('Could not build this region: ' + e.message, 'danger'); }
   finally { building = false; busy(null); if (again) build(); }
 }
@@ -750,7 +755,7 @@ function showStats(p, r) {
     (p.hexLayout === 'square' ? p.hexAcross + ' × ' + p.hexAcross + ' whole hexes'
       : p.hexRings + ' ring(s) · ' + p.pieces + ' nominal hexes') +
     ' · rendered ' + n + ' printable pieces.';
-  if(state.world==='jupiter') { $('st-low').textContent='Color 1';$('st-high').textContent='Color '+$('jp-count').value;$('st-relief').textContent=s.reliefMm.toFixed(2)+' mm color steps'; }
+  if(!!TPGiants.maps[state.world]) { $('st-low').textContent='Color 1';$('st-high').textContent='Color '+$('jp-count').value;$('st-relief').textContent=s.reliefMm.toFixed(2)+' mm color steps'; }
   const rel = s.reliefMm;
   $('exag-hint').textContent = `${p.exag}× · 1× is true scale. ` + (rel < 2 ? 'Relief is shallow; try more exaggeration.' : rel > 25 ? 'Tall; check the slicer for steep walls.' : 'Reads well at this width.');
   // Pluto: warn when the region strays into the unmapped half
@@ -939,8 +944,8 @@ function makeGlobe() {
           ? 'Here: ~'+Math.round(v/255*100)+'% stereo samples in nearby 0.5° cell; remainder uses bundled Venus DEM.'
           : 'Here: no measured stereo samples; bundled Venus DEM is used.';
       }
-    } else if(state.world==='jupiter') {
-      $('coverage-at-point').textContent='2015 imagery · no data beyond ±79.9°. Longitude is image-relative, not System III. Heights are color bands.';
+    } else if(!!TPGiants.maps[state.world]) {
+      $('coverage-at-point').textContent=TPGiants.description(state.world);
     } else if(state.world==='earth') {
       $('coverage-at-point').textContent='Earth: NOAA global relief plus saved Copernicus surface regions where available. Boxes show installed cells, not survey confidence. Grid spacing is not uniform survey accuracy.';
     } else if(state.world==='pluto') {
@@ -995,9 +1000,9 @@ function makeGlobe() {
         coverKey('#7a818a','Bundled Venus DEM (global)');
         coverKey('transparent','Stereo-derived terrain is available as an optional download; no map mask installed');
       }
-    } else if(world==='jupiter') {
-      coverKey('#394049','Unmapped poles · imagery ends at ±79.9°');
-      coverKey('transparent','2015 Hubble color map · not elevation');
+    } else if(!!TPGiants.maps[world]) {
+      coverKey('#394049','Printable latitude: '+TPGiants.coverage(world)+' · gray = unavailable');
+      coverKey('transparent',TPGiants.maps[world].label+' color map · not elevation');
     } else if(world==='pluto') {
       coverKey('rgba(84,192,207,.50)','New Horizons mapped surface (bundled mask)');
       coverKey('#7a818a','Unmapped / filled area');
@@ -1048,11 +1053,12 @@ function makeGlobe() {
   function theme() { scene.background = new THREE.Color(css('--tp-stage') || '#0d1014'); stars.material.color.set(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 0x8a919b : 0x9a958c); refresh(); }
   function setWorld(w) {
     // An 8K RGB map can occupy over 100 MB on the GPU; retain one surface map.
-    for(const key of Object.keys(tex))if(key!==w&&TPSurface.maps[key]){tex[key].dispose();delete tex[key];}
-    if(w==='jupiter'&&!tex[w]) {
-      const cv=document.createElement('canvas');cv.width=Math.min(3600,renderer.capabilities.maxTextureSize);cv.height=cv.width/2;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,cv.width,cv.height);
+    for(const key of Object.keys(tex))if(key!==w&&(TPSurface.maps[key]||TPGiants.maps[key])){tex[key].dispose();delete tex[key];}
+    if(!!TPGiants.maps[w]&&!tex[w]) {
+      const imagery=TPGiants.maps[w];
+      const cv=document.createElement('canvas');cv.width=Math.min(imagery.width,renderer.capabilities.maxTextureSize);cv.height=cv.width/2;const ctx=cv.getContext('2d');ctx.fillStyle='#394049';ctx.fillRect(0,0,cv.width,cv.height);
       tex[w]=new THREE.CanvasTexture(cv);tex[w].encoding=THREE.sRGBEncoding;
-      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-79.9)/180*cv.height,cv.width,159.8/180*cv.height);tex[w].needsUpdate=true;render();};im.src='data/jupiter/opal-2015-3600.jpg';
+      const im=new Image();im.onload=()=>{ctx.drawImage(im,0,(90-imagery.north)/180*cv.height,cv.width,(imagery.north-imagery.south)/180*cv.height);if(tex[w]?.image===cv){tex[w].needsUpdate=true;render();}};im.src=imagery.path;
     }
     if (!tex[w]) { $('gbusy').hidden = false; tex[w] = loader.load(TPSurface.maps[w]?.path||`data/${w}/globe.jpg`, () => { $('gbusy').hidden = true; render(); }); tex[w].encoding = THREE.sRGBEncoding; tex[w].anisotropy = 4; }
     mat.map = tex[w]; mat.needsUpdate = true;
@@ -1131,7 +1137,7 @@ function selectMark(L, fromGlobe) {
   if (fromGlobe) showTab('model');
 }
 function syncInputs() { $('lat').value = +state.lat.toFixed(4); $('lon').value = +state.lon.toFixed(4); $('size').value = Math.round(state.size); }
-function updateCoord() { $('coord').innerHTML = `<span><b>${WORLDS[state.world].name}</b></span><span>${fmtLat(state.lat)} ${fmtLon(state.lon)}${state.world==='jupiter'?' (map-relative)':''}</span><span>${Math.round(state.size)} km wide</span>`; }
+function updateCoord() { $('coord').innerHTML = `<span><b>${WORLDS[state.world].name}</b></span><span>${fmtLat(state.lat)} ${fmtLon(state.lon)}${!!TPGiants.maps[state.world]?' (map-relative)':''}</span><span>${Math.round(state.size)} km wide</span>`; }
 
 function syncSurfaceColors(){
   const imagery=TPSurface.maps[state.world];
@@ -1139,7 +1145,7 @@ function syncSurfaceColors(){
   $('surface-source-text').textContent=TPSurface.description(state.world);
   $('surface-source-link').href=imagery?.source||'#';
   $('surface-color-controls').hidden=!surfaceColorEnabled();
-  $('c-terrain').disabled=state.world==='jupiter'||surfaceColorEnabled();
+  $('c-terrain').disabled=!!TPGiants.maps[state.world]||surfaceColorEnabled();
 }
 function renderSurfacePalette(palette){
   if(!palette)return;
@@ -1148,17 +1154,18 @@ function renderSurfacePalette(palette){
 $('surface-color').onchange=()=>{syncSurfaceColors();schedule();};
 for(const id of ['surface-count','surface-grid'])$(id).onchange=()=>{surfacePalette=null;$('surface-palette').replaceChildren();schedule();};
 function syncJupiter() {
-  const yes=state.world==='jupiter';$('jupiter-options').hidden=!yes;
+  const yes=!!TPGiants.maps[state.world];$('jupiter-options').hidden=!yes;
+  if(yes){$('giant-name').textContent=TPGiants.maps[state.world].name;$('giant-panel-link').href='jupiter.html?world='+state.world;}
   $('exag').disabled=$('base').disabled=$('c-terrain').disabled=yes;
   $('exag').parentElement.hidden=yes;
   $('separate').disabled=yes;
-  $('size').max=yes?120000:9000;
+  $('size').max=yes?TPGiants.maps[state.world].maxSize:9000;
   if(yes)$('separate').checked=true;
   syncSurfaceColors();
 }
 function renderJupiterPalette(palette) {
   if(!palette)return;
-  $('jp-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label','Jupiter filament '+(k+1));input.onchange=()=>{jupiterPalette=Array.from($('jp-palette').children,x=>x.value);schedule();};return input;}));
+  $('jp-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label',WORLDS[state.world].name+' filament '+(k+1));input.onchange=()=>{jupiterPalette=Array.from($('jp-palette').children,x=>x.value);schedule();};return input;}));
 }
 for(const id of ['jp-count','jp-grid','jp-layer','jp-band','jp-backing'])$(id).onchange=()=>{jupiterPalette=null;schedule();};
 
@@ -1322,7 +1329,7 @@ $('exag').addEventListener('input', () => { $('o-exag').textContent = exFromSlid
 $('sun').addEventListener('input', () => { $('o-sun').textContent = $('sun').value + '°'; bench.setSun(+$('sun').value); });
 $('mark-filter').addEventListener('input', renderMarks);
 for (const id of ['lat', 'lon', 'size']) $(id).addEventListener('change', () => {
-  state.lat = clamp(+$('lat').value, -90, 90, state.lat); state.lon = clamp(+$('lon').value, -180, 180, state.lon); state.size = clamp(+$('size').value, 10, state.world==='jupiter'?120000:9000, state.size);
+  state.lat = clamp(+$('lat').value, -90, 90, state.lat); state.lon = clamp(+$('lon').value, -180, 180, state.lon); state.size = clamp(+$('size').value, 10, TPGiants.maps[state.world]?.maxSize||9000, state.size);
   state.mark = null; syncInputs(); renderMarks(); updateCoord(); if (globe) globe.refresh(); schedule(true);
 });
 for (const k of ['terrain', 'frame', 'text']) $('c-' + k).addEventListener('input', e => { state.colors[k] = e.target.value; bench.recolor(); });
@@ -1396,7 +1403,7 @@ $('export').onclick = async () => {
     if (p.widthMm > 1000 && !confirm(
       'Export a ' + p.widthMm.toLocaleString('en-US') + ' mm-wide model? Hex pieces and high-detail meshes may use substantial RAM and produce very large print files. Continue?')) return;
     const slug = ((L ? L.name : WORLDS[state.world].name + ' ' + fmtLat(state.lat) + ' ' + fmtLon(state.lon)) + ' ' + p.product + ' ' + p.shape).toLowerCase().replace(/°/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    btn.textContent = state.world==='jupiter'?'Sampling cloud colors…':'Loading elevation…';
+    btn.textContent = !!TPGiants.maps[state.world]?'Sampling cloud colors…':'Loading elevation…';
     const pr = call({ type: 'export', q: query(state.detail), p, font: state.border === 'lettered' ? state.font : null, readme: readmeTemplate(p, slug),
       x: { slug, colors: state.colors, spread: state.product === 'puzzle', spreadGap: clamp(+$('spread-gap').value, 1, 15, 3), perPiece: state.product === 'puzzle' } });
     exportId = reqId;
@@ -1554,7 +1561,7 @@ function initTerrainDataManager() {
   busy('Loading…');
   try {
     meta = await fetch('data/meta.json?v=' + BUILD).then(r => r.json());
-    meta.jupiter={radiusKm:71492};
+    for(const [key,m] of Object.entries(TPGiants.maps))meta[key]={radiusKm:m.radiusKm};
     if (window.terrainPacks) {
       try {
         const status = await window.terrainPacks.status();
