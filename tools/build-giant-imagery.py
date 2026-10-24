@@ -14,10 +14,10 @@ SOURCES = [
      (1800, 900), [(-65, -8), (5, 75)], False),
     ('uranus', '2023', 'https://archive.stsci.edu/hlsps/opal/cycle31/uranus/',
      'hlsp_opal_hst_wfc3-uvis_uranus-2023', 'f467m-f547m-f657n',
-     (721, 361), [(-10, 90)], False),
+     (721, 361), [(-4, 90)], False),
     ('neptune', '2025', 'https://archive.stsci.edu/missions/hlsp/opal/cycle31/neptune/',
      'hlsp_opal_hst_wfc3-uvis_neptune-2025', 'f467m-f547m-f657n',
-     (721, 361), [(-90, 35)], True),
+     (721, 361), [(-90, 30)], True),
 ]
 
 if __name__ == '__main__':

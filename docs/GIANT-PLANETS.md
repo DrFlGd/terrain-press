@@ -12,10 +12,10 @@ All maps are available offline. The added maps use Hubble OPAL Cycle 31 rotation
 | --- | --- | --- | --- |
 | Jupiter | 2015-01-19 | 3600 × 1598 | −79.9° to +79.9° |
 | Saturn | 2024-08-22 | 1800 × 900 | −65° to −8°, +5° to +75° |
-| Uranus | 2023-09-17 | 721 × 361 | −10° to +90° |
-| Neptune | 2025-06-28 | 721 × 361 | −90° to +35° |
+| Uranus | 2023-09-17 | 721 × 361 | −4° to +90° |
+| Neptune | 2025-06-28 | 721 × 361 | −90° to +30° |
 
-Conservative latitude bands exclude missing polar data, limb artifacts and Saturn's ring-obscured strip. Outside those bands, the globe is gray and generation rejects the selection. No gaps are filled or interpreted as dark clouds. The standalone full-map panel uses a continuous usable strip: Saturn +5° to +75°, Uranus −10° to +90°, Neptune −90° to +35°. “Full-map” means the complete longitude span of that strip.
+Conservative latitude bands exclude missing polar data, limb artifacts and Saturn's ring-obscured strip. Uranus's southern limit sits at −4° because the rows below carry rainbow limb and seam fringes; Neptune's northern limit sits at +30° because the mosaic's three frame seams brighten the top of the map, and faint seam brightening can remain between about +15° and +30°. Outside those bands, the globe is gray and generation rejects the selection. No gaps are filled or interpreted as dark clouds. The standalone full-map panel uses a continuous usable strip: Saturn +5° to +75°, Uranus −4° to +90°, Neptune −90° to +30°. “Full-map” means the complete longitude span of that strip.
 
 The published OPAL maps have different longitude conventions. Terrain Press deliberately retains image-relative longitude for all four worlds (image center = 0; left edge = −180; increasing to the right). These coordinates are not calibrated System III or official east/west longitudes. Latitudes are planetographic; selection distances use an equatorial-radius sphere and are approximate. The source READMEs preserve original conventions and observation details. Transient clouds, mosaic seams, moon transits and processing artifacts can remain in observed areas.
 
