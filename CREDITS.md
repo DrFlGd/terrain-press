@@ -67,3 +67,7 @@ The optional Moon surface colors and lunar globe use NASA Scientific Visualizati
 Earth surface painting uses NASA Earth Observatory Blue Marble Next Generation (August 2004), Reto Stöckli / NASA GSFC / MODIS. Mars uses the NASA/JPL/USGS Viking MDIM 2.1 mosaic colorized by NASA Ames. Mercury uses NASA/JHU APL/Carnegie Science/ASU MESSENGER MDIS enhanced colors (Applied Coherent Technology; USGS). Venus uses the NASA/JPL/MIT/PDS Geosciences Node / USGS Magellan synthetic-color radar mosaic. Mercury and Venus colors are not natural-color photographs.
 
 See [surface imagery sources, mirror credits and preparation](docs/SURFACE-COLORS.md) and `tools/surface/imagery.json` for exact provenance, resolutions and file hashes.
+
+## Saturn, Uranus and Neptune cloud imagery
+
+Hubble OPAL Cycle 31 color composites: NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley), G. Orton (JPL-Caltech). Lossless PNG derivatives with conservative coverage masks. See [sources, attribution and processing](docs/GIANT-PLANETS.md). Source READMEs are bundled alongside each map. Imagery is separate from the software license.

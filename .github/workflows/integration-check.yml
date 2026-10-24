@@ -79,3 +79,13 @@ jobs:
           name: rocky-surface-color-smoke
           path: rocky-smoke-output/
           if-no-files-found: ignore
+
+      - name: Exercise Saturn, Uranus, Neptune and 1024 color detail
+        run: node tools/giants-smoke.cjs
+      - name: Keep giant-planet screenshots and exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: giant-planets-smoke
+          path: giants-smoke-output/
+          if-no-files-found: ignore

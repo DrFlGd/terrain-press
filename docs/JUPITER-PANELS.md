@@ -8,7 +8,7 @@ Choose panel width, grid detail, constant printer layer height, backing layers a
 
 Quantization uses deterministic RGB clustering without dithering. Diagonal-only contacts are lowered to avoid nonmanifold edges. Preview uses that same cleaned grid. Grid resolution controls detail, not guaranteed printable feature size: narrow features, filament opacity and color mixing still need slicer inspection and a small physical print. No physical print or slicer compatibility claim is made yet.
 
-The standalone full-map page excludes crop selection and colored 3MF; these are available through the standard workflow below. Custom source images, palette reordering and measured-terrain surface assignments remain future work. Saturn is the next image-panel candidate. Surface assignments for Moon and rocky-planet terrain remain the accepted next color-terrain approach.
+The standalone full-map page excludes crop selection and colored 3MF; these are available through the standard workflow below. Custom source images, palette reordering and measured-terrain surface assignments remain future work. Saturn, Uranus and Neptune now share this workflow; see [giant planets](GIANT-PLANETS.md). Surface assignments for Moon and rocky-planet terrain remain the accepted next color-terrain approach.
 
 ## Source
 
@@ -35,7 +35,7 @@ The selected image is quantized once into 2–8 editable colors. Every piece sha
 
 The globe and crop use the same spherical selection, with image-relative east-positive longitude (image centre = 0, left edge = -180), **not calibrated System III longitude**. Source latitude is planetographic; spherical distances are approximate. Imagery ends at ±79.9° latitude: the globe shades missing poles and the generator rejects crops crossing them. Source: Simon, Wong & Orton (2015), Figure 1, https://esahubble.org/static/archives/releases/science_papers/heic1522a.pdf .
 
-Color detail is 48, 80, 128 (default), 192, 256, 384 or 512 cells across, identical in preview/export. DEM sampling and exaggeration do not affect Jupiter. Small islands can require coarser detail for the chosen nozzle. Region/crop selection and surface-colored 3MF are now implemented for these artistic panels; measured-terrain surface assignments remain future work.
+Color detail is 48, 80, 128 (default), 192, 256, 384, 512 or 1024 cells across, identical in preview/export. DEM sampling and exaggeration do not affect Jupiter. Small islands can require coarser detail for the chosen nozzle. Region/crop selection and surface-colored 3MF are now implemented for these artistic panels; measured-terrain surface assignments remain future work.
 
 Regression tests cover watertight clipped shapes and puzzles, preserved color metadata after spreading, map orientation/seam wrapping/polar rejection, and worker export assets and build-plate-relative color schedules. Chromium CI exercises globe selection, 2/8 colors, download and switching back to Moon.
 

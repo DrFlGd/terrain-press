@@ -194,3 +194,7 @@ Official source: [NASA PDS4 Magellan stereo archive](https://pds-geosciences.wus
 - **Venus Magellan stereo:** NASA uses namespaced PDS4 tags such as `<cart:latitude_type>`; the old validator only recognized unprefixed cartographic tags and rejected a valid label before the ~2.97 GB image transfer. The parser now accepts XML namespace prefixes **while still validating** the coordinate system, 600 m native grid, source height offset of 6,040,000 m, and 6,051,800 m radius. The official XML tag spelling was confirmed in a live NASA archive check. Full data transfer and exported Venus mesh remain beta validation tasks.
 
 To recover, use **v1.9.2**, keep the existing configured Terrain Data Manager directory, and click Download for the failed pack again; do **not** delete `.incomplete` directories.
+
+### Giant planets and 1024 color detail (v1.18.0)
+
+Saturn, Uranus and Neptune join Jupiter in globe selection and the standard ornament/puzzle export workflow. Giant panels and rocky-world painting now support 1024 color cells across. Bundled OPAL imagery has explicit coverage limits; rings are not included. See [giant-planet printing and sources](docs/GIANT-PLANETS.md).
