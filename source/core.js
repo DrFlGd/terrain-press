@@ -246,7 +246,12 @@
     if (shape === 'circle') {
       const n = 240; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; pts.push([Math.cos(a) * W / 2, Math.sin(a) * W / 2]); }
     } else if (shape === 'hexagon') {
-      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; pts.push([Math.cos(a) * W / 2, Math.sin(a) * W / 2]); }
+      // Exact mirror-symmetric vertices. Math.sin(PI/3) and Math.sin(2*PI/3)
+      // differ by one ulp, which made the flat edges very slightly sloped; the
+      // densified edge points then carried 1-ulp y noise and poly2tri rejected
+      // the ring with "EdgeEvent: Collinear not supported!".
+      const h = W / 2 * Math.sqrt(3) / 2;
+      pts.push([W / 2, 0], [W / 4, h], [-W / 4, h], [-W / 2, 0], [-W / 4, -h], [W / 4, -h]);
     } else {
       pts.push([-W / 2, -W / 2], [W / 2, -W / 2], [W / 2, W / 2], [-W / 2, W / 2]);
     }
@@ -257,8 +262,11 @@
     for (let i = 0; i < pts.length; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
       out.push(a);
-      const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / maxLen);
-      for (let k = 1; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]);
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const L = Math.hypot(dx, dy), n = Math.ceil(L / maxLen);
+      // Axis-aligned edges keep their shared coordinate bit-exact so every
+      // inserted point is truly collinear with the edge.
+      for (let k = 1; k < n; k++) out.push([dx ? a[0] + dx * k / n : a[0], dy ? a[1] + dy * k / n : a[1]]);
     }
     return out;
   }

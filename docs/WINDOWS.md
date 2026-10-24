@@ -161,6 +161,10 @@ The effective horizontal terrain resolution is ~**1–2 km**, not 600 m; NASA's 
 
 **Verification status:** Exact archived Moon filenames and original Venus tag structures have been checked against NASA's public files and have regression tests. A full multi-GB Windows transfer and source-elevation validation still require user retesting.
 
+## Hexagon ornament build fix (v1.19.1)
+
+A hexagon ornament could fail with **Could not build this region: poly2tri EdgeEvent: Collinear not supported!** (first reported for a 405 mm Pluto hexagon; it depended only on the width and detail level, not the world or location). The hexagon outline was computed with `Math.cos`/`Math.sin`, which left its two flat edges one floating-point ulp off horizontal, so the densified edge points were not exactly collinear and the triangulator rejected the ring. The outline now uses exact mirror-symmetric vertices and axis-aligned edges keep their shared coordinate bit-exact when densified. `desktop/hexagon-outline.test.js` rebuilds the failing cases (100 mm/144 grid and 405 mm/580 grid, with and without a frame) and checks the mesh is watertight. Circle, square and puzzle builds were unaffected.
+
 ## Tabbed settings, color contrast and top-bar data manager (v1.19.0)
 
 The settings rail is split into **Place**, **Model**, **Colors**, **Frame** and **Print** tabs; the download button stays below every tab, and the Frame tab is hidden for Hex Grid boards. **Terrain data** (the Terrain Data Manager) opens from the top bar, left of the theme buttons, in the desktop app only. The Colors tab holds the sampled-palette controls for gas giants and painted rocky worlds, the part colors, and a **Color contrast** slider (1.0×–3.0×) that pushes the sampled filament colors apart from their average without changing where each color falls. Edited swatches still take precedence and are reset when the slider moves. Exports record `colorContrast` in the settings JSON.

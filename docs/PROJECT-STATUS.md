@@ -1,6 +1,9 @@
 # Terrain Press — Project status and next milestones
 
-Current addition (v1.19.0): settings are grouped into Place, Model, Colors, Frame and Print tabs, the Terrain data manager opens from the top bar, and a Color contrast slider spreads sampled palettes apart. Earlier dated milestones below are historical.
+Current addition (v1.19.1): hexagon ornaments build again at every width and detail level; the outline previously had one-ulp sloped flat edges that poly2tri rejected as collinear. Earlier dated milestones below are historical.
+
+
+**v1.19 implementation:** settings are grouped into Place, Model, Colors, Frame and Print tabs, the Terrain data manager opens from the top bar, and a Color contrast slider spreads sampled palettes apart.
 
 
 **v1.18 implementation:** Saturn, Uranus and Neptune share Jupiter’s cloud-print workflow, and color detail supports 1024 cells across. See [giant planets](GIANT-PLANETS.md) for source coverage and printing limits.
