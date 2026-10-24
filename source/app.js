@@ -179,8 +179,8 @@ const query = (step, fastPreview = false) => ({
   // Fast preview stays inexpensive regardless of configured export ceiling.
   samplingLimit: fastPreview ? 721 : $('resolution-auto').checked
     ? 'auto' : +$('sampling-limit').value,
-  ...(surfaceColorEnabled()?{surfaceColors:true,surfaceCount:+$('surface-count').value,surfaceGrid:+$('surface-grid').value,surfacePalette:surfacePalette}:{}),
-  ...(!!TPGiants.maps[state.world]?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette}:{}),
+  ...(surfaceColorEnabled()?{surfaceColors:true,surfaceCount:+$('surface-count').value,surfaceGrid:+$('surface-grid').value,surfacePalette:surfacePalette,colorContrast:+$('color-contrast').value}:{}),
+  ...(!!TPGiants.maps[state.world]?{panelCount:+$('jp-count').value,panelGrid:+$('jp-grid').value,panelPalette:jupiterPalette,colorContrast:+$('color-contrast').value}:{}),
   featureMm: +$('min-feature').value
 });
 
@@ -603,7 +603,7 @@ function makeGlobe() {
     state.lat = +(Math.asin(v.y) * 180 / Math.PI).toFixed(4); state.lon = +(Math.atan2(-v.z, v.x) * 180 / Math.PI).toFixed(4); state.mark = null;
     $('t-top').value = WORLDS[state.world].name.toUpperCase(); $('t-bottom').value = `${fmtLat(state.lat)}  ${fmtLon(state.lon)}`;
     syncInputs(); renderMarks(); refresh(); updateCoord(); schedule(true);
-    $('pickhint').textContent = 'Region set · open Model to see it, or tap again';
+    $('pickhint').textContent = 'Region set · open Preview to see it, or tap again';
   });
   TPTheme.listeners.push(() => setTimeout(theme, 0)); theme();
   return { setWorld, refresh, lookAt, resize };
@@ -649,6 +649,7 @@ function syncSurfaceColors(){
   $('surface-source-link').href=imagery?.source||'#';
   $('surface-color-controls').hidden=!surfaceColorEnabled();
   $('c-terrain').disabled=!!TPGiants.maps[state.world]||surfaceColorEnabled();
+  $('contrast-wrap').hidden=!(TPGiants.maps[state.world]||surfaceColorEnabled());
 }
 function renderSurfacePalette(palette){
   if(!palette)return;
@@ -671,6 +672,9 @@ function renderJupiterPalette(palette) {
   $('jp-palette').replaceChildren(...palette.map((hex,k)=>{const input=document.createElement('input');input.type='color';input.value=hex;input.setAttribute('aria-label',WORLDS[state.world].name+' filament '+(k+1));input.onchange=()=>{jupiterPalette=Array.from($('jp-palette').children,x=>x.value);schedule();};return input;}));
 }
 for(const id of ['jp-count','jp-grid','jp-layer','jp-band','jp-backing'])$(id).onchange=()=>{jupiterPalette=null;schedule();};
+// One value spreads every sampled palette apart. Edited swatches are the final say, so moving it starts them over.
+function syncContrast(){$('o-contrast').textContent=(1+$('color-contrast').value/50).toFixed(1)+'×';}
+$('color-contrast').addEventListener('input',()=>{syncContrast();jupiterPalette=null;surfacePalette=null;schedule();});
 
 // ---------------- worlds ----------------
 function renderWorlds() {
@@ -711,6 +715,21 @@ function showTab(t) {
   if (g) { if (!globe) { globe = makeGlobe(); globe.setWorld(state.world); } globe.resize(); globe.lookAt(state.lat, state.lon); } else bench.resize();
 }
 $('tab-model').onclick = () => showTab('model'); $('tab-globe').onclick = () => showTab('globe');
+// settings tabs: one pane at a time; the download button stays below every pane
+const PANES = ['place', 'model', 'colors', 'frame', 'print'];
+function showPane(t) {
+  if (!PANES.includes(t)) t = 'place';
+  if ($('side-' + t).hidden) t = 'model';
+  for (const k of PANES) { const on = k === t, tab = $('side-' + k); tab.classList.toggle('active', on); tab.setAttribute('aria-selected', String(on)); tab.tabIndex = on ? 0 : -1; $('pane-' + k).hidden = !on; }
+  try { localStorage.setItem('tp-pane', t); } catch (e) {}
+}
+for (const k of PANES) $('side-' + k).onclick = () => showPane(k);
+$('side-place').parentElement.addEventListener('keydown', e => {
+  const open = PANES.filter(k => !$('side-' + k).hidden), at = open.indexOf((document.activeElement.id || '').replace('side-', ''));
+  if (at < 0) return;
+  const next = e.key === 'ArrowRight' ? open[(at + 1) % open.length] : e.key === 'ArrowLeft' ? open[(at - 1 + open.length) % open.length] : e.key === 'Home' ? open[0] : e.key === 'End' ? open[open.length - 1] : null;
+  if (!next) return; e.preventDefault(); showPane(next); $('side-' + next).focus();
+});
 function syncMode() {
   syncJupiter();
   state.product = radio('product'); state.shape = radio('shape');
@@ -735,7 +754,7 @@ function syncMode() {
       ' · ' + ringCounts[n - 1] + ' pieces';
   }
   $('hex-square-wrap').hidden = !hex || $('hex-layout').value !== 'square';
-  $('frame-options-section').hidden = hex;
+  $('side-frame').hidden = hex; if (hex && $('side-frame').classList.contains('active')) showPane('model');
   $('orn-opts').hidden = !orn || !framed; $('loop-wrap').hidden = !orn || !framed;
   $('fit-row').hidden = !(state.product === 'puzzle' || sep);
   $('pieces-wrap').hidden = state.product !== 'puzzle' || hex;
@@ -1060,7 +1079,8 @@ function initTerrainDataManager() {
 // ---------------- boot ----------------
 (async () => {
   $('width-num').value = $('width').value;
-  $('o-width').textContent = $('width-num').value + ' mm'; $('o-sun').textContent = $('sun').value + '°'; $('o-exag').textContent = exFromSlider(+$('exag').value) + '×';
+  $('o-width').textContent = $('width-num').value + ' mm'; $('o-sun').textContent = $('sun').value + '°'; $('o-exag').textContent = exFromSlider(+$('exag').value) + '×'; syncContrast();
+  let pane = 'place'; try { pane = localStorage.getItem('tp-pane') || pane; } catch (e) {} showPane(pane);
   busy('Loading…');
   try {
     meta = await fetch('data/meta.json?v=' + BUILD).then(r => r.json());

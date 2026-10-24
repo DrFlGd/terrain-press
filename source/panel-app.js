@@ -28,10 +28,10 @@ async function build(event){
   $('download').disabled=true;$('build').disabled=true;$('status').textContent='Building panel…';
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   try{
-    settings={width:+$('width').value,layer:+$('layer').value,bands:+$('bands').value,backing:+$('backing').value};
+    settings={width:+$('width').value,layer:+$('layer').value,bands:+$('bands').value,backing:+$('backing').value,contrast:+$('contrast').value};
     const c=document.createElement('canvas');c.width=+$('detail').value;const [south,north]=imagery.panelBand;const sy=(imagery.north-north)/(imagery.north-imagery.south)*source.height,sh=(north-south)/(imagery.north-imagery.south)*source.height;c.height=Math.round(c.width*sh/source.width);
     const ctx=c.getContext('2d');ctx.drawImage(source,0,sy,source.width,sh,0,0,c.width,c.height);
-    panel=TPPanel.quantize(ctx.getImageData(0,0,c.width,c.height).data,c.width,c.height,+$('count').value);
+    panel=TPPanel.quantize(ctx.getImageData(0,0,c.width,c.height).data,c.width,c.height,+$('count').value);panel.palette=TPPanel.contrast(panel.palette,+$('contrast').value);
     model=TPPanel.mesh(panel,settings.width,settings.layer,settings.bands,settings.backing);
     $('palette').replaceChildren(...panel.palette.map((rgb,k)=>{const input=document.createElement('input');input.type='color';input.value='#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join('');input.setAttribute('aria-label','Filament color '+(k+1));input.oninput=()=>{panel.palette[k]=input.value.slice(1).match(/../g).map(v=>parseInt(v,16));preview();};return input;}));
     if(camera){camera.position.set(0,-settings.width*.8,settings.width);controls.target.set(0,0,0);controls.update();}
@@ -40,6 +40,7 @@ async function build(event){
   }catch(e){$('status').textContent='Unable to build panel: '+e.message;}finally{$('build').disabled=false;}
 }
 $('settings').onsubmit=build;
+$('contrast').oninput=()=>{$('o-contrast').textContent=(1+$('contrast').value/50).toFixed(1)+'×';};
 $('settings').oninput=()=>{$('download').disabled=true;$('status').textContent='Settings changed — update the panel to export.';};
 $('download').onclick=async()=>{ $('download').disabled=true;try{
   const schedule=TPPanel.schedule(panel.palette,settings.layer,settings.bands,settings.backing);

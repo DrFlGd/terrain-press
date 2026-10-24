@@ -4,11 +4,11 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),
 const root=path.resolve(__dirname,'../site'),output=path.resolve(__dirname,'../rocky-smoke-output');fs.mkdirSync(output,{recursive:true});
 const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]==='/'?'/index.html':req.url.split('?')[0]));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(err,data)=>{if(err){res.writeHead(404);return res.end();}res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.json':'application/json','.jpg':'image/jpeg','.webp':'image/webp'})[path.extname(file)]||'application/octet-stream');res.end(data);});});await new Promise(r=>server.listen(8128,'127.0.0.1',r));let browser;
 try{browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(300000);const earthTiles=[];page.on('request',r=>{if(r.url().includes('/earth/color-21600/'))earthTiles.push(r.url());});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://127.0.0.1:8128');
-await page.locator('label[for="b-none"]').click();
-await page.locator('#width-num').fill('60');await page.locator('#width-num').dispatchEvent('change');
+await page.goto('http://127.0.0.1:8128');const tab=t=>page.locator('#side-'+t).click();
+await tab('frame');await page.locator('label[for="b-none"]').click();
+await tab('model');await page.locator('#width-num').fill('60');await page.locator('#width-num').dispatchEvent('change');
 for(const world of ['earth','mars','mercury','venus']){
- await page.locator('#w-'+world).click();
+ await page.locator('#w-'+world).click();await tab('colors');
  await page.locator('#surface-color').check();
  await page.selectOption('#surface-grid',world==='earth'?'1024':'128');
  await page.selectOption('#surface-count',world==='earth'?'2':'8');
@@ -44,7 +44,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  await page.screenshot({path:path.join(output,world+'-surface.png'),fullPage:true});
 }
 assert.ok(earthTiles.length>0,'painting requested native Earth tiles');
-await page.locator('#w-earth').click();
+await page.locator('#w-earth').click();await tab('place');
 const seamRequests=Promise.all(['0_1.jpg','5_1.jpg'].map(name=>page.waitForRequest(r=>r.url().endsWith('/earth/color-21600/'+name))));
 await page.locator('#lat').fill('0');await page.locator('#lat').dispatchEvent('change');
 await page.locator('#lon').fill('179.9');await page.locator('#lon').dispatchEvent('change');

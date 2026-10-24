@@ -1,6 +1,6 @@
 # Jupiter layered color panels
 
-The original full-map panel is available through the **Full-map panel** link in Jupiter controls. See the standard workflow integration below for the main world selector. This first implementation uses the entire bundled Hubble OPAL map as a rectangular panel, with 2–8 quantized colors and editable filament swatches. It works offline in the desktop app.
+The original full-map panel is available through the **Full-map panel** link in the **Colors** tab. See the standard workflow integration below for the main world selector. This first implementation uses the entire bundled Hubble OPAL map as a rectangular panel, with 2–8 quantized colors and editable filament swatches. It works offline in the desktop app.
 
 Each color is assigned a height band, sorted initially from dark to light. Higher bands have nested footprints so earlier colors remain exposed. The first color also forms the backing. These heights are artistic construction, not measured cloud or terrain elevations.
 

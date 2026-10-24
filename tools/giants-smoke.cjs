@@ -5,20 +5,27 @@ const root=path.resolve(__dirname,'../site'),output=path.resolve(__dirname,'../g
 const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]==='/'?'/index.html':req.url.split('?')[0]));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(err,data)=>{if(err){res.writeHead(404);return res.end();}res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp'})[path.extname(file)]||'application/octet-stream');res.end(data);});});await new Promise(r=>server.listen(8129,'127.0.0.1',r));let browser;
 try{browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(300000);const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(['error','warning'].includes(m.type())||m.text().startsWith('EXPORT '))console.log('Browser '+m.type()+': '+m.text());});page.on('download',d=>console.log('Download: '+d.suggestedFilename()));
 await page.addInitScript(()=>{const post=Worker.prototype.postMessage;Worker.prototype.postMessage=function(m,...rest){if(m.type==='export')console.log('EXPORT '+JSON.stringify({q:m.q,p:m.p}));return post.call(this,m,...rest);};});
-await page.goto('http://127.0.0.1:8129');
+await page.goto('http://127.0.0.1:8129');const tab=t=>page.locator('#side-'+t).click();
 for(const world of ['saturn','uranus','neptune']){
- await page.locator('#w-'+world).click();const name=world[0].toUpperCase()+world.slice(1);
+ // Contrast starts at 1.0× for every world so the 3.0× step below has a measurable effect.
+ const setContrast=v=>page.locator('#color-contrast').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));},v);
+ await setContrast('0');await page.locator('#w-'+world).click();const name=world[0].toUpperCase()+world.slice(1);
  await page.waitForFunction(name=>document.querySelector('#jp-palette input')?.getAttribute('aria-label')===name+' filament 1'&&document.getElementById('busy').hidden,name);
+ // One contrast value spreads the sampled palette; the export records it.
+ await tab('colors');assert.equal(await page.locator('#contrast-wrap').isVisible(),true);assert.equal(await page.locator('#o-contrast').textContent(),'1.0×');
+ const before=await page.locator('#jp-palette input').evaluateAll(list=>list.map(i=>i.value));
+ await setContrast('100');assert.equal(await page.locator('#o-contrast').textContent(),'3.0×');
+ await page.waitForFunction(before=>document.getElementById('busy').hidden&&JSON.stringify(Array.from(document.querySelectorAll('#jp-palette input'),i=>i.value))!==JSON.stringify(before),before);
  assert.equal(await page.locator('#exag').isEnabled(),false);
  assert.match(await page.locator('#giant-panel-link').getAttribute('href'),new RegExp('world='+world));
  await page.locator('#tab-globe').click();const box=await page.locator('#globe').boundingBox();await page.locator('#globe').click({position:{x:box.width/2,y:box.height/2}});await page.screenshot({path:path.join(output,world+'-globe.png')});await page.locator('#tab-model').click();
- await page.locator('label[for="p-puzzle"]').click();await page.locator('label[for="s-square"]').click();await page.selectOption('#jp-grid','80');
+ await tab('model');await page.locator('label[for="p-puzzle"]').click();await page.locator('label[for="s-square"]').click();await tab('colors');await page.selectOption('#jp-grid','80');
  await page.waitForFunction(()=>document.getElementById('busy').hidden);
  const dl=page.waitForEvent('download');await page.locator('#export').click();const zip=path.join(output,world+'-export.zip');await Promise.race([dl.then(d=>d.saveAs(zip)),page.waitForFunction(()=>document.body.innerText.includes('Export failed:')).then(async()=>{throw Error(await page.locator('body').innerText());})]);console.log(world+' export completed');
  require('node:child_process').execFileSync('python',['-c',`import zipfile,sys,json
 with zipfile.ZipFile(sys.argv[1]) as z:
  world=sys.argv[2];names=z.namelist();s=json.loads(z.read(world+'-settings.json'))
- assert s['query']['world']==world and s['imagery']['name'].lower()==world
+ assert s['query']['world']==world and s['imagery']['name'].lower()==world and s['query']['colorContrast']==100
  assert world.upper()+'-PRINTING.txt' in names and 'color-changes.csv' in names
  assert any(n.endswith('-print-guide.pdf') for n in names)
  assert any(n.startswith('single-pieces/') for n in names)
@@ -28,13 +35,13 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  const panel=await browser.newPage();panel.setDefaultTimeout(300000);panel.on('pageerror',e=>errors.push(e.message));await panel.goto('http://127.0.0.1:8129/jupiter.html?world='+world);await panel.waitForFunction(()=>!document.getElementById('download').disabled);assert.match(await panel.title(),new RegExp(name));await panel.close();
 }
 // Exercise the actual 1024 grid in the normal workflow, including preview packing.
-await page.locator('#w-saturn').click();await page.locator('label[for="p-ornament"]').click();await page.locator('label[for="b-none"]').click();await page.selectOption('#jp-grid','1024');
+await page.locator('#w-saturn').click();await tab('model');await page.locator('label[for="p-ornament"]').click();await tab('frame');await page.locator('label[for="b-none"]').click();await tab('colors');await page.selectOption('#jp-grid','1024');
 await page.waitForFunction(()=>document.getElementById('chip-mesh').textContent.includes('1024 × 1024')&&document.getElementById('busy').hidden);
 await page.screenshot({path:path.join(output,'saturn-1024.png')});
 // A ring-obscured selection must fail, not manufacture a black color band.
-await page.selectOption('#jp-grid','48');await page.locator('#size').fill('1000');await page.locator('#size').dispatchEvent('change');await page.locator('#lat').fill('0');await page.locator('#lat').dispatchEvent('change');
+await page.selectOption('#jp-grid','48');await tab('place');await page.locator('#size').fill('1000');await page.locator('#size').dispatchEvent('change');await page.locator('#lat').fill('0');await page.locator('#lat').dispatchEvent('change');
 await page.waitForFunction(()=>document.body.innerText.includes('unmapped polar or obscured imagery'));
-await page.locator('#w-moon').click();assert.equal(await page.locator('#exag').isEnabled(),true);
+await page.locator('#w-moon').click();assert.equal(await page.locator('#exag').isEnabled(),true);await tab('colors');assert.equal(await page.locator('#contrast-wrap').isVisible(),false);
 assert.deepEqual(errors,[]);console.log('Giant planets and 1024 browser smoke passed');
 }catch(e){if(browser){const p=browser.contexts()[0]?.pages()[0];if(p){await p.screenshot({path:path.join(output,'failure.png')}).catch(()=>{});console.error(await p.locator('body').innerText().catch(()=>''));}}throw e;}finally{if(browser)await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

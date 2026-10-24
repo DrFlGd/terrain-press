@@ -30,6 +30,13 @@ function quantize(rgba, width, height, count, cleanDiagonals = true) {
   }}
   return {labels,palette:palette.map(c=>c.map(Math.round)),width,height,removed};
 }
+// Spread a palette apart from its mean color: 0 leaves it alone, 100 triples every difference.
+// Luminance order is preserved, so band heights keep their meaning; channels clamp at 0 and 255.
+function contrast(palette, amount) {
+  const f=1+Math.max(0,Math.min(100,+amount||0))/50;
+  const mean=[0,1,2].map(i=>palette.reduce((s,c)=>s+c[i],0)/palette.length);
+  return palette.map(c=>c.map((v,i)=>Math.round(Math.max(0,Math.min(255,mean[i]+(v-mean[i])*f)))));
+}
 function mesh(panel, widthMM, layerHeight, bandLayers, backingLayers) {
   if(!Number.isFinite(widthMM)||widthMM<40||widthMM>250||!Number.isFinite(layerHeight)||layerHeight<.1||layerHeight>.4||!Number.isInteger(bandLayers)||bandLayers<1||bandLayers>10||!Number.isInteger(backingLayers)||backingLayers<2||backingLayers>30) throw Error('Invalid panel dimensions');
   const {labels,width:w,height:h,palette}=panel, step=widthMM/w;
@@ -79,5 +86,5 @@ function crop(rgba,w,h,q,n,imagery={radiusKm:71492,north:79.9,south:-79.9}) {
   }
   return out;
 }
-root.TPPanel={quantize,mesh,schedule,crop};
+root.TPPanel={quantize,mesh,schedule,crop,contrast};
 })(typeof self!=='undefined'?self:globalThis);

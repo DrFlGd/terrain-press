@@ -1,6 +1,6 @@
 # Moon terrain surface colors
 
-Enable **Surface colors from lunar imagery** in the Moon controls. Choose 2–8 filament colors and a 128, 256 (default), or 512-cell image sampling grid. Edit the generated swatches to match your filaments. Changing count or image sampling resets swatches; changing location preserves manually chosen swatches until those settings reset them. Turn the switch off for the existing single-color workflow.
+Enable **Surface colors from lunar imagery** in the **Colors** tab. Choose 2–8 filament colors and a 128, 256 (default), or 512-cell image sampling grid. Edit the generated swatches to match your filaments. Changing count, image sampling or color contrast resets swatches; changing location preserves manually chosen swatches until those settings reset them. Turn the switch off for the existing single-color workflow.
 
 This paints the real elevation mesh. Terrain downloads, exaggeration, framing, lettering, ornament shapes, square/radial/hex puzzles and print layouts retain their existing behavior. No height bands, thickness changes, or layer-change schedule are introduced. Upward terrain triangles receive the image label at their centroid; sidewalls and undersides use the first color. Frames/lettering retain their separate materials. Geometry is byte-identical with painting enabled or disabled for otherwise identical inputs.
 

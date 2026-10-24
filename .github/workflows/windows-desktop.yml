@@ -43,15 +43,15 @@ jobs:
       - name: Preserve portable EXE as downloadable workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Terrain-Press-1.18.0-Portable-Windows
+          name: Terrain-Press-1.19.0-Portable-Windows
           path: dist/Terrain-Press-*-Portable.exe
           if-no-files-found: error
           retention-days: 30
       - name: Publish downloadable Windows release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v1.18.0
-          name: Terrain Press Desktop v1.18.0 — More giant planets and 1024 color detail — testing
+          tag_name: desktop-v1.19.0
+          name: Terrain Press Desktop v1.19.0 — Tabbed settings and color contrast — testing
           target_commitish: ${{ github.sha }}
           files: dist/Terrain-Press-*-Portable.exe
           fail_on_unmatched_files: true
@@ -61,10 +61,12 @@ jobs:
             Testing pre-release of the standalone portable 64-bit Windows edition of Terrain Press.
             Includes Jupiter globe selection and integrated ornament/puzzle exports. Windows UI and slicer acceptance remain pending.
 
-            Download Terrain-Press-1.18.0-Portable.exe and run it without installing Node.js or Python.
+            Download Terrain-Press-1.19.0-Portable.exe and run it without installing Node.js or Python.
 
-            - NEW: Saturn, Uranus and Neptune in the standard globe, ornament and puzzle workflow, using offline Hubble OPAL cloud maps. Rings and unavailable imagery are excluded.
-            - NEW: Color detail up to 1024 cells across for giant panels and rocky-world surface painting.
+            - NEW: Settings are grouped into Place, Model, Colors, Frame and Print tabs instead of one long rail; the Terrain data manager button sits in the top bar beside the theme buttons.
+            - NEW: A single Color contrast control spreads sampled filament colors apart for gas-giant color bands and rocky-world surface painting; edited swatches still win.
+            - Saturn, Uranus and Neptune in the standard globe, ornament and puzzle workflow, using offline Hubble OPAL cloud maps. Rings and unavailable imagery are excluded.
+            - Color detail up to 1024 cells across for giant panels and rocky-world surface painting.
             - Earth imagery at 21600 × 10800 for terrain painting (4× linear detail), with an 8K globe overview and offline tiles.
             - Earth, Mars, Mercury and Venus imagery painting with 2–8 editable colors; same colored 3MF workflow as the Moon. Mercury uses enhanced colors; Venus uses synthetic radar colors.
             - Moon terrain surface colors from offline 8192 × 4096 NASA SVS imagery, with 2–8 editable colors and colored 3MF exports.

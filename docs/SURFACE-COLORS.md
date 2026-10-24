@@ -1,6 +1,6 @@
 # Imagery-painted terrain
 
-Version 1.16 adds Earth, Mars, Mercury and Venus to the Moon's surface-painting workflow. Select a world and region on Globe, enable **Surface colors from imagery**, choose 2–8 colors and edit the swatches to match filament. Sampling options are 128, 256 and 512 cells across. The globe uses the same source imagery as the paint sampler; Earth displays an 8K overview while painting uses 21.6K tiles.
+Version 1.16 adds Earth, Mars, Mercury and Venus to the Moon's surface-painting workflow. Select a world and region on Globe, open the **Colors** tab, enable **Surface colors from imagery**, choose 2–8 colors and edit the swatches to match filament. Sampling options are 128, 256, 512 and 1024 cells across. The **Color contrast** slider (1.0×–3.0×) pushes the sampled colors apart from their average without changing which cells get which color; moving it resets edited swatches, which otherwise take precedence. The globe uses the same source imagery as the paint sampler; Earth displays an 8K overview while painting uses 21.6K tiles.
 
 Painting assigns materials to the existing terrain triangles. It does not alter elevations, add stacked color layers or flatten oceans. All existing shapes, frames and puzzle layouts remain available. Terrain mesh density limits color boundaries; use export-detail preview for a closer match.
 
