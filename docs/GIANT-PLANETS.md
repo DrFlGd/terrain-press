@@ -1,6 +1,6 @@
 # Giant-planet color prints
 
-Saturn, Uranus and Neptune now join Jupiter in the main world selector. Select an area on the globe, then use the existing ornament, puzzle, hex-grid, frame, tray and lettering workflow. All pieces share a 2–8-color palette and layer-change schedule. These are artistic color-band heights, not measured atmospheric elevation. Saturn's rings are not geometry in this workflow.
+Saturn, Uranus and Neptune now join Jupiter in the main world selector. Select an area on the globe, then use the existing ornament, puzzle, hex-grid, frame, tray and lettering workflow. All pieces share a 2–8-color palette and layer-change schedule. Color count, detail, layer schedule, swatches and the **Color contrast** slider live in the **Colors** tab; contrast spreads the sampled colors apart from their average without moving the band boundaries, and edited swatches still take precedence. These are artistic color-band heights, not measured atmospheric elevation. Saturn's rings are not geometry in this workflow.
 
 Color detail now includes **1024 cells across**, for giant prints, standalone full-map panels, and rocky-world surface painting. This doubles the linear sampling limit and quadruples the maximum cell count compared with 512. Higher detail takes more memory and time and can create features smaller than a nozzle; it cannot recover detail missing from a source image. Defaults remain unchanged. Rocky painting still assigns materials to terrain triangles, whose size also limits visible color detail.
 

@@ -4,3 +4,5 @@ source/_purge.json
 .DS_Store
 *.zip
 dist/
+smoke-output/
+*-smoke-output/

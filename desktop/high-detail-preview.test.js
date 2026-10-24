@@ -67,7 +67,7 @@ test('Automatic and Advanced modes preserve the planner contract', () => {
     'resolution-auto': { checked: true },
     'sampling-limit': { value: '1441' },
     'min-feature': { value: '0.4' },
-    'surface-color': { checked: false }, 'surface-count': { value: '4' }, 'surface-grid': { value: '256' }
+    'surface-color': { checked: false }, 'surface-count': { value: '4' }, 'surface-grid': { value: '256' }, 'color-contrast': { value: '0' }
   };
   const $ = id => controls[id];
   const moonHelper = app.match(/function surfaceColorEnabled\(\)\{[^}]+\}/)[0];
@@ -80,6 +80,7 @@ test('Automatic and Advanced modes preserve the planner contract', () => {
   assert.equal(query('source').surfaceColors, true);
   assert.equal(query('source').surfaceCount, 4);
   assert.equal(query('source').surfaceGrid, 256);
+  assert.equal(query('source').colorContrast, 0, 'contrast travels with the sampled palette, not the terrain query');
   controls['surface-color'].checked = false;
   controls['min-feature'].value = '0.8';
   assert.equal(query('source').featureMm, 0.8);

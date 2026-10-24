@@ -58,6 +58,7 @@ async function colorHF(q) {
   const {plan,source}=planHeights(q),im=giantImage;
   const pixels=TPPanel.crop(im.rgba,im.w,im.h,q,plan.N,imagery);
   const panel=TPPanel.quantize(pixels,plan.N,plan.N,q.panelCount||4);
+  if(q.colorContrast)panel.palette=TPPanel.contrast(panel.palette,q.colorContrast);
   if(q.panelPalette?.length===panel.palette.length)panel.palette=q.panelPalette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16)));
   return {panel,N:plan.N,heights:new Float32Array(plan.N**2),sizeKm:q.size,stepMm:plan.stepMm,plan,source,limited:false};
 }
@@ -111,7 +112,7 @@ async function imageSurface(q) {
   const surface=surfaceCache.surface;
   const palette=q.surfacePalette;
   if(palette && (palette.length!==surface.palette.length || !palette.every(c=>/^#[0-9a-f]{6}$/i.test(c))))throw Error('Invalid surface palette');
-  return {...surface,palette:palette?palette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16))):surface.palette};
+  return {...surface,palette:palette?palette.map(hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16))):TPPanel.contrast(surface.palette,q.colorContrast)};
 }
 const cache = { key: '', hf: null };
 async function getHF(q, id) {

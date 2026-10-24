@@ -116,6 +116,14 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 .tp-cta p { font-size: 11.5px; color: var(--tp-ink-3); text-align: center; margin: 6px 0 0; }
 .tp-credits { padding: 14px 16px; font-size: 11px; color: var(--tp-ink-3); line-height: 1.5; }
 .tp-credits a { color: var(--tp-ink-2); }
+.tp-side-tabs { position: sticky; top: 0; z-index: 4; display: flex; background: var(--tp-panel); border-bottom: 1px solid var(--tp-line); }
+.tp-side-tab { flex: 1 1 0; min-width: 0; background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 11px 4px 9px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--tp-ink-3); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-side-tab:hover { color: var(--tp-ink); background: var(--tp-panel-2); }
+.tp-side-tab.active { color: var(--tp-ink); border-bottom-color: var(--tp-accent); }
+.tp-side-tab:focus-visible { outline-offset: -3px; }
+.tp-pane { display: flex; flex-direction: column; }
+.tp-pane > .tp-sec:last-child { border-bottom: 0; }
+.tp-data-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 .tp-stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; background: var(--tp-stage); }
 .tp-stagebar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--tp-line); background: var(--tp-panel); flex-wrap: wrap; }
@@ -148,6 +156,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
   .tp-app { display: flex; flex-direction: column; height: auto; }
   .tp-stage { order: -1; grid-template-rows: auto 60vh auto; }
   .tp-side { border-right: 0; overflow: visible; }
+  .tp-side-tabs { position: static; }
   .tp-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tp-stats > div:nth-child(3) { border-right: 0; }
   .tp-stats > div:nth-child(n+4) { border-top: 1px solid var(--tp-line); }
@@ -159,6 +168,7 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 <nav class="tp-nav d-flex align-items-center gap-3 px-3 py-2">
   <span class="tp-brand"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 15c3-2 5 1 8-1s4-4 6-3" fill="none" stroke="var(--tp-accent)" stroke-width="1.8" stroke-linecap="round"/></svg>Terrain Press</span>
   <div class="tp-worlds flex-grow-1" id="worlds" role="group" aria-label="World"></div>
+  <button type="button" id="manage-data" class="btn btn-sm btn-tp tp-data-btn" hidden title="Terrain data manager · offline datasets" aria-label="Terrain data manager · offline datasets"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 5.5v13c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-13M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Terrain data</span></button>
   <div class="btn-group btn-group-sm" role="group" aria-label="Colour theme">
     <button type="button" class="btn btn-tp" id="th-light" title="Light" aria-label="Light theme"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg></button>
     <button type="button" class="btn btn-tp" id="th-auto" title="Match system" aria-label="Match system theme"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
@@ -168,127 +178,168 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 
 <div class="tp-app">
   <aside class="tp-side" aria-label="Model settings">
-    <div class="px-3 pt-2"><button type="button" id="manage-data" class="btn btn-sm btn-tp w-100" hidden>Terrain data manager · Offline datasets</button></div>
-    <section class="tp-sec">
-      <h2>Where <small id="mark-count"></small></h2>
-      <input type="search" class="form-control form-control-sm" id="mark-filter" placeholder="Search landmarks" aria-label="Search landmarks">
-      <div class="tp-marks" id="marks"></div>
-      <div class="row g-2">
-        <div class="col-4"><label class="tp-label" for="lat">Latitude °</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="lat" type="number" step="0.01" min="-90" max="90" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="lat" data-step-direction="up" aria-label="Increase Latitude" title="Increase Latitude">▴</button><button type="button" class="tp-step-button" data-step-target="lat" data-step-direction="down" aria-label="Decrease Latitude" title="Decrease Latitude">▾</button></div></div></div>
-        <div class="col-4"><label class="tp-label" for="lon">Longitude °E</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="lon" type="number" step="0.01" min="-180" max="180" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="lon" data-step-direction="up" aria-label="Increase Longitude" title="Increase Longitude">▴</button><button type="button" class="tp-step-button" data-step-target="lon" data-step-direction="down" aria-label="Decrease Longitude" title="Decrease Longitude">▾</button></div></div></div>
-        <div class="col-4"><label class="tp-label" for="size">Width km</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="size" type="number" step="1" min="10" max="9000" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="size" data-step-direction="up" aria-label="Increase Region width" title="Increase Region width">▴</button><button type="button" class="tp-step-button" data-step-target="size" data-step-direction="down" aria-label="Decrease Region width" title="Decrease Region width">▾</button></div></div></div>
-      </div>
-      <p class="tp-hint" id="where-hint">Open the <b>Globe</b> tab to pick any spot; the dots are landing sites.</p>
-    </section>
+    <div class="tp-side-tabs" role="tablist" aria-label="Settings">
+      <button type="button" class="tp-side-tab active" id="side-place" role="tab" aria-selected="true" aria-controls="pane-place">Place</button>
+      <button type="button" class="tp-side-tab" id="side-model" role="tab" aria-selected="false" aria-controls="pane-model" tabindex="-1">Model</button>
+      <button type="button" class="tp-side-tab" id="side-colors" role="tab" aria-selected="false" aria-controls="pane-colors" tabindex="-1">Colors</button>
+      <button type="button" class="tp-side-tab" id="side-frame" role="tab" aria-selected="false" aria-controls="pane-frame" tabindex="-1">Frame</button>
+      <button type="button" class="tp-side-tab" id="side-print" role="tab" aria-selected="false" aria-controls="pane-print" tabindex="-1">Print</button>
+    </div>
 
-    <section class="tp-sec">
-      <h2>Model</h2>
-      <div class="btn-group tp-seg" role="group" aria-label="Product">
-        <input type="radio" class="btn-check" name="product" id="p-ornament" value="ornament" checked><label class="btn btn-tp" for="p-ornament">Ornament</label>
-        <input type="radio" class="btn-check" name="product" id="p-puzzle" value="puzzle"><label class="btn btn-tp" for="p-puzzle">Puzzle</label>
-      </div>
-      <div class="btn-group tp-seg" role="group" aria-label="Shape">
-        <input type="radio" class="btn-check" name="shape" id="s-circle" value="circle" checked><label class="btn btn-tp" for="s-circle">Circle</label>
-        <input type="radio" class="btn-check" name="shape" id="s-square" value="square"><label class="btn btn-tp" for="s-square">Square</label>
-        <input type="radio" class="btn-check" name="shape" id="s-hexagon" value="hexagon"><label class="btn btn-tp" for="s-hexagon">Hexagon</label>
-        <input type="radio" class="btn-check" name="shape" id="s-hexgrid" value="hexgrid"><label class="btn btn-tp" for="s-hexgrid">Hex Grid</label>
-      </div>
-      <div>
-        <div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div>
-        <input type="range" class="form-range" id="width" min="60" max="1000" step="5" value="100">
-        <div class="row g-2 align-items-end">
-          <div class="col-5"><label class="tp-label" for="width-num">Exact width · mm</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" type="number" id="width-num" min="60" max="1000" step="1" value="100" inputmode="numeric" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="width-num" data-step-direction="up" aria-label="Increase Model width" title="Increase Model width">▴</button><button type="button" class="tp-step-button" data-step-target="width-num" data-step-direction="down" aria-label="Decrease Model width" title="Decrease Model width">▾</button></div></div></div>
-          <div class="col-7"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="unlock-size"><label class="form-check-label" for="unlock-size">Unlock over 1,000 mm</label></div></div>
+    <div class="tp-pane" id="pane-place" role="tabpanel" aria-labelledby="side-place">
+      <section class="tp-sec">
+        <h2>Landmarks <small id="mark-count"></small></h2>
+        <input type="search" class="form-control form-control-sm" id="mark-filter" placeholder="Search landmarks" aria-label="Search landmarks">
+        <div class="tp-marks" id="marks"></div>
+      </section>
+      <section class="tp-sec">
+        <h2>Region</h2>
+        <div class="row g-2">
+          <div class="col-4"><label class="tp-label" for="lat">Latitude °</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="lat" type="number" step="0.01" min="-90" max="90" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="lat" data-step-direction="up" aria-label="Increase Latitude" title="Increase Latitude">▴</button><button type="button" class="tp-step-button" data-step-target="lat" data-step-direction="down" aria-label="Decrease Latitude" title="Decrease Latitude">▾</button></div></div></div>
+          <div class="col-4"><label class="tp-label" for="lon">Longitude °E</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="lon" type="number" step="0.01" min="-180" max="180" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="lon" data-step-direction="up" aria-label="Increase Longitude" title="Increase Longitude">▴</button><button type="button" class="tp-step-button" data-step-target="lon" data-step-direction="down" aria-label="Decrease Longitude" title="Decrease Longitude">▾</button></div></div></div>
+          <div class="col-4"><label class="tp-label" for="size">Width km</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" id="size" type="number" step="1" min="10" max="9000" inputmode="decimal" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="size" data-step-direction="up" aria-label="Increase Region width" title="Increase Region width">▴</button><button type="button" class="tp-step-button" data-step-target="size" data-step-direction="down" aria-label="Decrease Region width" title="Decrease Region width">▾</button></div></div></div>
         </div>
-        <p id="size-warning" class="tp-hint" role="status" hidden>Unlocked: maximum 5,000 mm. Large exports and spread layouts can exhaust RAM or exceed printer build volumes. Verify the mesh size before printing.</p>
-      </div>
-      <div id="hex-opts" hidden>
-        <label class="tp-label" for="hex-layout">Hex Grid arrangement</label>
-        <select id="hex-layout" class="form-select form-select-sm">
-          <option value="edge">Hex outline · half-hex border</option>
-          <option value="alternating">Hex outline · alternating edge pieces</option>
-          <option value="round">Rounded hex cluster · whole hexes only</option>
-          <option value="square">Square hex cluster · whole hexes only</option>
-        </select>
-        <div id="hex-edge-wrap" class="mt-2">
-          <label class="tp-label" for="hex-edge">Half-hex border surface</label>
-          <select id="hex-edge" class="form-select form-select-sm">
-            <option value="terrain" selected>Terrain relief (continuous landscape)</option>
-            <option value="flat">Flat border pieces (base height)</option>
+        <p class="tp-hint" id="where-hint">Open the <b>Globe</b> tab above the preview to pick any spot; the dots are landing sites.</p>
+      </section>
+      <div class="tp-credits" id="credits"></div>
+    </div>
+
+    <div class="tp-pane" id="pane-model" role="tabpanel" aria-labelledby="side-model" hidden>
+      <section class="tp-sec">
+        <h2>Shape</h2>
+        <div class="btn-group tp-seg" role="group" aria-label="Product">
+          <input type="radio" class="btn-check" name="product" id="p-ornament" value="ornament" checked><label class="btn btn-tp" for="p-ornament">Ornament</label>
+          <input type="radio" class="btn-check" name="product" id="p-puzzle" value="puzzle"><label class="btn btn-tp" for="p-puzzle">Puzzle</label>
+        </div>
+        <div class="btn-group tp-seg" role="group" aria-label="Shape">
+          <input type="radio" class="btn-check" name="shape" id="s-circle" value="circle" checked><label class="btn btn-tp" for="s-circle">Circle</label>
+          <input type="radio" class="btn-check" name="shape" id="s-square" value="square"><label class="btn btn-tp" for="s-square">Square</label>
+          <input type="radio" class="btn-check" name="shape" id="s-hexagon" value="hexagon"><label class="btn btn-tp" for="s-hexagon">Hexagon</label>
+          <input type="radio" class="btn-check" name="shape" id="s-hexgrid" value="hexgrid"><label class="btn btn-tp" for="s-hexgrid">Hex Grid</label>
+        </div>
+        <div>
+          <div class="d-flex justify-content-between"><label class="tp-label" for="width">Terrain width</label><output class="tp-out" id="o-width"></output></div>
+          <input type="range" class="form-range" id="width" min="60" max="1000" step="5" value="100">
+          <div class="row g-2 align-items-end">
+            <div class="col-5"><label class="tp-label" for="width-num">Exact width · mm</label><div class="tp-step-field"><input class="form-control form-control-sm tp-num tp-step-input" type="number" id="width-num" min="60" max="1000" step="1" value="100" inputmode="numeric" /><div class="tp-step-buttons"><button type="button" class="tp-step-button" data-step-target="width-num" data-step-direction="up" aria-label="Increase Model width" title="Increase Model width">▴</button><button type="button" class="tp-step-button" data-step-target="width-num" data-step-direction="down" aria-label="Decrease Model width" title="Decrease Model width">▾</button></div></div></div>
+            <div class="col-7"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="unlock-size"><label class="form-check-label" for="unlock-size">Unlock over 1,000 mm</label></div></div>
+          </div>
+          <p id="size-warning" class="tp-hint" role="status" hidden>Unlocked: maximum 5,000 mm. Large exports and spread layouts can exhaust RAM or exceed printer build volumes. Verify the mesh size before printing.</p>
+        </div>
+        <div id="hex-opts" hidden>
+          <label class="tp-label" for="hex-layout">Hex Grid arrangement</label>
+          <select id="hex-layout" class="form-select form-select-sm">
+            <option value="edge">Hex outline · half-hex border</option>
+            <option value="alternating">Hex outline · alternating edge pieces</option>
+            <option value="round">Rounded hex cluster · whole hexes only</option>
+            <option value="square">Square hex cluster · whole hexes only</option>
           </select>
+          <div id="hex-edge-wrap" class="mt-2">
+            <label class="tp-label" for="hex-edge">Half-hex border surface</label>
+            <select id="hex-edge" class="form-select form-select-sm">
+              <option value="terrain" selected>Terrain relief (continuous landscape)</option>
+              <option value="flat">Flat border pieces (base height)</option>
+            </select>
+          </div>
+          <div id="hex-rings-wrap" class="mt-2">
+            <label class="tp-label" for="hex-rings">Hex ring size</label>
+            <select id="hex-rings" class="form-select form-select-sm">
+              <option value="1">1 ring · 7 nominal hexes</option>
+              <option value="2" selected>2 rings · 19 nominal hexes</option>
+              <option value="3">3 rings · 37 nominal hexes</option>
+              <option value="4">4 rings · 61 nominal hexes</option>
+              <option value="5">5 rings · 91 nominal hexes</option>
+              <option value="6">6 rings · 127 nominal hexes</option>
+            </select>
+          </div>
+          <div id="hex-square-wrap" class="mt-2" hidden>
+            <label class="tp-label" for="hex-across">Hexagons across and down (N × N)</label>
+            <input class="form-control form-control-sm tp-num" id="hex-across" type="number" min="2" max="12" step="1" value="5">
+            <p class="tp-hint">For example, 5 across and 5 down gives exactly 25 complete hexagons, arranged in staggered rows.</p>
+          </div>
+          <p id="hex-count-hint" class="tp-hint mt-1">Select a ring size. Borders are lattice-aligned, with no tiny leftover slivers.</p>
         </div>
-        <div id="hex-rings-wrap" class="mt-2">
-          <label class="tp-label" for="hex-rings">Hex ring size</label>
-          <select id="hex-rings" class="form-select form-select-sm">
-            <option value="1">1 ring · 7 nominal hexes</option>
-            <option value="2" selected>2 rings · 19 nominal hexes</option>
-            <option value="3">3 rings · 37 nominal hexes</option>
-            <option value="4">4 rings · 61 nominal hexes</option>
-            <option value="5">5 rings · 91 nominal hexes</option>
-            <option value="6">6 rings · 127 nominal hexes</option>
-          </select>
+      </section>
+      <section class="tp-sec">
+        <h2>Relief &amp; fit</h2>
+        <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
+        <div class="row g-2">
+          <div class="col-4"><label class="tp-label" for="base">Base mm</label><input class="form-control form-control-sm tp-num" id="base" type="number" step="0.2" min="1" max="8" value="2"></div>
         </div>
-        <div id="hex-square-wrap" class="mt-2" hidden>
-          <label class="tp-label" for="hex-across">Hexagons across and down (N × N)</label>
-          <input class="form-control form-control-sm tp-num" id="hex-across" type="number" min="2" max="12" step="1" value="5">
-          <p class="tp-hint">For example, 5 across and 5 down gives exactly 25 complete hexagons, arranged in staggered rows.</p>
+        <div class="row g-2" id="fit-row">
+          <div class="col-6" id="pieces-wrap"><label class="tp-label" for="pieces" id="pieces-label">Pieces across</label><input class="form-control form-control-sm tp-num" id="pieces" type="number" step="1" min="2" max="12" value="5"></div>
+          <div class="col-6"><label class="tp-label" for="gap">Clearance mm</label><input class="form-control form-control-sm tp-num" id="gap" type="number" step="0.05" min="0.1" max="0.6" value="0.3"></div>
         </div>
-        <p id="hex-count-hint" class="tp-hint mt-1">Select a ring size. Borders are lattice-aligned, with no tiny leftover slivers.</p>
-      </div>
-      <div id="surface-color-options" hidden>
-        <div class="form-check form-switch"><input id="surface-color" class="form-check-input" type="checkbox" role="switch"><label for="surface-color" class="form-check-label">Surface colors from imagery</label></div>
-        <div id="surface-color-controls" hidden>
-          <label class="tp-label" for="surface-count">Filament colors</label><select id="surface-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
-          <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count or sampling resets them. Color 1 also paints walls and undersides.</p><div id="surface-palette" class="d-flex gap-1 flex-wrap"></div>
-          <p class="tp-hint">Use colored 3MF in a compatible slicer; STL has no colors. Terrain mesh detail limits color edges. Enable high-detail preview to match export. No layer-height color schedule.</p>
-          <p class="tp-hint"><span id="surface-source-text"></span> <a id="surface-source-link" target="_blank" rel="noopener">Source</a></p>
+        <div id="spread-opts" class="row g-2">
+          <div class="col-6"><label class="tp-label" for="spread-gap">Print gap mm</label><input class="form-control form-control-sm tp-num" id="spread-gap" type="number" step="0.5" min="1" max="15" value="3"></div>
+          <p class="tp-hint">Puzzle downloads automatically include spread printing plates, every piece as a separate STL, and a numbered map.</p>
         </div>
-      </div>
-      <div id="jupiter-options" hidden>
-        <h3 class="tp-label"><span id="giant-name">Jupiter</span> color bands</h3>
+        <p class="tp-hint" id="model-hint"></p>
+      </section>
+    </div>
+
+    <div class="tp-pane" id="pane-colors" role="tabpanel" aria-labelledby="side-colors" hidden>
+      <section class="tp-sec" id="jupiter-options" hidden>
+        <h2><span><span id="giant-name">Jupiter</span> color bands</span></h2>
         <p class="tp-hint">Select a region on Globe, then choose any shape or puzzle layout. Heights represent color order. Frame and color pieces print separately. <a id="giant-panel-link" href="jupiter.html">Full-map panel</a></p>
         <label class="tp-label" for="jp-count">Colors</label><select id="jp-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
         <label class="tp-label" for="jp-grid">Color detail</label><select id="jp-grid" class="form-select form-select-sm"><option value="48">Coarse · 48 cells</option><option value="80">Quick · 80 cells</option><option value="128" selected>Standard · 128 cells</option><option value="192">Fine · 192 cells</option><option value="256">High · 256 cells</option><option value="384">Very high · 384 cells</option><option value="512">Ultra · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
         <label class="tp-label" for="jp-layer">Printer layer height (including first layer)</label><select id="jp-layer" class="form-select form-select-sm"><option>0.1</option><option selected>0.2</option><option>0.3</option></select>
         <label class="tp-label" for="jp-band">Printer layers per color band</label><select id="jp-band" class="form-select form-select-sm"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
         <label class="tp-label" for="jp-backing">Backing layers (first color)</label><select id="jp-backing" class="form-select form-select-sm"><option>6</option><option selected>8</option><option>10</option><option>12</option></select>
-        <p class="tp-hint">384–1024 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail or thickness reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
-      </div>
-      <div><div class="d-flex justify-content-between"><label class="tp-label" for="exag">Relief exaggeration</label><output class="tp-out" id="o-exag"></output></div><input type="range" class="form-range" id="exag" min="0" max="100" step="1" value="20"><p class="tp-hint" id="exag-hint"></p></div>
-      <div class="row g-2">
-        <div class="col-4"><label class="tp-label" for="base">Base mm</label><input class="form-control form-control-sm tp-num" id="base" type="number" step="0.2" min="1" max="8" value="2"></div>
-        <div class="col-4"><label class="tp-label" for="frame">Frame mm</label><input class="form-control form-control-sm tp-num" id="frame" type="number" step="0.5" min="4" max="14" value="7"></div>
-        <div class="col-4"><label class="tp-label" for="rim">Rim mm</label><input class="form-control form-control-sm tp-num" id="rim" type="number" step="0.5" min="0.5" max="30" value="3"></div>
-      </div>
-      <div class="form-check form-switch" id="rim-auto-wrap"><input class="form-check-input" type="checkbox" role="switch" id="rim-auto"><label class="form-check-label" for="rim-auto">Raise the rim with tall relief</label></div>
-      <div id="orn-opts" class="d-flex flex-column gap-1">
-        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="separate" checked><label class="form-check-label" for="separate">Terrain and frame as two separate prints</label></div>
-        <div class="form-check form-switch" id="loop-wrap"><input class="form-check-input" type="checkbox" role="switch" id="loop"><label class="form-check-label" for="loop">Hanging loop on the frame</label></div>
-      </div>
-      <div class="row g-2" id="fit-row">
-        <div class="col-6" id="pieces-wrap"><label class="tp-label" for="pieces" id="pieces-label">Pieces across</label><input class="form-control form-control-sm tp-num" id="pieces" type="number" step="1" min="2" max="12" value="5"></div>
-        <div class="col-6"><label class="tp-label" for="gap">Clearance mm</label><input class="form-control form-control-sm tp-num" id="gap" type="number" step="0.05" min="0.1" max="0.6" value="0.3"></div>
-      </div>
-      <div id="spread-opts" class="row g-2">
-        <div class="col-6"><label class="tp-label" for="spread-gap">Print gap mm</label><input class="form-control form-control-sm tp-num" id="spread-gap" type="number" step="0.5" min="1" max="15" value="3"></div>
-        <p class="tp-hint">Puzzle downloads automatically include spread printing plates, every piece as a separate STL, and a numbered map.</p>
-      </div>
-      <p class="tp-hint" id="model-hint"></p>
-    </section>
+        <p class="tp-hint">384–1024 cells take longer and produce larger files; select detail that suits your nozzle. Filament colors · bottom to top. Changes to count, detail, thickness or contrast reset the palette.</p><div id="jp-palette" class="d-flex gap-1 flex-wrap"></div>
+      </section>
+      <section class="tp-sec" id="surface-color-options" hidden>
+        <h2>Surface colors</h2>
+        <div class="form-check form-switch"><input id="surface-color" class="form-check-input" type="checkbox" role="switch"><label for="surface-color" class="form-check-label">Surface colors from imagery</label></div>
+        <div id="surface-color-controls" hidden>
+          <label class="tp-label" for="surface-count">Filament colors</label><select id="surface-count" class="form-select form-select-sm"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+          <label class="tp-label" for="surface-grid">Color sampling</label><select id="surface-grid" class="form-select form-select-sm"><option value="128">Quick · 128 cells</option><option value="256" selected>Standard · 256 cells</option><option value="512">Fine · 512 cells</option><option value="1024">Maximum · 1024 cells</option></select>
+          <p class="tp-hint">Real relief with 2–8 surface colors. Edit swatches to match filament; changing count, sampling or contrast resets them. Color 1 also paints walls and undersides.</p><div id="surface-palette" class="d-flex gap-1 flex-wrap"></div>
+          <p class="tp-hint">Use colored 3MF in a compatible slicer; STL has no colors. Terrain mesh detail limits color edges. Enable high-detail preview to match export. No layer-height color schedule.</p>
+          <p class="tp-hint"><span id="surface-source-text"></span> <a id="surface-source-link" target="_blank" rel="noopener">Source</a></p>
+        </div>
+      </section>
+      <section class="tp-sec" id="contrast-wrap" hidden>
+        <div class="d-flex justify-content-between"><label class="tp-label" for="color-contrast">Color contrast</label><output class="tp-out" id="o-contrast"></output></div>
+        <input type="range" class="form-range" id="color-contrast" min="0" max="100" step="5" value="0">
+        <p class="tp-hint">Pushes the sampled filament colors apart from their shared average so neighbouring bands separate more clearly. It changes the suggested colors, not where they fall, and resets edited swatches.</p>
+      </section>
+      <section class="tp-sec">
+        <h2>Part colors</h2>
+        <div class="tp-colors">
+          <label><input id="c-terrain" type="color" value="#8e8d87" aria-label="Terrain colour">Terrain</label>
+          <label><input id="c-frame" type="color" value="#26282c" aria-label="Frame colour">Frame</label>
+          <label><input id="c-text" type="color" value="#c8915a" aria-label="Lettering colour">Letters</label>
+        </div>
+        <p class="tp-hint">Preview and 3MF colors for the terrain, frame and lettering. Sampled surface colors or color bands replace the terrain color while they are on.</p>
+      </section>
+    </div>
 
-    <section class="tp-sec" id="frame-options-section">
-      <h2>Frame &amp; lettering</h2>
-      <div class="btn-group tp-seg" role="group" aria-label="Border">
-        <input type="radio" class="btn-check" name="border" id="b-lettered" value="lettered" checked><label class="btn btn-tp" for="b-lettered">Frame + text</label>
-        <input type="radio" class="btn-check" name="border" id="b-plain" value="plain"><label class="btn btn-tp" for="b-plain">Plain frame</label>
-        <input type="radio" class="btn-check" name="border" id="b-none" value="none"><label class="btn btn-tp" for="b-none">No frame</label>
-      </div>
-      <div id="back-opts" class="d-flex flex-column gap-2">
-        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="back" checked><label class="form-check-label" for="back">Closed back, so the frame is a tray you can carry</label></div>
-        <div class="row g-2" id="back-row"><div class="col-6"><label class="tp-label" for="back-mm">Back thickness mm</label><input class="form-control form-control-sm tp-num" id="back-mm" type="number" step="0.2" min="0.8" max="4" value="1.6"></div></div>
-      </div>
-      <div id="letter-opts" class="d-flex flex-column gap-2">
+    <div class="tp-pane" id="pane-frame" role="tabpanel" aria-labelledby="side-frame" hidden>
+      <section class="tp-sec">
+        <h2>Frame</h2>
+        <div class="btn-group tp-seg" role="group" aria-label="Border">
+          <input type="radio" class="btn-check" name="border" id="b-lettered" value="lettered" checked><label class="btn btn-tp" for="b-lettered">Frame + text</label>
+          <input type="radio" class="btn-check" name="border" id="b-plain" value="plain"><label class="btn btn-tp" for="b-plain">Plain frame</label>
+          <input type="radio" class="btn-check" name="border" id="b-none" value="none"><label class="btn btn-tp" for="b-none">No frame</label>
+        </div>
+        <div class="row g-2">
+          <div class="col-4"><label class="tp-label" for="frame">Frame mm</label><input class="form-control form-control-sm tp-num" id="frame" type="number" step="0.5" min="4" max="14" value="7"></div>
+          <div class="col-4"><label class="tp-label" for="rim">Rim mm</label><input class="form-control form-control-sm tp-num" id="rim" type="number" step="0.5" min="0.5" max="30" value="3"></div>
+        </div>
+        <div class="form-check form-switch" id="rim-auto-wrap"><input class="form-check-input" type="checkbox" role="switch" id="rim-auto"><label class="form-check-label" for="rim-auto">Raise the rim with tall relief</label></div>
+        <div id="orn-opts" class="d-flex flex-column gap-1">
+          <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="separate" checked><label class="form-check-label" for="separate">Terrain and frame as two separate prints</label></div>
+          <div class="form-check form-switch" id="loop-wrap"><input class="form-check-input" type="checkbox" role="switch" id="loop"><label class="form-check-label" for="loop">Hanging loop on the frame</label></div>
+        </div>
+        <div id="back-opts" class="d-flex flex-column gap-2">
+          <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="back" checked><label class="form-check-label" for="back">Closed back, so the frame is a tray you can carry</label></div>
+          <div class="row g-2" id="back-row"><div class="col-6"><label class="tp-label" for="back-mm">Back thickness mm</label><input class="form-control form-control-sm tp-num" id="back-mm" type="number" step="0.2" min="0.8" max="4" value="1.6"></div></div>
+        </div>
+      </section>
+      <section class="tp-sec" id="letter-opts">
+        <h2>Lettering</h2>
         <div class="btn-group tp-seg" role="group" aria-label="Lettering style">
           <input type="radio" class="btn-check" name="font" id="f-worm" value="worm" checked><label class="btn btn-tp" for="f-worm">Space age</label>
           <input type="radio" class="btn-check" name="font" id="f-plaque" value="plaque"><label class="btn btn-tp" for="f-plaque">Apollo plaque</label>
@@ -301,70 +352,68 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
         </div>
         <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="merge" checked><label class="form-check-label" for="merge">Lettering and frame as one part</label></div>
         <p class="tp-hint" id="loop-note" hidden>The top line is left off while the hanging loop is on.</p>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <section class="tp-sec">
-      <h2>Print</h2>
-      <div class="tp-colors">
-        <label><input id="c-terrain" type="color" value="#8e8d87" aria-label="Terrain colour">Terrain</label>
-        <label><input id="c-frame" type="color" value="#26282c" aria-label="Frame colour">Frame</label>
-        <label><input id="c-text" type="color" value="#c8915a" aria-label="Lettering colour">Letters</label>
-      </div>
-      <label class="tp-label">Terrain resolution</label>
-      <div class="btn-group tp-seg" role="group" aria-label="Terrain resolution mode">
-        <input type="radio" class="btn-check" name="resolution-mode" id="resolution-auto" value="auto" checked><label class="btn btn-tp" for="resolution-auto">Automatic</label>
-        <input type="radio" class="btn-check" name="resolution-mode" id="resolution-advanced" value="advanced"><label class="btn btn-tp" for="resolution-advanced">Advanced</label>
-      </div>
-      <div id="auto-options" class="mt-2">
-        <label class="tp-label" for="min-feature">Smallest printable feature</label>
-        <select class="form-select form-select-sm" id="min-feature">
-          <option value="0.2">0.2 mm (very fine)</option>
-          <option value="0.4" selected>0.4 mm (typical)</option>
-          <option value="0.6">0.6 mm</option>
-          <option value="0.8">0.8 mm</option>
-          <option value="1">1.0 mm</option>
-        </select>
-        <p class="tp-hint mt-1">Uses the sharpest available terrain data for these coordinates, your model size and the smallest detail your printer can reproduce. Avoids unnecessary mesh geometry.</p>
-      </div>
-      <div id="advanced-options" class="mt-2" hidden>
-        <label class="tp-label">Mesh spacing</label>
-        <div class="btn-group tp-seg" role="group" aria-label="Manual export detail">
-          <input type="radio" class="btn-check" name="detail" id="d-std" value="0.5"><label class="btn btn-tp" for="d-std">Standard · 0.50 mm</label>
-          <input type="radio" class="btn-check" name="detail" id="d-fine" value="0.35" checked><label class="btn btn-tp" for="d-fine">Fine · 0.35 mm</label>
-          <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra · 0.25 mm</label>
+    <div class="tp-pane" id="pane-print" role="tabpanel" aria-labelledby="side-print" hidden>
+      <section class="tp-sec">
+        <h2>Terrain resolution</h2>
+        <div class="btn-group tp-seg" role="group" aria-label="Terrain resolution mode">
+          <input type="radio" class="btn-check" name="resolution-mode" id="resolution-auto" value="auto" checked><label class="btn btn-tp" for="resolution-auto">Automatic</label>
+          <input type="radio" class="btn-check" name="resolution-mode" id="resolution-advanced" value="advanced"><label class="btn btn-tp" for="resolution-advanced">Advanced</label>
         </div>
-        <label class="tp-label mt-2" for="sampling-limit">Maximum terrain sample grid</label>
-        <select class="form-select form-select-sm" id="sampling-limit">
-          <option value="721" selected>721 × 721</option>
-          <option value="1441">1,441 × 1,441</option>
-          <option value="2881">2,881 × 2,881</option>
-        </select>
-        <p class="tp-hint mt-1">Advanced settings bypass printer-feature optimization. Finer spacing may not reveal more detail than the elevation data contains and can use substantial memory.</p>
-      </div>
-      <div class="form-check form-switch mt-2">
-        <input class="form-check-input" type="checkbox" role="switch" id="preview-high">
-        <label class="form-check-label" for="preview-high">High-detail preview (match export)</label>
-      </div>
-      <p class="tp-hint" id="preview-hint">Fast preview for responsive editing. Enable to see the selected export mesh before downloading.</p>
-      <p class="tp-hint mt-1" id="grid-plan">Calculating useful sampling density…</p>
-      <p class="tp-hint" id="grid-plan-note" role="status">Automatic resolution matches the terrain dataset and your printable-feature setting.</p>
-      <p class="tp-hint">Very dense exports may require substantial memory and produce large 3MF/STL files. Hard limit: 2,881 × 2,881 samples.</p>
-      <p class="tp-hint">Widths above 1,000 mm require explicitly unlocking the size limit. High-resolution or multi-piece projects can exhaust memory even below 5,000 mm; always check your printer's build volume.</p>
-      <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
-    </section>
+        <div id="auto-options">
+          <label class="tp-label" for="min-feature">Smallest printable feature</label>
+          <select class="form-select form-select-sm" id="min-feature">
+            <option value="0.2">0.2 mm (very fine)</option>
+            <option value="0.4" selected>0.4 mm (typical)</option>
+            <option value="0.6">0.6 mm</option>
+            <option value="0.8">0.8 mm</option>
+            <option value="1">1.0 mm</option>
+          </select>
+          <p class="tp-hint mt-1">Uses the sharpest available terrain data for these coordinates, your model size and the smallest detail your printer can reproduce. Avoids unnecessary mesh geometry.</p>
+        </div>
+        <div id="advanced-options" hidden>
+          <label class="tp-label">Mesh spacing</label>
+          <div class="btn-group tp-seg" role="group" aria-label="Manual export detail">
+            <input type="radio" class="btn-check" name="detail" id="d-std" value="0.5"><label class="btn btn-tp" for="d-std">Standard · 0.50 mm</label>
+            <input type="radio" class="btn-check" name="detail" id="d-fine" value="0.35" checked><label class="btn btn-tp" for="d-fine">Fine · 0.35 mm</label>
+            <input type="radio" class="btn-check" name="detail" id="d-ultra" value="0.25"><label class="btn btn-tp" for="d-ultra">Ultra · 0.25 mm</label>
+          </div>
+          <label class="tp-label mt-2" for="sampling-limit">Maximum terrain sample grid</label>
+          <select class="form-select form-select-sm" id="sampling-limit">
+            <option value="721" selected>721 × 721</option>
+            <option value="1441">1,441 × 1,441</option>
+            <option value="2881">2,881 × 2,881</option>
+          </select>
+          <p class="tp-hint mt-1">Advanced settings bypass printer-feature optimization. Finer spacing may not reveal more detail than the elevation data contains and can use substantial memory.</p>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="preview-high">
+          <label class="form-check-label" for="preview-high">High-detail preview (match export)</label>
+        </div>
+        <p class="tp-hint" id="preview-hint">Fast preview for responsive editing. Enable to see the selected export mesh before downloading.</p>
+        <p class="tp-hint" id="grid-plan">Calculating useful sampling density…</p>
+        <p class="tp-hint" id="grid-plan-note" role="status">Automatic resolution matches the terrain dataset and your printable-feature setting.</p>
+      </section>
+      <section class="tp-sec">
+        <h2>Printing notes</h2>
+        <p class="tp-hint">Very dense exports may require substantial memory and produce large 3MF/STL files. Hard limit: 2,881 × 2,881 samples.</p>
+        <p class="tp-hint">Widths above 1,000 mm require explicitly unlocking the size limit. High-resolution or multi-piece projects can exhaust memory even below 5,000 mm; always check your printer's build volume.</p>
+        <p class="tp-hint">0.12–0.16 mm layers, 15% gyroid infill, no supports. Matte PLA hides layer lines; silk shows off slopes.</p>
+      </section>
+    </div>
 
     <div class="tp-cta">
       <button type="button" class="btn btn-accent" id="export">Download print files</button>
       <p id="export-note">A .zip with STL and .3mf files, ready for any slicer.</p>
     </div>
-    <div class="tp-credits" id="credits"></div>
   </aside>
 
   <main class="tp-stage">
     <div class="tp-stagebar">
       <ul class="nav nav-pills tp-tabs" role="tablist">
-        <li class="nav-item"><button class="nav-link active" id="tab-model" role="tab" aria-selected="true" aria-controls="view-model">Model</button></li>
+        <li class="nav-item"><button class="nav-link active" id="tab-model" role="tab" aria-selected="true" aria-controls="view-model">Preview</button></li>
         <li class="nav-item"><button class="nav-link" id="tab-globe" role="tab" aria-selected="false" aria-controls="view-globe">Globe</button></li>
       </ul>
       <div class="tp-coord" id="coord"></div>
