@@ -445,9 +445,9 @@ body { background: var(--tp-bg); color: var(--tp-ink); --bs-body-bg: var(--tp-bg
 </style>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
-<script src="giant-core.js?v=40ce0afc17"></script>
-<script src="surface-core.js?v=40ce0afc17"></script>
-<script>const BUILD = '40ce0afc17'; // changes whenever worker.js or core.js change, so browsers never run stale code
+<script src="giant-core.js?v=e508f0c50b"></script>
+<script src="surface-core.js?v=e508f0c50b"></script>
+<script>const BUILD = 'e508f0c50b'; // changes whenever worker.js or core.js change, so browsers never run stale code
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
@@ -1002,7 +1002,7 @@ function makeGlobe() {
       }
     } else if(!!TPGiants.maps[world]) {
       coverKey('#394049','Printable latitude: '+TPGiants.coverage(world)+' · gray = unavailable');
-      coverKey('transparent','2015 Hubble color map · not elevation');
+      coverKey('transparent',TPGiants.maps[world].label+' color map · not elevation');
     } else if(world==='pluto') {
       coverKey('rgba(84,192,207,.50)','New Horizons mapped surface (bundled mask)');
       coverKey('#7a818a','Unmapped / filled area');

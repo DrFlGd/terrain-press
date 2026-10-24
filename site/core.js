@@ -443,32 +443,111 @@
       }
       spans.set(y,[lo,hi]);
     }
+    // Pass 1 clips every boundary cell and notes where ring vertices land on the
+    // grid lines. Clipper drops collinear vertices per cell, so where a puzzle
+    // outline runs along or grazes a cell boundary the two neighbours describe the
+    // shared edge with different vertices. Pass 2 splits both sides at the same
+    // points, keeping faces and walls edge-matched instead of leaving T-junctions.
+    const clipped=new Map(), vert=new Map(), horiz=new Map(), vstops=new Map(), hstops=new Map(), stride=n+2;
+    const bounds=(x,y)=>({l:coord(-W/2+x*cell),r:coord(-W/2+(x+1)*cell),top:coord(W/2-y*cell),bot:coord(W/2-(y+1)*cell)});
+    const isFull=(bd,y)=>{const span=spans.get(y);return !!span&&bd.l>span[0]+1/SCALE&&bd.r<span[1]-1/SCALE;};
+    // A ring edge a→b on this cell's boundary: the unit grid edge it lies on, its
+    // extent, and whether the solid (always left of a→b) really lies in this cell. A
+    // boundary edge whose solid would lie outside the cell is a zero-width pinch.
+    const onGrid=(a,b,x,y,bd)=>{
+      if(a[0]===b[0]&&(a[0]===bd.l||a[0]===bd.r)){const right=a[0]===bd.r;return {map:vert,stops:vstops,key:(right?x+1:x)*stride+y,lo:Math.min(a[1],b[1]),hi:Math.max(a[1],b[1]),from:bd.bot,to:bd.top,near:right,solid:(b[1]>a[1])===right,axis:1};}
+      if(a[1]===b[1]&&(a[1]===bd.top||a[1]===bd.bot)){const bottom=a[1]===bd.bot;return {map:horiz,stops:hstops,key:(bottom?y+1:y)*stride+x,lo:Math.min(a[0],b[0]),hi:Math.max(a[0],b[0]),from:bd.l,to:bd.r,near:bottom,solid:(b[0]>a[0])===bottom,axis:0};}
+      return null;
+    };
     for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++) {
-      const l=coord(-W/2+x*cell),r=coord(-W/2+(x+1)*cell);
-      const t=coord(W/2-y*cell),b=coord(W/2-(y+1)*cell);
-      const rect=[[l,b],[r,b],[r,t],[l,t]],span=spans.get(y);
-      const full=span && l>span[0]+1/SCALE && r<span[1]-1/SCALE;
-      const regions=full?[{outer:rect,holes:[]}]:boolOp(CL.ClipType.ctIntersection,[ex.outer,...ex.holes],[rect]);
-      const k=flat?1:panel.labels[y*n+x]+1;
-      for(const region of regions) {
-        for(const tri of full ? [[rect[0],rect[1],rect[2]],[rect[0],rect[2],rect[3]]] : triangulate(region,[])) {
-          let [a,b,c]=tri;if(area(tri)<0)[b,c]=[c,b];
-          push(a,b,c,levels[k]);push(c,b,a,bottom);
-        }
-        for(const ring of [region.outer,...region.holes])for(let i=0;i<ring.length;i++) {
-          const a=ring[i],b=ring[(i+1)%ring.length];
-          const key=[a.join(','),b.join(',')].sort().join('|');
-          const previous=edges.get(key);
-          if(previous){walls(previous.k>k?previous:{a,b,k},Math.min(previous.k,k));edges.delete(key);}
-          else edges.set(key,{a,b,k});
-        }
+      const bd=bounds(x,y);if(isFull(bd,y))continue;
+      const regions=boolOp(CL.ClipType.ctIntersection,[ex.outer,...ex.holes],[[[bd.l,bd.bot],[bd.r,bd.bot],[bd.r,bd.top],[bd.l,bd.top]]]);
+      clipped.set(y*n+x,regions);
+      // Every vertex on a boundary becomes a stop, including a lone touch point:
+      // the strictly simple split below ends an edge there as well.
+      const stop=(stops,key,v)=>{let set=stops.get(key);if(!set)stops.set(key,set=new Set());set.add(v);};
+      for(const region of regions)for(const ring of [region.outer,...region.holes])for(const v of ring) {
+        if(v[1]>bd.bot&&v[1]<bd.top){if(v[0]===bd.l)stop(vstops,x*stride+y,v[1]);else if(v[0]===bd.r)stop(vstops,(x+1)*stride+y,v[1]);}
+        if(v[0]>bd.l&&v[0]<bd.r){if(v[1]===bd.top)stop(hstops,y*stride+x,v[0]);else if(v[1]===bd.bot)stop(hstops,(y+1)*stride+x,v[0]);}
       }
     }
-    for(const e of edges.values())walls(e,0);
-    function walls(e,low) {
-      for(let k=low;k<e.k;k++) {
-        const a=[...e.a,levels[k]],b=[...e.b,levels[k]],c=[...e.b,levels[k+1]],d=[...e.a,levels[k+1]];
-        out.push(...a,...b,...c,...a,...c,...d);
+    // Walls along cell boundaries are settled per unit grid edge from the claims of
+    // the two cells sharing it, by a one-dimensional sweep; buckets are keyed
+    // numerically and resolved as soon as both neighbours are done.
+    const claim=(map,key,lo,hi,k,near)=>{const list=map.get(key);if(list)list.push([lo,hi,k,near]);else map.set(key,[[lo,hi,k,near]]);};
+    for(let y=y0;y<=y1;y++) {
+      for(let x=x0;x<=x1;x++) {
+        const bd=bounds(x,y),k=flat?1:panel.labels[y*n+x]+1;
+        const rect=[[bd.l,bd.bot],[bd.r,bd.bot],[bd.r,bd.top],[bd.l,bd.top]];
+        for(const region of clipped.get(y*n+x)||[{outer:rect,holes:[]}]) {
+          const split={outer:withStops(region.outer,x,y,bd),holes:region.holes.map(h=>withStops(h,x,y,bd))};
+          const faces=region.outer===rect&&split.outer.length===4?[{region:split,tris:[[rect[0],rect[1],rect[2]],[rect[0],rect[2],rect[3]]]}]:cellFaces(split);
+          for(const {region,tris} of faces) {
+            for(const tri of tris) {
+              let [a,b,c]=tri;if(area(tri)<0)[b,c]=[c,b];
+              push(a,b,c,levels[k]);push(c,b,a,bottom);
+            }
+            for(const ring of [region.outer,...region.holes])for(let i=0;i<ring.length;i++) {
+              const a=ring[i],b=ring[(i+1)%ring.length],g=onGrid(a,b,x,y,bd);
+              if(!g)walls(a,b,k,0);else if(g.solid)claim(g.map,g.key,g.lo,g.hi,k,g.near);
+            }
+          }
+        }
+        settle(vert,x*stride+y,true);
+      }
+      for(let x=x0;x<=x1;x++)settle(horiz,y*stride+x,false);
+    }
+    for(const key of [...vert.keys()])settle(vert,key,true);
+    for(const key of [...horiz.keys()])settle(horiz,key,false);
+    // Insert the neighbours' vertices into this ring's edges along the grid lines.
+    function withStops(ring,x,y,bd) {
+      const out=[];
+      for(let i=0;i<ring.length;i++) {
+        const a=ring[i],b=ring[(i+1)%ring.length];out.push(a);
+        const g=onGrid(a,b,x,y,bd),set=g&&g.stops.get(g.key);if(!set)continue;
+        const inside=[...set].filter(v=>v>g.lo&&v<g.hi).sort((p,q)=>b[g.axis]>a[g.axis]?p-q:q-p);
+        for(const v of inside)out.push(g.axis?[a[0],v]:[v,a[1]]);
+      }
+      return out;
+    }
+    // Clipper can return a ring that touches itself where the outline grazes a cell
+    // boundary; poly2tri rejects a vertex lying on another edge. Split such rings
+    // into strictly simple polygons (keeping the inserted collinear vertices), retry,
+    // and only then drop a sliver far below printable size: its neighbours' edges
+    // simply become exposed walls.
+    function cellFaces(region) {
+      try { return [{region,tris:triangulate(region,[])}]; }
+      catch (e) {
+        const c=new CL.Clipper(CL.Clipper.ioStrictlySimple|CL.Clipper.ioPreserveCollinear);
+        c.AddPaths([region.outer,...region.holes].map(toCL),CL.PolyType.ptSubject,true);
+        const tree=new CL.PolyTree();c.Execute(CL.ClipType.ctUnion,tree,CL.PolyFillType.pftNonZero,CL.PolyFillType.pftNonZero);
+        return polyTreeToExPolys(tree).filter(simple=>simple.outer.length>=3).flatMap(simple=>{
+          try { return [{region:simple,tris:triangulate(simple,[])}]; }
+          catch (e2) { if(Math.abs(exArea(simple))<1e-3)return []; throw e2; }
+        });
+      }
+    }
+    // Emit the step walls on one unit edge. `near` marks claims from the cell west of
+    // a vertical edge or north of a horizontal one; where the two sides differ, the
+    // wall faces away from the taller side.
+    function settle(map,key,vertical) {
+      const claims=map.get(key);if(!claims)return;map.delete(key);
+      const index=Math.floor(key/stride),fixed=vertical?coord(-W/2+index*cell):coord(W/2-index*cell);
+      const stops=[...new Set([...claims.flatMap(c=>[c[0],c[1]]),...((vertical?vstops:hstops).get(key)||[])])].sort((p,q)=>p-q);
+      for(let i=0;i+1<stops.length;i++) {
+        const p=stops[i],q=stops[i+1];let kNear=0,kFar=0;
+        for(const [lo,hi,k,near] of claims)if(lo<=p&&hi>=q){if(near)kNear=Math.max(kNear,k);else kFar=Math.max(kFar,k);}
+        if(kNear===kFar)continue;
+        // The taller side must sit on the left of a→b: a taller west side travels up
+        // (p→q on a vertical edge), a taller north side travels east (p→q).
+        const [s,e]=kNear>kFar?[p,q]:[q,p];
+        if(vertical)walls([fixed,s],[fixed,e],Math.max(kNear,kFar),Math.min(kNear,kFar));
+        else walls([s,fixed],[e,fixed],Math.max(kNear,kFar),Math.min(kNear,kFar));
+      }
+    }
+    function walls(a,b,high,low) {
+      for(let k=low;k<high;k++) {
+        out.push(a[0],a[1],levels[k],b[0],b[1],levels[k],b[0],b[1],levels[k+1],a[0],a[1],levels[k],b[0],b[1],levels[k+1],a[0],a[1],levels[k+1]);
       }
     }
   }

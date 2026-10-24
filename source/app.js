@@ -505,7 +505,7 @@ function makeGlobe() {
       }
     } else if(!!TPGiants.maps[world]) {
       coverKey('#394049','Printable latitude: '+TPGiants.coverage(world)+' · gray = unavailable');
-      coverKey('transparent','2015 Hubble color map · not elevation');
+      coverKey('transparent',TPGiants.maps[world].label+' color map · not elevation');
     } else if(world==='pluto') {
       coverKey('rgba(84,192,207,.50)','New Horizons mapped surface (bundled mask)');
       coverKey('#7a818a','Unmapped / filled area');

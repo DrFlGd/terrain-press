@@ -15,6 +15,17 @@ for(const part of model.parts.filter(p=>p.role==='terrain')){watertight(part.tri
 const xml=TPCore.model3mf(model.parts,{terrain:'#cccccc',frame:'#444444'},'Jupiter')[2][1];assert.match(xml,/pid="100000" p1="/);
 if(product==='puzzle'){const spread=TPCore.spreadPieces(model.parts,model.grid,3,model.floorZ);for(const p of spread.parts){assert.equal(p.faceColors.length,p.tris.length/9);watertight(p.tris);}}
 });}
+test('puzzle outline grazing color-cell boundaries triangulates and stays watertight',()=>{
+// The Neptune 80-cell browser export: a jigsaw socket ran along x = -16.25 mm, a cell boundary, so the
+// clipped cell touched itself and poly2tri rejected it ("Collinear not supported"). Both neighbours must
+// also describe the shared boundary with the same vertices, or faces and walls leave T-junctions.
+const n=80,rgba=new Uint8Array(n*n*4);let s=929976;for(let i=0;i<rgba.length;i+=4){s=(s*1664525+1013904223)>>>0;rgba.set([s>>>24,(s>>>16)&255,(s>>>8)&255,255],i);}
+const panel={panel:TPPanel.quantize(rgba,n,n,4),heights:new Float32Array(n*n),N:n,sizeKm:20000};
+const model=TPCore.buildModel({...common,widthMm:100,pieces:5,stepMm:.5,back:true,backMm:1.6,seed:929976,shape:'square',product:'puzzle',border:'plain'},panel,null);
+const pieces=model.parts.filter(p=>p.role==='terrain');assert.equal(pieces.length,25);
+for(const part of pieces){watertight(part.tris);assert.equal(part.faceColors.length,part.tris.length/9);}
+for(const part of TPCore.spreadPieces(model.parts,model.grid,3,model.floorZ).parts)if(part.faceColors)watertight(part.tris);
+});
 test('map crop preserves orientation, wraps seam and rejects polar gaps',()=>{const w=360,h=160,pixels=new Uint8Array(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++)pixels.set([x%256,y,0,255],(y*w+x)*4);
 const sample=(lon,lat=0)=>TPPanel.crop(pixels,w,h,{lat,lon,size:1000},1);
 assert.equal(sample(0)[0],180);assert.deepEqual(sample(179),sample(-181));assert.ok(sample(0,20)[1]<sample(0,-20)[1]);assert.throws(()=>sample(0,85),/polar/);
