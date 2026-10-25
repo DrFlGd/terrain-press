@@ -2,7 +2,7 @@
 
 **Historical status (2026-10-13, v1.8.3):** The desktop app supports **seven offline worlds** and optional elevation upgrades for **five** (Moon, Mars, Mercury, Ceres and Vesta). The user has confirmed that the **Mars download renders**, and has now confirmed that **Mercury, Ceres and Vesta function correctly** in their installation. This establishes a successful *functional field test*, **not** independent certification of archive height/datum values, every STL/3MF, offline restart/removal, or multi-GB Moon transfers. The USGS products remain beta in the release catalog while that evidence is collected. **Venus now has an experimental geographically masked Magellan stereo beta**, not a higher-resolution complete global map. Pluto still lacks an optional higher-resolution source.
 
-For the current eight-world status, planetary matrix, delivered feature list and **prioritized next steps**, see **[Project status and next milestones](PROJECT-STATUS.md)**. The phase sections below preserve implementation history and outstanding acceptance gates.
+For the current twelve-world status, planetary matrix, delivered feature list and **prioritized next steps**, see **[Project status and next milestones](PROJECT-STATUS.md)**. The phase sections below preserve implementation history and outstanding acceptance gates.
 
 
 
@@ -334,3 +334,26 @@ Implemented as optional surface assignments in the standard Moon workflow: 8K of
 ## Rocky-planet surface colors — v1.16 implementation
 
 Earth, Mars, Mercury and Venus now share the Moon's 2–8-color imagery painting and 3MF workflow, including globe selection, editable palettes, puzzle-piece colors and print guides. See [surface colors and source limitations](SURFACE-COLORS.md). This adds no elevation sources or water geometry. Ceres, Vesta and Pluto imagery are deferred pending registration/coverage work; additional gas giants remain future work.
+
+## Giant planets and 1024 color detail — v1.18.0
+
+- [x] Saturn, Uranus and Neptune use Jupiter's worker, full-map panel page, color-change CSV and per-world `PRINTING.txt`. Rings are excluded.
+- [x] Color detail reaches 1024 cells across for giant bands and rocky-world painting.
+- [x] Color-cell clipping inserts shared grid-line vertices into both neighbours and settles step walls per grid edge, removing a poly2tri "Collinear not supported" failure and overlapping internal walls.
+- [x] Printable bands trimmed away from limb and seam artifacts: Uranus ends at -4°, Neptune's north edge at 30°.
+
+See [giant planets](GIANT-PLANETS.md).
+
+## Tabbed settings and color contrast — v1.19.0
+
+- [x] Settings grouped into Place, Model, Colors, Frame and Print tabs; the preview's Model tab is renamed Preview; the Frame tab hides for Hex Grid.
+- [x] Color contrast slider (1.0×–3.0×) spreads sampled giant and surface palettes about their mean and is saved as `colorContrast` in exports.
+- [x] The desktop Terrain data manager opens from a top-bar button instead of the first row of the settings rail.
+
+## Hexagon ornament build fix — v1.19.1
+
+- [x] Hexagon outlines use exact mirror-symmetric vertices and densified axis-aligned edges stay bit-exact, so a one-ulp slope no longer makes poly2tri reject the ring as collinear. `desktop/hexagon-outline.test.js` covers widths from 60 to 500 mm, including the failing 405 mm Pluto ornament.
+
+## Next round — parity and settings follow-ups (proposed, not scheduled)
+
+The [project status](PROJECT-STATUS.md#next-round-parity-and-settings-follow-ups-proposed-2026-10-24) lists the recommended next round: independent CI smokes, Ceres/Vesta/Pluto export checks and imagery painting, an 8192 × 4096 Earth base, a color-detail source warning, a docs refresh, quantizer corner cleanup, and seven settings UI refinements.

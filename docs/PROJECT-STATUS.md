@@ -1,21 +1,18 @@
 # Terrain Press — Project status and next milestones
 
-Current addition (v1.19.1): hexagon ornaments build again at every width and detail level; the outline previously had one-ulp sloped flat edges that poly2tri rejected as collinear. Earlier dated milestones below are historical.
+**Updated:** 2026-10-25  ·  **Current Windows testing release:** [v1.19.1](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.19.1)  ·  **Supported worlds:** 12 (eight terrain worlds: Moon, Mars, Mercury, Venus, Earth, Ceres, Vesta, Pluto; four giant planets: Jupiter, Saturn, Uranus, Neptune)
 
+## Recent releases
 
-**v1.19 implementation:** settings are grouped into Place, Model, Colors, Frame and Print tabs, the Terrain data manager opens from the top bar, and a Color contrast slider spreads sampled palettes apart.
+| Release | Date | Change |
+|---|---|---|
+| [v1.19.1](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.19.1) (#12) | 2026-10-24 | Hexagon ornaments build again at every width and detail level. Rounding left one-ulp slopes on the outline's flat edges, which poly2tri rejected as "Collinear not supported". |
+| [v1.19.0](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.19.0) (#11) | 2026-10-24 | Settings grouped into Place, Model, Colors, Frame and Print tabs; Color contrast slider (1.0×–3.0×) spreads sampled palettes apart and is recorded as `colorContrast` in exports; the Terrain data manager opens from a top-bar button. |
+| [v1.18.0](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.18.0) (#10) | 2026-10-24 | Saturn, Uranus and Neptune share Jupiter's cloud-print workflow; color detail reaches 1024 cells across; color-cell clipping rewritten to remove a poly2tri failure and overlapping step walls. See [giant planets](GIANT-PLANETS.md). |
+| v1.17 (#9) | 2026-10-23 | Earth paint imagery increases to 21600 × 10800 (about 1.85 km/pixel), with an 8K globe overview and offline regional tile sampling. See [surface colors](SURFACE-COLORS.md). |
+| v1.16 (#8) | 2026-10-22 | Earth, Mars, Mercury and Venus join the Moon's imagery-painting workflow: 2–8 editable colors, real terrain, colored 3MFs and print guides. |
 
-
-**v1.18 implementation:** Saturn, Uranus and Neptune share Jupiter’s cloud-print workflow, and color detail supports 1024 cells across. See [giant planets](GIANT-PLANETS.md) for source coverage and printing limits.
-
-
-**v1.17 implementation:** Earth paint imagery increases to 21600 × 10800 (about 1.85 km/pixel), with a sharper 8K globe overview and offline regional tile sampling. See [surface colors](SURFACE-COLORS.md).
-
-
-**v1.16 implementation:** Earth, Mars, Mercury and Venus now share the released Moon imagery-painting workflow: 2–8 editable colors, real terrain, colored 3MFs and print guides. Jupiter retains its stacked-color workflow. See [surface colors and imagery provenance](SURFACE-COLORS.md).
-
-
-**Updated:** 2026-10-15  ·  **Current Windows testing release:** [v1.11.0](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.11.0)  ·  **Supported bodies:** 8
+Earlier dated milestones below are historical; the [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) keeps the full implementation history.
 
 This is the **current** status summary. The [terrain data roadmap](TERRAIN-DATA-ROADMAP.md) contains implementation history, detailed requirements and research notes; [Windows instructions](WINDOWS.md) explain the downloadable desktop app. A **working download or render is not the same as a scientific validation of absolute elevations, datum, missing-data coverage or complete offline export behavior**.
 
@@ -25,7 +22,7 @@ Earth is implemented with a 4096 × 2048 offline ETOPO base and optional NOAA 60
 
 ## Supported worlds and optional elevation upgrades
 
-All seven bodies have offline, built-in elevation grids and selected locally sharper landmark patches. The optional upgrades below improve **printable terrain elevation**; they are not photographic/color surface texture packs.
+The table covers the seven non-Earth terrain worlds; Earth is described above and the four giant planets, which print color bands rather than elevation, in [GIANT-PLANETS.md](GIANT-PLANETS.md). All seven bodies have offline, built-in elevation grids and selected locally sharper landmark patches. The optional upgrades below improve **printable terrain elevation**; they are not photographic/color surface texture packs.
 
 | Body | Bundled global elevation grid | Optional higher-resolution DEM/DTM in desktop manager | Field feedback (as of 2026-10-13) | Remaining acceptance |
 |---|---|---|---|---|
@@ -62,7 +59,33 @@ All seven bodies have offline, built-in elevation grids and selected locally sha
 
 **Water level with separate water/terrain export colors** is deferred at the user's request (2026-10-15), with no scheduled implementation or release. Proposed scope includes an adjustable elevation level, flat water surface, separate printable water/terrain volumes, colored 3MF parts and separate STL parts. See the [roadmap parking lot](TERRAIN-DATA-ROADMAP.md#feature-parking-lot--deferred-not-scheduled) for geometry, water-mask and acceptance considerations.
 
+## Next round: parity and settings follow-ups (proposed 2026-10-24)
+
+Two reviews after v1.18–v1.19 recommend finishing parity across the twelve worlds before adding new worlds or features. None of these is scheduled yet.
+
+**World parity and quality**
+
+1. **Independent CI smokes.** Later smoke steps in `integration-check.yml` skip when an earlier one fails; add `if: always()` or split them into parallel jobs so one world cannot hide another.
+2. **Browser export checks for Ceres, Vesta and Pluto**, including Pluto's unmapped-area warning, so every world has an end-to-end run.
+3. **Earth bundled relief at 8192 × 4096.** Earth's bundled grid is 9.8 km/pixel, four to fifty times coarser than other rocky worlds without an optional download; the larger base adds about 30 MB.
+4. **Imagery painting for Ceres, Vesta and Pluto** from Dawn Framing Camera and New Horizons color mosaics, reusing `tools/surface/prepare.py`.
+5. **Warn when color detail exceeds the source image**, using the worker's `sourceStepMm`; 1024 cells oversample every giant map 4–11×.
+6. **Refresh DATA.md and the README** for twelve worlds and document the imagery-only giant layout.
+7. **Quantizer corner cleanup** for the rare non-manifold edge where four wall faces meet at a color-cell corner, plus a watertightness fuzz in the node tests.
+
+**Settings UI**
+
+1. **Numbered swatches** (1–8) matching the color-changes CSV, print guide and preview legend.
+2. **One name for color detail**: giants say "Color detail" (48–1024 cells), surface painting says "Color sampling" (128–1024).
+3. **Step arrows on the remaining number fields** (base, frame, rim, pieces, clearance, print gap, back thickness, hexes across).
+4. **Trim repeated hints** between the Print tab notes, the export note and the PDF guide.
+5. **Theme the Globe coverage legend** and the data manager border for the light theme.
+6. **World strip overflow cue** so narrow windows show that more worlds sit to the right.
+7. **Shareable settings URL** so a print can be reopened exactly.
+
 ## Prioritized development plan (proposed, not yet implemented)
+
+The longer-term plan below predates the giant planets and still applies after the next round above.
 
 1. **Close the existing planetary acceptance loop.** Record reproducible Mercury/Ceres/Vesta and Mars results, remove beta labels only after source-value and offline-export checks, verify Moon downloads and capture failures. This is verification work, not reimplementation of functioning downloads.
 2. **Implement geographically bounded regional terrain downloads with coverage/provenance masks.** Use coordinate windows, data overlap, seams, poles and dateline handling. This unlocks honest high-detail **Pluto** regional products and efficient downloads for other worlds.
