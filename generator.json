@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DrFlGd/Generator-Library/main/schema/generator.schema.json",
+  "id": "terrain-press",
+  "name": "Terrain Press",
+  "summary": "Turn real NASA elevation data into 3D-printable ornaments and jigsaw puzzles.",
+  "description": "Pick a place on Earth, the Moon, Mars, Mercury, Ceres, Vesta, Venus, Pluto or the gas giants, choose a shape and a size, and download print-ready STL and 3MF files. Everything is computed in the browser from real spacecraft measurements; nothing is uploaded anywhere.",
+  "tags": ["terrain", "ornament", "puzzle", "nasa", "3mf", "stl"],
+  "process": "3d-print",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://ianbauters.github.io/terrain-press/",
+  "upstream": "ianbauters/terrain-press",
+  "distributions": [
+    {
+      "kind": "web",
+      "url": "https://ianbauters.github.io/terrain-press/",
+      "label": "Open online"
+    },
+    {
+      "kind": "bundle",
+      "label": "Install offline copy",
+      "from": { "type": "repo", "path": "site" },
+      "entry": "index.html",
+      "notes": "The site/ folder with the bundled elevation data (about 300 MB)."
+    },
+    {
+      "kind": "exe",
+      "platform": "windows",
+      "install": "portable",
+      "label": "Install Windows app",
+      "from": { "type": "release", "tag": "desktop-v*", "asset": "Terrain-Press-*-Portable.exe", "prerelease": true }
+    }
+  ]
+}
