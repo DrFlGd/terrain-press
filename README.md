@@ -77,9 +77,11 @@ This is a decorative representation, not survey-grade data, and is not endorsed 
 
 ## Windows desktop app
 
-A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.9.2 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.9.2) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
+A portable, offline Windows executable is built automatically by GitHub Actions. Download [Terrain Press v1.19.1 Portable](https://github.com/DrFlGd/terrain-press/releases/tag/desktop-v1.19.1) from the official release page. No browser, server, Node.js or Python is needed. See [Windows build and usage instructions](docs/WINDOWS.md) and the [current project status and future milestones](docs/PROJECT-STATUS.md).
 
 ## Current progress and data validation
+
+**As of 2026-10-25 (v1.19.1):** twelve worlds are selectable: eight terrain worlds (Moon, Mars, Mercury, Venus, Earth, Ceres, Vesta, Pluto) and four giant planets (Jupiter, Saturn, Uranus, Neptune) printed as stacked color bands. See [recent releases](docs/PROJECT-STATUS.md#recent-releases) and the [proposed next round](docs/PROJECT-STATUS.md#next-round-parity-and-settings-follow-ups-proposed-2026-10-24). The paragraph below is the 2026-10-13 elevation validation record.
 
 **As of 2026-10-13 (v1.8.3):** Seven celestial bodies are printable offline. Moon LOLA 128/256/512, Mars MOLA 64, Mercury MESSENGER 64, Ceres Dawn 60 and Vesta Dawn 48 are available as optional higher-resolution **elevation** datasets. The user has **confirmed Mars successfully downloads/renders** and **confirmed Mercury, Ceres and Vesta function** in their installation. These are positive real-world results; independent source-height/datum checks and the full offline/export/removal matrix remain open, so the relevant beta product labels have **not** been changed. Venus now has a separately downloadable **partial-coverage Magellan stereo elevation beta (~20% observed)**; Pluto still has no optional higher-resolution elevation pack. Venus's stereo raster is not a complete global DEM.
 
@@ -198,3 +200,7 @@ To recover, use **v1.9.2**, keep the existing configured Terrain Data Manager di
 ### Giant planets and 1024 color detail (v1.18.0)
 
 Saturn, Uranus and Neptune join Jupiter in globe selection and the standard ornament/puzzle export workflow. Giant panels and rocky-world painting now support 1024 color cells across. Bundled OPAL imagery has explicit coverage limits; rings are not included. See [giant-planet printing and sources](docs/GIANT-PLANETS.md).
+
+### Tabbed settings and color contrast (v1.19.0, v1.19.1)
+
+Settings are grouped into **Place, Model, Colors, Frame and Print** tabs, and the desktop Terrain data manager opens from the top bar. A **Color contrast** slider (1.0×–3.0×) in the Colors tab spreads sampled palettes apart without changing which cells get which color. v1.19.1 fixes hexagon ornaments failing to build with "Collinear not supported".
